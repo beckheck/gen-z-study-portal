@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useMemo, useRef, useState, useLayoutEffect, createContext, useContext } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import ReactConfetti from "react-confetti";
 import { DataTransfer } from "@/lib/data-transfer";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,15 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
-import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap } from "lucide-react";
+import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo } from "lucide-react";
+
+// -----------------------------
+// Theme Context
+// -----------------------------
+const ThemeContext = createContext();
+export function useTheme() {
+  return useContext(ThemeContext);
+}
 
 // -----------------------------
 // Helpers & Local Storage Hooks
@@ -46,8 +55,15 @@ function uid() { return Math.random().toString(36).slice(2, 10); }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-// Color chips for schedule types
-const typeColors = { class: "bg-violet-500", lab: "bg-emerald-500", workshop: "bg-amber-500", assistantship: "bg-sky-500" };
+// Color chips for different event types
+const typeColors = { 
+  class: "bg-violet-500", 
+  lab: "bg-emerald-500", 
+  workshop: "bg-amber-500", 
+  assistantship: "bg-sky-500",
+  exam: "bg-rose-500",
+  task: "bg-amber-500"
+};
 
 // -----------------------------
 // Dev sanity checks (lightweight "tests")
@@ -86,6 +102,53 @@ function __devTests__() {
 // -----------------------------
 // Main App Component
 // -----------------------------
+// Accent color CSS variables updater
+function useAccentColor(color) {
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const hsl = getHSLComponents(color);
+    
+    root.style.setProperty('--accent-h', hsl.h);
+    root.style.setProperty('--accent-s', hsl.s + '%');
+    root.style.setProperty('--accent-l', hsl.l + '%');
+  }, [color]);
+}
+
+// Convert hex to HSL components
+function getHSLComponents(hex) {
+  // Remove the hash if present
+  hex = hex.replace('#', '');
+  
+  // Convert hex to RGB
+  const r = parseInt(hex.substr(0, 2), 16) / 255;
+  const g = parseInt(hex.substr(2, 2), 16) / 255;
+  const b = parseInt(hex.substr(4, 2), 16) / 255;
+  
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+
+  if (max === min) {
+    h = s = 0;
+  } else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return {
+    h: Math.round(h * 360),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100)
+  };
+}
+
 export default function StudyPortal() {
   // Core state
   const [courses, setCourses] = useLocalState("sp:courses", DEFAULT_COURSES);
@@ -138,6 +201,10 @@ export default function StudyPortal() {
   const [darkMode, setDarkMode] = useLocalState("sp:dark", prefersDark);
   const [soundtrackEmbed, setSoundtrackEmbed] = useLocalState("sp:soundtrackEmbed", "");
   const [bgImage, setBgImage] = useLocalState("sp:bgImage", "");
+  const [accentColor, setAccentColor] = useLocalState("sp:accentColor", {
+    light: "#7c3aed", // violet-600
+    dark: "#8b5cf6"   // violet-500
+  });
   const [gradientStart, setGradientStart] = useLocalState("sp:gradientStart", {
     light: "#ffd2e9", // fuchsia-200 equivalent
     dark: "#18181b"   // zinc-900 equivalent
@@ -155,24 +222,34 @@ export default function StudyPortal() {
   // Study-tracker-only tasks
   const [sessionTasks, setSessionTasks] = useLocalState("sp:sessionTasks", []); // {id, title, done, createdAt}
 
-  // Apply theme before paint + minimal reset for consistency
+  // Apply theme and accent color before paint + minimal reset for consistency
   useLayoutEffect(() => {
     const root = document.documentElement;
     if (darkMode) {
       root.classList.remove("light");
       root.classList.add("dark");
       root.style.colorScheme = "dark";
+      root.style.setProperty('--background', '#1e1e1e');
     } else {
       root.classList.remove("dark");
       root.classList.add("light");
       root.style.colorScheme = "light";
+      root.style.setProperty('--background', '#ffffff');
     }
   }, [darkMode]);
+
+  // Update accent color CSS variables
+  useAccentColor(darkMode ? accentColor.dark : accentColor.light);
   useLayoutEffect(() => {
     if (document.getElementById('sp-reset')) return;
     const style = document.createElement('style');
     style.id = 'sp-reset';
     style.textContent = `
+:root {
+  --accent-h: 0;
+  --accent-s: 0%;
+  --accent-l: 50%;
+}
 :where(*, *::before, *::after){box-sizing:border-box}
 :where(html, body){height:100%}
 :where(body){margin:0; line-height:1.5; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility}
@@ -183,6 +260,54 @@ export default function StudyPortal() {
 :where(iframe){border:0}
 :where(.dark) label{color:#e5e7eb}
 :where(.dark) h1, :where(.dark) h2, :where(.dark) h3, :where(.dark) h4{color:#fafafa}
+
+/* Apply accent color to UI elements */
+[role="tab"][data-state="active"] {
+  background-color: var(--tab-accent) !important;
+  color: white !important;
+}
+
+/* Primary buttons */
+button:not([variant="ghost"]):not([variant="outline"]):not([variant="secondary"]):not([variant="link"]),
+button[variant="default"],
+.bg-gradient-to-br {
+  background-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l)) !important;
+  color: white !important;
+}
+
+/* Progress bars */
+[role="progressbar"] > div {
+  background-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l)) !important;
+}
+
+/* Switches */
+[data-state="checked"] {
+  background-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l)) !important;
+}
+
+/* Button hover states */
+button:hover:not([variant="ghost"]):not([variant="outline"]):not([variant="secondary"]):not([variant="link"]),
+button[variant="default"]:hover {
+  background-color: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) - 5%)) !important;
+}
+
+/* Gradients */
+.text-transparent.bg-gradient-to-r {
+  background-image: linear-gradient(to right, 
+    hsl(var(--accent-h) var(--accent-s) var(--accent-l)), 
+    hsl(calc(var(--accent-h) + 60) var(--accent-s) var(--accent-l))
+  ) !important;
+}
+
+/* Badge accents */
+.bg-violet-500 {
+  background-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l)) !important;
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l)) !important;
+}
 `;
     document.head.appendChild(style);
   }, []);
@@ -268,7 +393,7 @@ export default function StudyPortal() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                StudyHub ✨ — <span className="text-fuchsia-600 dark:text-fuchsia-400">Gen Z</span> Portal
+                StudyHub ✨ — <span className="text-white dark:text-black">Gen Z</span> Portal
               </h1>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Plan smarter. Study deeper. Protect your vibe.</p>
             </div>
@@ -283,12 +408,12 @@ export default function StudyPortal() {
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList className="flex flex-wrap gap-2 bg-white/70 dark:bg-white/10 backdrop-blur p-2 rounded-2xl shadow-lg">
-            <TabsTrigger value="dashboard" className="rounded-xl">Dashboard</TabsTrigger>
-            <TabsTrigger value="planner" className="rounded-xl"><CalendarDays className="w-4 h-4 mr-1" />Planner</TabsTrigger>
-            <TabsTrigger value="courses" className="rounded-xl"><NotebookPen className="w-4 h-4 mr-1" />Courses</TabsTrigger>
-            <TabsTrigger value="study" className="rounded-xl"><Brain className="w-4 h-4 mr-1" />Study Tracker</TabsTrigger>
-            <TabsTrigger value="wellness" className="rounded-xl"><HeartPulse className="w-4 h-4 mr-1" />Wellness</TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-xl"><Settings className="w-4 h-4 mr-1" />Settings</TabsTrigger>
+            <TabsTrigger value="dashboard" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}>Dashboard</TabsTrigger>
+            <TabsTrigger value="planner" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><CalendarDays className="w-4 h-4 mr-1" />Planner</TabsTrigger>
+            <TabsTrigger value="courses" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><NotebookPen className="w-4 h-4 mr-1" />Courses</TabsTrigger>
+            <TabsTrigger value="study" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><Brain className="w-4 h-4 mr-1" />Study Tracker</TabsTrigger>
+            <TabsTrigger value="wellness" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><HeartPulse className="w-4 h-4 mr-1" />Wellness</TabsTrigger>
+            <TabsTrigger value="settings" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><Settings className="w-4 h-4 mr-1" />Settings</TabsTrigger>
           </TabsList>
 
           {/* Dashboard */}
@@ -359,6 +484,8 @@ export default function StudyPortal() {
               onAdd={addSchedule}
               onRemove={removeSchedule}
               eventsByDay={eventsForDay}
+              exams={exams}
+              tasks={tasks}
             />
           </TabsContent>
 
@@ -427,6 +554,8 @@ export default function StudyPortal() {
               darkMode={darkMode}
               gradientEnabled={gradientEnabled}
               setGradientEnabled={setGradientEnabled}
+              accentColor={accentColor}
+              setAccentColor={setAccentColor}
               dataTransfer={dataTransfer}
             />
           </TabsContent>
@@ -532,11 +661,12 @@ function Upcoming({ exams, tasks, courses }) {
 // -----------------------------
 // Planner (Week + Month views)
 // -----------------------------
-function Planner({ courses, onAdd, onRemove, eventsByDay }) {
+function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ courseIndex: 0, type: "class", title: "", day: "Mon", start: "10:00", end: "11:30", location: "" });
   const [filterCourse, setFilterCourse] = useState("all");
   const [view, setView] = useState("week");
+  const [weekOffset, setWeekOffset] = useState(0);
 
   // Month data
   const now = new Date();
@@ -552,12 +682,76 @@ function Planner({ courses, onAdd, onRemove, eventsByDay }) {
   function shiftMonth(delta) { const d = new Date(monthView.year, monthView.month + delta, 1); setMonthView({ year: d.getFullYear(), month: d.getMonth() }); }
 
   // Weekly dates (show numbered days on headers)
-  const startOfWeek = useMemo(() => { const d = new Date(); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); d.setHours(0, 0, 0, 0); return d; }, []);
-  function dayNumOfWeek(i) { const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate() + i); return d.getDate(); }
+  const startOfWeek = useMemo(() => { 
+    const d = new Date(); 
+    const w = (d.getDay() + 6) % 7; 
+    d.setDate(d.getDate() - w + (weekOffset * 7)); 
+    d.setHours(0, 0, 0, 0); 
+    return d; 
+  }, [weekOffset]);
+  
+  function dayNumOfWeek(i) { 
+    const d = new Date(startOfWeek); 
+    d.setDate(startOfWeek.getDate() + i); 
+    return d.getDate(); 
+  }
+
+  // Format date for display
+  function formatDate(date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${date.getDate()}`;
+  }
+
+  // Helper: get all events for a specific date
+  function getAllEventsForDate(date) {
+    const events = [];
+    const dateStr = date.toISOString().split('T')[0];
+    const dayName = DAYS[(date.getDay() + 6) % 7];
+
+    // Regular schedule events
+    const scheduleEvents = eventsByDay(dayName)
+      .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
+      .map(e => ({
+        ...e,
+        eventType: 'schedule',
+        time: e.start,
+        displayTime: `${e.start}–${e.end}`
+      }));
+    events.push(...scheduleEvents);
+
+    // Exams for this date
+    const dayExams = exams
+      .filter(e => e.date === dateStr && (filterCourse === 'all' || String(e.courseIndex) === filterCourse))
+      .map(e => ({
+        ...e,
+        eventType: 'exam',
+        time: '00:00',
+        displayTime: 'Exam',
+        type: 'exam'
+      }));
+    events.push(...dayExams);
+
+    // Tasks due on this date
+    const dayTasks = tasks
+      .filter(t => t.due === dateStr && !t.done && (filterCourse === 'all' || String(t.courseIndex) === filterCourse))
+      .map(t => ({
+        ...t,
+        eventType: 'task',
+        time: '00:00',
+        displayTime: 'Due',
+        type: 'task'
+      }));
+    events.push(...dayTasks);
+
+    return events.sort((a, b) => a.time.localeCompare(b.time));
+  }
 
   // Helper: events for weekday name (Mon..Sun), filtered & sorted
   function eventsForWeekdayName(dayName) {
-    return eventsByDay(dayName).filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse);
+    const date = new Date(startOfWeek);
+    const dayIndex = DAYS.indexOf(dayName);
+    date.setDate(date.getDate() + dayIndex);
+    return getAllEventsForDate(date);
   }
 
   return (
@@ -575,10 +769,27 @@ function Planner({ courses, onAdd, onRemove, eventsByDay }) {
         <div className="flex items-center gap-2">
           <Button variant={view === 'week' ? 'default' : 'outline'} onClick={() => setView('week')} className="rounded-xl">Week</Button>
           <Button variant={view === 'month' ? 'default' : 'outline'} onClick={() => setView('month')} className="rounded-xl">Month</Button>
-          {view === 'month' && (
+          {view === 'week' ? (
+            <div className="flex items-center gap-2 ml-2">
+              <Button variant="outline" onClick={() => setWeekOffset(offset => offset - 1)} className="rounded-xl">
+                <CalendarDays className="w-4 h-4 mr-2" />Prev Week
+              </Button>
+              <div className="font-medium">
+                {formatDate(startOfWeek)} - {formatDate(new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000))}
+              </div>
+              <Button variant="outline" onClick={() => setWeekOffset(offset => offset + 1)} className="rounded-xl">
+                Next Week<CalendarDays className="w-4 h-4 ml-2" />
+              </Button>
+              {weekOffset !== 0 && (
+                <Button variant="ghost" onClick={() => setWeekOffset(0)} className="rounded-xl">
+                  Today
+                </Button>
+              )}
+            </div>
+          ) : (
             <div className="flex items-center gap-2 ml-2">
               <Button variant="outline" onClick={() => shiftMonth(-1)} className="rounded-xl">Prev</Button>
-              <div className="font-serif text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-600 to-sky-500">
+              <div className="font-serif text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r">
                 {MONTHS[monthView.month]} {monthView.year}
               </div>
               <Button variant="outline" onClick={() => shiftMonth(1)} className="rounded-xl">Next</Button>
@@ -635,27 +846,101 @@ function Planner({ courses, onAdd, onRemove, eventsByDay }) {
 
       {/* Views */}
       {view === 'week' ? (
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 gap-4 relative">
           {DAYS.map((d, idx) => (
-            <Card key={d} className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-              <CardHeader>
+            <Card key={d} className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur relative">
+              <CardHeader className="relative z-[1]">
                 <CardTitle className="flex items-center gap-2">
-                  {d} <span className="ml-2 inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-white/5 text-sm">{dayNumOfWeek(idx)}</span>
-                  <Badge variant="secondary" className="ml-2 rounded-full">{eventsForWeekdayName(d).length}</Badge>
+                  <div className="flex items-center gap-2">
+                    <span>{d}</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-8 h-8 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur flex items-center justify-center font-medium">
+                        {dayNumOfWeek(idx)}
+                      </div>
+                      {eventsForWeekdayName(d).length > 0 && (
+                        <Badge variant="secondary" className="h-8 px-2.5 rounded-xl flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
+                          <span>{eventsForWeekdayName(d).length}</span>
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 </CardTitle>
-                <CardDescription>Events</CardDescription>
+                <CardDescription>Upcoming</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 {eventsForWeekdayName(d).map(e => (
-                  <div key={e.id} className="flex items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-block w-2 h-2 rounded-full ${typeColors[e.type]}`}></span>
-                        <span className="font-medium">{e.title || e.type}</span>
+                  <div 
+                    key={e.id} 
+                    className="group relative flex items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        {e.eventType === 'schedule' && (
+                          <span className={`flex-shrink-0 inline-block w-2 h-2 rounded-full ${typeColors[e.type]}`}></span>
+                        )}
+                        {e.eventType === 'exam' && (
+                          <span className="flex-shrink-0 inline-block w-2 h-2 rounded-full bg-rose-500"></span>
+                        )}
+                        {e.eventType === 'task' && (
+                          <span className="flex-shrink-0 inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+                        )}
+                        <span className="font-medium truncate">{e.title || e.type}</span>
                       </div>
-                      <div className="text-xs text-zinc-500">{e.start}–{e.end} · {courses[e.courseIndex]} · {e.location}</div>
+                      <div className="text-xs text-zinc-500 truncate">
+                        {e.displayTime && `${e.displayTime} · `}
+                        {courses[e.courseIndex]}
+                        {e.location && ` · ${e.location}`}
+                        {e.weight && ` · ${e.weight}%`}
+                        {e.priority && ` · ${e.priority} priority`}
+                      </div>
                     </div>
-                    <Button size="icon" variant="ghost" onClick={() => onRemove(e.id)} className="rounded-xl"><Trash2 className="w-4 h-4" /></Button>
+                    {e.eventType === 'schedule' && (
+                      <Button size="icon" variant="ghost" onClick={() => onRemove(e.id)} className="flex-shrink-0 rounded-xl">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    
+                    {/* Hover tooltip */}
+                    <div 
+                      style={{ 
+                        backgroundColor: 'var(--background, white)',
+                        zIndex: 99999,
+                        position: 'fixed',
+                        transform: 'translateY(-100%)',
+                        marginBottom: '8px',
+                        left: '50%',
+                        marginLeft: '-8rem' // half of w-64 (16rem)
+                      }} 
+                      className="opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-64 p-3 rounded-xl shadow-xl border border-white/20 dark:border-white/10"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          {e.eventType === 'schedule' && (
+                            <span className={`flex-shrink-0 inline-block w-2 h-2 rounded-full ${typeColors[e.type]}`}></span>
+                          )}
+                          {e.eventType === 'exam' && (
+                            <span className="flex-shrink-0 inline-block w-2 h-2 rounded-full bg-rose-500"></span>
+                          )}
+                          {e.eventType === 'task' && (
+                            <span className="flex-shrink-0 inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+                          )}
+                          <span className="font-medium text-zinc-900 dark:text-zinc-100">{e.title || e.type}</span>
+                        </div>
+                        <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                          <div>{courses[e.courseIndex]}</div>
+                          {e.displayTime && <div>{e.displayTime}</div>}
+                          {e.location && <div>{e.location}</div>}
+                          {e.weight && <div>Weight: {e.weight}%</div>}
+                          {e.priority && <div>Priority: {e.priority}</div>}
+                          {e.notes && <div className="italic mt-2">{e.notes}</div>}
+                        </div>
+                      </div>
+                      {/* Arrow */}
+                      <div className="absolute bottom-0 left-4 transform translate-y-full">
+                        <div style={{ backgroundColor: 'var(--background, white)' }} className="w-2 h-2 rotate-45 transform -translate-y-1 border-r border-b border-white/20 dark:border-white/10"></div>
+                      </div>
+                    </div>
                   </div>
                 ))}
                 {eventsForWeekdayName(d).length === 0 && <div className="text-sm text-zinc-500">No events.</div>}
@@ -706,11 +991,31 @@ function Planner({ courses, onAdd, onRemove, eventsByDay }) {
 function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleTask, deleteTask, exams, addExam, deleteExam }) {
   const [taskForm, setTaskForm] = useState({ title: "", due: "", priority: "normal" });
   const [examForm, setExamForm] = useState({ title: "", date: "", weight: 20, notes: "" });
+  const [editingExam, setEditingExam] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
   const courseTasks = tasks.filter(t => t.courseIndex === selected);
   const courseExams = exams.filter(e => e.courseIndex === selected);
-  const progress = useMemo(() => { const d = courseTasks.filter(t => t.done).length; const tot = courseTasks.length || 1; return Math.round((d / tot) * 100); }, [courseTasks]);
+  const progress = useMemo(() => { 
+    const d = courseTasks.filter(t => t.done).length; 
+    const tot = courseTasks.length || 1; 
+    return Math.round((d / tot) * 100); 
+  }, [courseTasks]);
   return (
     <div className="space-y-6">
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-50">
+          <ReactConfetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={500}
+            gravity={0.2}
+            onConfettiComplete={() => {
+              setTimeout(() => setShowConfetti(false), 2000);
+            }}
+          />
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Select value={String(selected)} onValueChange={(v) => setSelected(Number(v))}>
@@ -723,7 +1028,7 @@ function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleT
       </div>
       <Progress value={progress} className="h-3 rounded-xl" />
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         {/* Tasks */}
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
           <CardHeader>
@@ -751,7 +1056,16 @@ function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleT
                   </Select>
                 </div>
               </div>
-              <Button onClick={() => { if (!taskForm.title) return; addTask({ ...taskForm, courseIndex: selected }); setTaskForm({ title: "", due: "", priority: "normal" }); }} className="rounded-xl"><Plus className="w-4 h-4 mr-2" />Add task</Button>
+              <Button 
+                onClick={() => { 
+                  if (!taskForm.title) return; 
+                  addTask({ ...taskForm, courseIndex: selected }); 
+                  setTaskForm({ title: "", due: "", priority: "normal" }); 
+                }} 
+                className="rounded-xl w-full"
+                variant="default">
+                <Plus className="w-4 h-4 mr-2" />Add task
+              </Button>
             </div>
 
             <div className="space-y-2">
@@ -764,22 +1078,105 @@ function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleT
                     <div className="text-xs text-zinc-500">due {t.due || "—"} · {t.priority}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => toggleTask(t.id)}>Done</Button>
+                    <Button 
+                      size="sm" 
+                      variant="default" 
+                      className="rounded-xl" 
+                      onClick={() => {
+                        toggleTask(t.id);
+                        // Check if this was the last incomplete task
+                        const incompleteTasks = courseTasks.filter(task => !task.done && task.id !== t.id);
+                        if (incompleteTasks.length === 0 && courseTasks.length > 0) {
+                          setShowConfetti(true);
+                        }
+                      }}>
+                      Done
+                    </Button>
                     <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteTask(t.id)}><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </div>
               ))}
 
-              {courseTasks.filter(t => t.done).length > 0 && <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">Completed</div>}
-              {courseTasks.filter(t => t.done).map(t => (
-                <div key={t.id} className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl opacity-70">
-                  <div>
-                    <div className="line-through">{t.title}</div>
-                    <div className="text-xs text-zinc-500">{t.due || "—"}</div>
+              {courseTasks.filter(t => t.done).length > 0 && (
+                <>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">Completed</div>
+                  <div className="space-y-2">
+                    {courseTasks.filter(t => t.done).map(t => (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={t.id} 
+                        className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group"
+                      >
+                        <div className="flex-1">
+                          <div className="line-through group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                            {t.title}
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            {t.due || "—"} · {t.priority}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" 
+                            onClick={() => toggleTask(t.id)}
+                            title="Undo"
+                          >
+                            <Undo className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" 
+                            onClick={() => deleteTask(t.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                  <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteTask(t.id)}><Trash2 className="w-4 h-4" /></Button>
-                </div>
-              ))}
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Evaluations */}
+        <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><CalendarDays className="w-5 h-5" />Upcoming Evals</CardTitle>
+            <CardDescription>Your next evaluations</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {courseExams.length === 0 && <div className="text-sm text-zinc-500">No upcoming exams yet.</div>}
+            <div className="space-y-2 max-h-[420px] overflow-auto">
+              {courseExams
+                .sort((a, b) => a.date.localeCompare(b.date))
+                .map(e => (
+                  <div key={e.id} className="flex items-start justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl">
+                    <div>
+                      <div className="font-medium">{e.title}</div>
+                      <div className="text-xs text-zinc-500">
+                        {e.date} · {e.weight}%
+                        {e.notes && <div className="mt-1 text-xs italic">{e.notes}</div>}
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="rounded-full self-start">
+                      {(() => {
+                        const examDate = new Date(e.date);
+                        const today = new Date();
+                        const diffTime = examDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        return diffDays <= 0 ? "Today" : 
+                               diffDays === 1 ? "Tomorrow" :
+                               `${diffDays} days`;
+                      })()}
+                    </Badge>
+                  </div>
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -800,20 +1197,35 @@ function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleT
               </div>
               <Label>Notes</Label>
               <Textarea value={examForm.notes} onChange={(e) => setExamForm({ ...examForm, notes: e.target.value })} className="rounded-xl" placeholder="Chapters, topics, allowed materials…" />
-              <Button onClick={() => { if (!examForm.title || !examForm.date) return; addExam({ ...examForm, courseIndex: selected }); setExamForm({ title: "", date: "", weight: 20, notes: "" }); }} className="rounded-xl"><Plus className="w-4 h-4 mr-2" />Add exam</Button>
-            </div>
-
-            <div className="space-y-2">
-              {courseExams.length === 0 && <div className="text-sm text-zinc-500">No upcoming exams yet.</div>}
-              {courseExams.sort((a, b) => a.date.localeCompare(b.date)).map(e => (
-                <div key={e.id} className="flex items-start justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl">
-                  <div>
-                    <div className="font-medium">{e.title} <span className="text-xs text-zinc-500">{e.weight}%</span></div>
-                    <div className="text-xs text-zinc-500">{e.date} · {e.notes || ""}</div>
-                  </div>
-                  <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteExam(e.id)}><Trash2 className="w-4 h-4" /></Button>
-                </div>
-              ))}
+              <Button 
+                onClick={() => { 
+                  if (!examForm.title || !examForm.date) return;
+                  if (editingExam) {
+                    setExams(s => s.map(e => e.id === editingExam ? { ...examForm, id: e.id, courseIndex: selected } : e));
+                    setEditingExam(null);
+                  } else {
+                    addExam({ ...examForm, courseIndex: selected });
+                  }
+                  setExamForm({ title: "", date: "", weight: 20, notes: "" }); 
+                }} 
+                className="rounded-xl w-full"
+                style={{
+                  backgroundColor: `hsl(var(--accent-h) var(--accent-s) var(--accent-l))`,
+                  color: 'white'
+                }}>
+                <Plus className="w-4 h-4 mr-2" />{editingExam ? 'Update' : 'Add'} exam
+              </Button>
+              {editingExam && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setEditingExam(null);
+                    setExamForm({ title: "", date: "", weight: 20, notes: "" });
+                  }} 
+                  className="rounded-xl mt-2 w-full">
+                  Cancel Edit
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1007,7 +1419,7 @@ function Wellness() {
 // -----------------------------
 // Settings
 // -----------------------------
-function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbed, bgImage, setBgImage, gradientStart, setGradientStart, gradientMiddle, setGradientMiddle, gradientEnd, setGradientEnd, darkMode, gradientEnabled, setGradientEnabled, dataTransfer }) {
+function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbed, bgImage, setBgImage, gradientStart, setGradientStart, gradientMiddle, setGradientMiddle, gradientEnd, setGradientEnd, darkMode, gradientEnabled, setGradientEnabled, accentColor, setAccentColor, dataTransfer }) {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
@@ -1110,6 +1522,56 @@ function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbe
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
+          <CardTitle>Accent Color</CardTitle>
+          <CardDescription>Customize the main theme color</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Accent Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+            <div className="w-24 h-24 relative mt-2">
+              <div 
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: `conic-gradient(
+                    from 0deg,
+                    hsl(0, 100%, 50%),
+                    hsl(60, 100%, 50%),
+                    hsl(120, 100%, 50%),
+                    hsl(180, 100%, 50%),
+                    hsl(240, 100%, 50%),
+                    hsl(300, 100%, 50%),
+                    hsl(360, 100%, 50%)
+                  )`
+                }}
+              />
+              <div 
+                className="absolute inset-1 rounded-full border-4 border-white dark:border-zinc-800"
+                style={{ backgroundColor: darkMode ? accentColor.dark : accentColor.light }}
+              />
+              <label className="block absolute inset-0 rounded-full cursor-pointer">
+                <input
+                  type="color"
+                  value={darkMode ? accentColor.dark : accentColor.light}
+                  onChange={(e) => setAccentColor(prev => ({
+                    ...prev,
+                    [darkMode ? 'dark' : 'light']: e.target.value
+                  }))}
+                  className="sr-only"
+                />
+              </label>
+            </div>
+          </div>
+          <Button variant="outline" className="rounded-xl w-full" onClick={() => {
+            setAccentColor({
+              light: "#7c3aed",
+              dark: "#8b5cf6"
+            });
+          }}>Reset to Default</Button>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+        <CardHeader>
           <CardTitle>Background Gradient</CardTitle>
           <CardDescription>Customize the background colors</CardDescription>
         </CardHeader>
@@ -1118,7 +1580,6 @@ function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbe
             <Switch
               checked={gradientEnabled}
               onCheckedChange={setGradientEnabled}
-              className="data-[state=checked]:bg-fuchsia-600"
             />
             <Label>Enable gradient background</Label>
           </div>
