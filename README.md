@@ -24,7 +24,7 @@ A modern, interactive study portal built specifically for Generation Z students,
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/gen-z-study-portal.git
+   git clone https://github.com/beckheck/gen-z-study-portal.git
    cd gen-z-study-portal
    ```
 
