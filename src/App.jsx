@@ -111,6 +111,7 @@ export default function StudyPortal() {
     light: "#a7f3d0", // emerald-200 equivalent
     dark: "#1e293b"   // slate-800 equivalent
   });
+  const [gradientEnabled, setGradientEnabled] = useLocalState("sp:gradientEnabled", true);
 
   // Study-tracker-only tasks
   const [sessionTasks, setSessionTasks] = useLocalState("sp:sessionTasks", []); // {id, title, done, createdAt}
@@ -248,9 +249,9 @@ export default function StudyPortal() {
   return (
     <div 
       className="min-h-screen relative text-zinc-900 dark:text-zinc-100"
-      style={{ 
+      style={gradientEnabled ? {
         background: `linear-gradient(to bottom right, ${darkMode ? gradientStart.dark : gradientStart.light}, ${darkMode ? gradientMiddle.dark : gradientMiddle.light}, ${darkMode ? gradientEnd.dark : gradientEnd.light})`
-      }}
+      } : {}}
     >
       {bgImage && (
         <div
@@ -426,6 +427,8 @@ export default function StudyPortal() {
               gradientEnd={gradientEnd}
               setGradientEnd={setGradientEnd}
               darkMode={darkMode}
+              gradientEnabled={gradientEnabled}
+              setGradientEnabled={setGradientEnabled}
             />
           </TabsContent>
         </Tabs>
@@ -1005,7 +1008,7 @@ function Wellness(){
 // -----------------------------
 // Settings
 // -----------------------------
-function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbed, bgImage, setBgImage, gradientStart, setGradientStart, gradientMiddle, setGradientMiddle, gradientEnd, setGradientEnd, darkMode }){
+function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbed, bgImage, setBgImage, gradientStart, setGradientStart, gradientMiddle, setGradientMiddle, gradientEnd, setGradientEnd, darkMode, gradientEnabled, setGradientEnabled }){
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
@@ -1072,53 +1075,64 @@ function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbe
           <CardDescription>Customize the background colors</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label>Start Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
-            <div className="flex items-center gap-2 mt-1.5">
-              <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientStart.dark : gradientStart.light }}></div>
-              <Input 
-                type="color" 
-                value={darkMode ? gradientStart.dark : gradientStart.light} 
-                onChange={(e) => setGradientStart(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
-                className="h-10 rounded-xl w-full"
-              />
-            </div>
+          <div className="flex items-center gap-2 pb-2">
+            <Switch 
+              checked={gradientEnabled} 
+              onCheckedChange={setGradientEnabled} 
+              className="data-[state=checked]:bg-fuchsia-600"
+            />
+            <Label>Enable gradient background</Label>
           </div>
-          <div>
-            <Label>Middle Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
-            <div className="flex items-center gap-2 mt-1.5">
-              <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientMiddle.dark : gradientMiddle.light }}></div>
-              <Input 
-                type="color" 
-                value={darkMode ? gradientMiddle.dark : gradientMiddle.light} 
-                onChange={(e) => setGradientMiddle(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
-                className="h-10 rounded-xl w-full"
-              />
+          
+          <div className={gradientEnabled ? "" : "opacity-50 pointer-events-none"}>
+            <div>
+              <Label>Start Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientStart.dark : gradientStart.light }}></div>
+                <Input 
+                  type="color" 
+                  value={darkMode ? gradientStart.dark : gradientStart.light} 
+                  onChange={(e) => setGradientStart(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
+                  className="h-10 rounded-xl w-full"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <Label>End Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
-            <div className="flex items-center gap-2 mt-1.5">
-              <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientEnd.dark : gradientEnd.light }}></div>
-              <Input 
-                type="color" 
-                value={darkMode ? gradientEnd.dark : gradientEnd.light} 
-                onChange={(e) => setGradientEnd(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
-                className="h-10 rounded-xl w-full"
-              />
+            <div className="mt-4">
+              <Label>Middle Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientMiddle.dark : gradientMiddle.light }}></div>
+                <Input 
+                  type="color" 
+                  value={darkMode ? gradientMiddle.dark : gradientMiddle.light} 
+                  onChange={(e) => setGradientMiddle(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
+                  className="h-10 rounded-xl w-full"
+                />
+              </div>
             </div>
+            <div className="mt-4">
+              <Label>End Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientEnd.dark : gradientEnd.light }}></div>
+                <Input 
+                  type="color" 
+                  value={darkMode ? gradientEnd.dark : gradientEnd.light} 
+                  onChange={(e) => setGradientEnd(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
+                  className="h-10 rounded-xl w-full"
+                />
+              </div>
+            </div>
+            <Button variant="outline" className="rounded-xl w-full mt-4" onClick={() => {
+              if (darkMode) {
+                setGradientStart(prev => ({ ...prev, dark: "#18181b" }));
+                setGradientMiddle(prev => ({ ...prev, dark: "#0f172a" }));
+                setGradientEnd(prev => ({ ...prev, dark: "#1e293b" }));
+              } else {
+                setGradientStart(prev => ({ ...prev, light: "#ffd2e9" }));
+                setGradientMiddle(prev => ({ ...prev, light: "#bae6fd" }));
+                setGradientEnd(prev => ({ ...prev, light: "#a7f3d0" }));
+              }
+            }}>Reset to Default</Button>
           </div>
-          <Button variant="outline" className="rounded-xl w-full" onClick={() => {
-            if (darkMode) {
-              setGradientStart(prev => ({ ...prev, dark: "#18181b" }));
-              setGradientMiddle(prev => ({ ...prev, dark: "#0f172a" }));
-              setGradientEnd(prev => ({ ...prev, dark: "#1e293b" }));
-            } else {
-              setGradientStart(prev => ({ ...prev, light: "#ffd2e9" }));
-              setGradientMiddle(prev => ({ ...prev, light: "#bae6fd" }));
-              setGradientEnd(prev => ({ ...prev, light: "#a7f3d0" }));
-            }
-          }}>Reset to Default</Button>
         </CardContent>
       </Card>
     </div>
