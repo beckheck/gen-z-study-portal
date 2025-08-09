@@ -206,43 +206,68 @@ export default function StudyPortal() {
   function removeSchedule(id){ setSchedule(s => s.filter(x => x.id !== id)); }
   function eventsForDay(day){ return schedule.filter(e => e.day === day).sort((a,b)=> a.start.localeCompare(b.start)); }
 
-  // CSV export
-  function exportCSV(){
-    const rows = [
-      ["type","course","title","startTs","endTs","durationMin","technique","moodStart","moodEnd","note"],
-      ...sessions.map(s=> [
-        "session",
-        courses[s.courseIndex],
-        "",
-        new Date(s.startTs).toISOString(),
-        new Date(s.endTs).toISOString(),
-        s.durationMin,
-        s.technique,
-        s.moodStart,
-        s.moodEnd,
-        (s.note||"").replace(/[\r\n]+/g, " ")
-      ]),
-      ["type","course","title","date","weight","notes"],
-      ...exams.map(e=> [
-        "exam",
-        courses[e.courseIndex],
-        e.title,
-        e.date,
-        e.weight,
-        (e.notes||"").replace(/[\r\n]+/g, " ")
-      ]),
-      ["type","course","title","due","priority","done"],
-      ...tasks.map(t=> ["task", courses[t.courseIndex], t.title, t.due, t.priority, t.done?1:0]),
-      ["type","course","title","day","start","end","location"],
-      ...schedule.map(e=> ["schedule", courses[e.courseIndex], e.title, e.day, e.start, e.end, e.location])
-    ];
-    const csv = rows
-      .map(r => r.map(x => `"${String(x ?? "").replace(/"/g,'""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  // JSON export with settings
+  function exportJSON(){
+    const data = {
+      // Core data
+      sessions: sessions.map(s => ({
+        type: "session",
+        course: courses[s.courseIndex],
+        startTs: new Date(s.startTs).toISOString(),
+        endTs: new Date(s.endTs).toISOString(),
+        durationMin: s.durationMin,
+        technique: s.technique,
+        moodStart: s.moodStart,
+        moodEnd: s.moodEnd,
+        note: (s.note || "").replace(/[\r\n]+/g, " ")
+      })),
+      exams: exams.map(e => ({
+        type: "exam",
+        course: courses[e.courseIndex],
+        title: e.title,
+        date: e.date,
+        weight: e.weight,
+        notes: (e.notes || "").replace(/[\r\n]+/g, " ")
+      })),
+      tasks: tasks.map(t => ({
+        type: "task",
+        course: courses[t.courseIndex],
+        title: t.title,
+        due: t.due,
+        priority: t.priority,
+        done: t.done
+      })),
+      schedule: schedule.map(e => ({
+        type: "schedule",
+        course: courses[e.courseIndex],
+        title: e.title,
+        day: e.day,
+        start: e.start,
+        end: e.end,
+        location: e.location
+      })),
+      sessionTasks: sessionTasks,
+      
+      // Settings
+      settings: {
+        courses: courses,
+        selectedCourse: selectedCourse,
+        darkMode: darkMode,
+        gradient: {
+          enabled: gradientEnabled,
+          start: gradientStart,
+          middle: gradientMiddle,
+          end: gradientEnd
+        },
+        bgImage: bgImage,
+        soundtrackEmbed: soundtrackEmbed
+      }
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'study_portal_export.csv'; a.click();
+    a.href = url; a.download = 'study_portal_export.json'; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -275,7 +300,7 @@ export default function StudyPortal() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={exportCSV} className="rounded-xl"><Download className="w-4 h-4 mr-2"/>Export CSV</Button>
+            <Button variant="outline" onClick={exportJSON} className="rounded-xl"><Download className="w-4 h-4 mr-2"/>Export JSON</Button>
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur">
               <MoonSunToggle checked={darkMode} onCheckedChange={setDarkMode} />
             </div>
