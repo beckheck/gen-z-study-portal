@@ -1,12 +1,58 @@
-# React + Vite
+# Gen Z Study Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, interactive study portal built specifically for Generation Z students, featuring a sleek UI and powerful learning tools.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Modern and responsive user interface using Tailwind CSS
+- Interactive components powered by shadcn/ui and Radix UI
+- Beautiful icons from Lucide React
+- Data visualization with Recharts
+- Smooth animations with Framer Motion
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS
+- **UI Components:** shadcn/ui + Radix UI
+- **Icons:** Lucide React
+- **Charts:** Recharts
+- **Animations:** Framer Motion
+
+## 📦 Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/gen-z-study-portal.git
+   cd gen-z-study-portal
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 🔧 Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+
+## 💻 System Requirements
+
+- Node.js 18.0 or later
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📝 License
+
+This project is open source and available under the [MIT License](LICENSE).
