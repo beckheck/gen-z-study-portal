@@ -1,4 +1,4 @@
-# Gen Z Study Portal
+# Study Portal
 
 A modern, interactive study portal built specifically for Generation Z students, featuring a sleek UI and powerful learning tools.
 

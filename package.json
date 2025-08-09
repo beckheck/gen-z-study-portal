@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Gen Z Study Portal – React + Vite + Tailwind + shadcn/ui + Lucide + Recharts",
+  "description": "Study Portal – React + Vite + Tailwind + shadcn/ui + Lucide + Recharts",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
