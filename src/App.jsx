@@ -99,6 +99,18 @@ export default function StudyPortal() {
   const [darkMode, setDarkMode] = useLocalState("sp:dark", prefersDark);
   const [soundtrackEmbed, setSoundtrackEmbed] = useLocalState("sp:soundtrackEmbed", "");
   const [bgImage, setBgImage] = useLocalState("sp:bgImage", "");
+  const [gradientStart, setGradientStart] = useLocalState("sp:gradientStart", {
+    light: "#ffd2e9", // fuchsia-200 equivalent
+    dark: "#18181b"   // zinc-900 equivalent
+  });
+  const [gradientMiddle, setGradientMiddle] = useLocalState("sp:gradientMiddle", {
+    light: "#bae6fd", // sky-200 equivalent
+    dark: "#0f172a"   // slate-900 equivalent
+  });
+  const [gradientEnd, setGradientEnd] = useLocalState("sp:gradientEnd", {
+    light: "#a7f3d0", // emerald-200 equivalent
+    dark: "#1e293b"   // slate-800 equivalent
+  });
 
   // Study-tracker-only tasks
   const [sessionTasks, setSessionTasks] = useLocalState("sp:sessionTasks", []); // {id, title, done, createdAt}
@@ -234,7 +246,12 @@ export default function StudyPortal() {
   }
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-br from-fuchsia-200 via-sky-200 to-emerald-200 dark:from-zinc-900 dark:via-slate-900 dark:to-slate-800 text-zinc-900 dark:text-zinc-100">
+    <div 
+      className="min-h-screen relative text-zinc-900 dark:text-zinc-100"
+      style={{ 
+        background: `linear-gradient(to bottom right, ${darkMode ? gradientStart.dark : gradientStart.light}, ${darkMode ? gradientMiddle.dark : gradientMiddle.light}, ${darkMode ? gradientEnd.dark : gradientEnd.light})`
+      }}
+    >
       {bgImage && (
         <div
           className="pointer-events-none absolute inset-0 bg-center bg-cover bg-no-repeat opacity-60 mix-blend-luminosity"
@@ -402,6 +419,13 @@ export default function StudyPortal() {
               setSoundtrackEmbed={setSoundtrackEmbed}
               bgImage={bgImage}
               setBgImage={setBgImage}
+              gradientStart={gradientStart}
+              setGradientStart={setGradientStart}
+              gradientMiddle={gradientMiddle}
+              setGradientMiddle={setGradientMiddle}
+              gradientEnd={gradientEnd}
+              setGradientEnd={setGradientEnd}
+              darkMode={darkMode}
             />
           </TabsContent>
         </Tabs>
@@ -981,7 +1005,7 @@ function Wellness(){
 // -----------------------------
 // Settings
 // -----------------------------
-function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbed, bgImage, setBgImage }){
+function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbed, bgImage, setBgImage, gradientStart, setGradientStart, gradientMiddle, setGradientMiddle, gradientEnd, setGradientEnd, darkMode }){
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
@@ -1039,6 +1063,62 @@ function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbe
             <Button variant="outline" className="rounded-xl" onClick={()=>setBgImage("")}>Clear</Button>
           </div>
           {bgImage && <img src={bgImage} alt="Background preview" className="rounded-xl max-h-40 w-full object-cover"/>}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+        <CardHeader>
+          <CardTitle>Background Gradient</CardTitle>
+          <CardDescription>Customize the background colors</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Start Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientStart.dark : gradientStart.light }}></div>
+              <Input 
+                type="color" 
+                value={darkMode ? gradientStart.dark : gradientStart.light} 
+                onChange={(e) => setGradientStart(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
+                className="h-10 rounded-xl w-full"
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Middle Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientMiddle.dark : gradientMiddle.light }}></div>
+              <Input 
+                type="color" 
+                value={darkMode ? gradientMiddle.dark : gradientMiddle.light} 
+                onChange={(e) => setGradientMiddle(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
+                className="h-10 rounded-xl w-full"
+              />
+            </div>
+          </div>
+          <div>
+            <Label>End Color {darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className="w-10 h-10 rounded-lg shadow-inner" style={{ backgroundColor: darkMode ? gradientEnd.dark : gradientEnd.light }}></div>
+              <Input 
+                type="color" 
+                value={darkMode ? gradientEnd.dark : gradientEnd.light} 
+                onChange={(e) => setGradientEnd(prev => ({ ...prev, [darkMode ? 'dark' : 'light']: e.target.value }))}
+                className="h-10 rounded-xl w-full"
+              />
+            </div>
+          </div>
+          <Button variant="outline" className="rounded-xl w-full" onClick={() => {
+            if (darkMode) {
+              setGradientStart(prev => ({ ...prev, dark: "#18181b" }));
+              setGradientMiddle(prev => ({ ...prev, dark: "#0f172a" }));
+              setGradientEnd(prev => ({ ...prev, dark: "#1e293b" }));
+            } else {
+              setGradientStart(prev => ({ ...prev, light: "#ffd2e9" }));
+              setGradientMiddle(prev => ({ ...prev, light: "#bae6fd" }));
+              setGradientEnd(prev => ({ ...prev, light: "#a7f3d0" }));
+            }
+          }}>Reset to Default</Button>
         </CardContent>
       </Card>
     </div>
