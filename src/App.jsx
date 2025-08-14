@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
-import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo } from "lucide-react";
+import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo, CalendarRange } from "lucide-react";
+import TimetableView from "@/components/TimetableView";
 
 // -----------------------------
 // Theme Context
@@ -153,6 +154,7 @@ export default function StudyPortal() {
   // Core state
   const [courses, setCourses] = useLocalState("sp:courses", DEFAULT_COURSES);
   const [schedule, setSchedule] = useLocalState("sp:schedule", []); // {id, courseIndex, type, title, day, start, end, location}
+  const [timetableEvents, setTimetableEvents] = useLocalState("sp:timetableEvents", []); // {id, courseIndex, eventType, classroom, teacher, day, startTime, endTime, block}
   const [tasks, setTasks] = useLocalState("sp:tasks", []);           // per-course to-dos
   const [exams, setExams] = useLocalState("sp:exams", []);
   const [sessions, setSessions] = useLocalState("sp:sessions", []);
@@ -175,7 +177,10 @@ export default function StudyPortal() {
       gradientMiddle,
       gradientEnd,
       bgImage,
-      soundtrackEmbed
+      soundtrackEmbed,
+      accentColor,
+      cardOpacity,
+      weatherApiKey
     }),
     // Set state callback
     (newState) => {
@@ -183,6 +188,7 @@ export default function StudyPortal() {
       if (newState.exams) setExams(newState.exams);
       if (newState.tasks) setTasks(newState.tasks);
       if (newState.schedule) setSchedule(newState.schedule);
+      if (newState.timetableEvents) setTimetableEvents(newState.timetableEvents);
       if (newState.sessionTasks) setSessionTasks(newState.sessionTasks);
       if (newState.courses) setCourses(newState.courses);
       if (newState.selectedCourse !== undefined) setSelectedCourse(newState.selectedCourse);
@@ -193,6 +199,10 @@ export default function StudyPortal() {
       if (newState.gradientEnd) setGradientEnd(newState.gradientEnd);
       if (newState.bgImage !== undefined) setBgImage(newState.bgImage);
       if (newState.soundtrackEmbed !== undefined) setSoundtrackEmbed(newState.soundtrackEmbed);
+      if (newState.accentColor !== undefined) setAccentColor(newState.accentColor);
+      if (newState.cardOpacity !== undefined) setCardOpacity(newState.cardOpacity);
+      if (newState.weatherApiKey !== undefined) setWeatherApiKey(newState.weatherApiKey);
+      if (newState.weatherLocation !== undefined) setWeatherLocation(newState.weatherLocation);
     }
   ), []);
 
@@ -204,6 +214,15 @@ export default function StudyPortal() {
   const [accentColor, setAccentColor] = useLocalState("sp:accentColor", {
     light: "#7c3aed", // violet-600
     dark: "#8b5cf6"   // violet-500
+  });
+  const [cardOpacity, setCardOpacity] = useLocalState("sp:cardOpacity", {
+    light: 80, // 80% opacity for light mode
+    dark: 25   // 25% opacity for dark mode (increased from 18%)
+  });
+  const [weatherApiKey, setWeatherApiKey] = useLocalState("sp:weatherApiKey", "");
+  const [weatherLocation, setWeatherLocation] = useLocalState("sp:weatherLocation", {
+    useGeolocation: true,
+    city: ""
   });
   const [gradientStart, setGradientStart] = useLocalState("sp:gradientStart", {
     light: "#ffd2e9", // fuchsia-200 equivalent
@@ -240,10 +259,56 @@ export default function StudyPortal() {
 
   // Update accent color CSS variables
   useAccentColor(darkMode ? accentColor.dark : accentColor.light);
+
+  // Update card opacity CSS variables
+  useLayoutEffect(() => {
+    let style = document.getElementById('sp-card-opacity');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'sp-card-opacity';
+      document.head.appendChild(style);
+    }
+    
+    const cssContent = `
+/* Card opacity adjustments - Light Mode */
+:where(:not(.dark)) .bg-white\\/80 {
+  background-color: rgba(255, 255, 255, ${cardOpacity.light / 100}) !important;
+}
+
+/* Card opacity adjustments - Dark Mode */
+:where(.dark) .bg-white\\/80,
+:where(.dark) .dark\\:bg-white\\/10 {
+  background-color: rgba(39, 39, 42, ${cardOpacity.dark / 100}) !important;
+}
+
+/* Ensure dark mode overrides */
+.dark .bg-white\\/80 {
+  background-color: rgba(39, 39, 42, ${cardOpacity.dark / 100}) !important;
+}
+
+.dark .dark\\:bg-white\\/10 {
+  background-color: rgba(39, 39, 42, ${cardOpacity.dark / 100}) !important;
+}
+`;
+
+    style.textContent = cssContent;
+    console.log('Updated card opacity CSS:', { 
+      lightOpacity: cardOpacity.light + '%', 
+      darkOpacity: cardOpacity.dark + '%',
+      isDarkMode: darkMode 
+    });
+  }, [cardOpacity, darkMode]);
   useLayoutEffect(() => {
     if (document.getElementById('sp-reset')) return;
     const style = document.createElement('style');
     style.id = 'sp-reset';
+    
+    // Import Gen Z friendly font
+    const fontLink = document.createElement('link');
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap';
+    fontLink.rel = 'stylesheet';
+    document.head.appendChild(fontLink);
+    
     style.textContent = `
 :root {
   --accent-h: 0;
@@ -251,11 +316,11 @@ export default function StudyPortal() {
   --accent-l: 50%;
 }
 :where(*, *::before, *::after){box-sizing:border-box}
-:where(html, body){height:100%}
+:where(html, body){height:100%; font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif}
 :where(body){margin:0; line-height:1.5; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility}
 :where(img, picture, video, canvas, svg){display:block; max-width:100%}
 :where(input, button, textarea, select){font:inherit}
-:where(p, h1, h2, h3, h4, h5, h6){overflow-wrap:break-word}
+:where(p, h1, h2, h3, h4, h5, h6){overflow-wrap:break-word; font-family: 'Space Grotesk', sans-serif}
 :where(#root, #__next){isolation:isolate}
 :where(iframe){border:0}
 :where(.dark) label{color:#e5e7eb}
@@ -307,6 +372,30 @@ button[variant="default"]:hover {
 /* Focus ring */
 *:focus-visible {
   outline-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l)) !important;
+}
+
+/* Gen Z styling enhancements */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.025em !important;
+}
+
+button, .button {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Weather widget 3D effects */
+.weather-icon-3d {
+  filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4)) drop-shadow(1px 1px 2px rgba(0,0,0,0.2));
+  transform: perspective(150px) rotateX(20deg) rotateY(-5deg);
+  transition: transform 0.3s ease;
+}
+
+.weather-icon-3d:hover {
+  transform: perspective(150px) rotateX(25deg) rotateY(-10deg) scale(1.1);
 }
 `;
     document.head.appendChild(style);
@@ -407,71 +496,36 @@ button[variant="default"]:hover {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="flex flex-wrap gap-2 bg-white/70 dark:bg-white/10 backdrop-blur p-2 rounded-2xl shadow-lg">
-            <TabsTrigger value="dashboard" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}>Dashboard</TabsTrigger>
-            <TabsTrigger value="planner" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><CalendarDays className="w-4 h-4 mr-1" />Planner</TabsTrigger>
-            <TabsTrigger value="courses" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><NotebookPen className="w-4 h-4 mr-1" />Courses</TabsTrigger>
-            <TabsTrigger value="study" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><Brain className="w-4 h-4 mr-1" />Study Tracker</TabsTrigger>
-            <TabsTrigger value="wellness" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><HeartPulse className="w-4 h-4 mr-1" />Wellness</TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-xl" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))"}}><Settings className="w-4 h-4 mr-1" />Settings</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-center">
+            <TabsList className="flex flex-wrap justify-center gap-2 bg-white/70 dark:bg-white/10 backdrop-blur p-3 rounded-2xl shadow-lg" style={{paddingTop: '8px', paddingBottom: '16px'}}>
+              <TabsTrigger value="dashboard" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}>Dashboard</TabsTrigger>
+              <TabsTrigger value="planner" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><CalendarDays className="w-4 h-4 mr-2" />Planner</TabsTrigger>
+              <TabsTrigger value="timetable" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><CalendarRange className="w-4 h-4 mr-2" />Timetable</TabsTrigger>
+              <TabsTrigger value="courses" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><NotebookPen className="w-4 h-4 mr-2" />Courses</TabsTrigger>
+              <TabsTrigger value="study" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><Brain className="w-4 h-4 mr-2" />Study Tracker</TabsTrigger>
+              <TabsTrigger value="wellness" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><HeartPulse className="w-4 h-4 mr-2" />Wellness</TabsTrigger>
+              <TabsTrigger value="settings" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><Settings className="w-4 h-4 mr-2" />Settings</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Dashboard */}
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Flame className="w-5 h-5" />This Week Focus</CardTitle>
-                  <CardDescription>Hours by course (this week)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-56 text-zinc-900 dark:text-zinc-100">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={weeklyStats.courseData}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'currentColor' }} />
-                        <YAxis tick={{ fontSize: 12, fill: 'currentColor' }} />
-                        <Tooltip />
-                        <Bar dataKey="hours" radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5" />Daily Flow</CardTitle>
-                  <CardDescription>Minutes studied by day</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-56 text-zinc-900 dark:text-zinc-100">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={weeklyStats.dayData}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'currentColor' }} />
-                        <YAxis tick={{ fontSize: 12, fill: 'currentColor' }} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="minutes" strokeWidth={3} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-                <CardFooter className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Total this week: {(weeklyStats.totalMin / 60).toFixed(1)}h · Avg session: {weeklyStats.avgSession}m · Streak: {weeklyStats.streak}d
-                </CardFooter>
-              </Card>
-
-              <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><CalendarDays className="w-5 h-5" />Next Up</CardTitle>
-                  <CardDescription>Upcoming exams & tasks</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Upcoming exams={exams} tasks={tasks} courses={courses} />
-                </CardContent>
-              </Card>
+            <div className="flex justify-between items-start mb-4">
+              <WeatherWidget 
+                apiKey={weatherApiKey} 
+                location={weatherLocation}
+              />
+              <CurrentDateTime />
             </div>
+            <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><CalendarDays className="w-5 h-5" />Next Up</CardTitle>
+                <CardDescription>Upcoming exams & tasks</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Upcoming exams={exams} tasks={tasks} courses={courses} />
+              </CardContent>
+            </Card>
 
             <SoundtrackCard embed={soundtrackEmbed} />
             <TipsRow />
@@ -486,6 +540,15 @@ button[variant="default"]:hover {
               eventsByDay={eventsForDay}
               exams={exams}
               tasks={tasks}
+            />
+          </TabsContent>
+
+          {/* Timetable */}
+          <TabsContent value="timetable">
+            <TimetableView 
+              courses={courses}
+              timetableEvents={timetableEvents}
+              setTimetableEvents={setTimetableEvents}
             />
           </TabsContent>
 
@@ -556,6 +619,12 @@ button[variant="default"]:hover {
               setGradientEnabled={setGradientEnabled}
               accentColor={accentColor}
               setAccentColor={setAccentColor}
+              cardOpacity={cardOpacity}
+              setCardOpacity={setCardOpacity}
+              weatherApiKey={weatherApiKey}
+              setWeatherApiKey={setWeatherApiKey}
+              weatherLocation={weatherLocation}
+              setWeatherLocation={setWeatherLocation}
               dataTransfer={dataTransfer}
             />
           </TabsContent>
@@ -568,6 +637,281 @@ button[variant="default"]:hover {
 // -----------------------------
 // UI SUBCOMPONENTS
 // -----------------------------
+function CurrentDateTime() {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  return (
+    <div className="text-right">
+      <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+        {formatDate(currentTime)}
+      </div>
+      <div className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+        {formatTime(currentTime)}
+      </div>
+    </div>
+  );
+}
+
+function WeatherWidget({ apiKey, location }) {
+  const [weather, setWeather] = useState({
+    condition: 'loading',
+    temperature: '--',
+    location: 'Getting location...',
+    description: 'Loading...'
+  });
+  const [error, setError] = useState(null);
+
+  // OpenWeatherMap API integration
+  useEffect(() => {
+    const API_KEY = apiKey || 'demo_key'; // Use provided API key or demo
+    
+    const fetchWeatherByCity = async (city) => {
+      try {
+        if (!apiKey || apiKey.trim() === '') {
+          throw new Error('No API key provided');
+        }
+        
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`
+        );
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Invalid API key or key not yet activated');
+          } else if (response.status === 404) {
+            throw new Error(`City "${city}" not found`);
+          } else {
+            throw new Error(`Weather API error: ${response.status}`);
+          }
+        }
+        
+        const data = await response.json();
+        
+        // Map OpenWeatherMap icons to our emoji system
+        const getWeatherIcon = (weatherMain, icon) => {
+          const iconMap = {
+            'Clear': '☀️',
+            'Clouds': icon.includes('01') ? '☀️' : icon.includes('02') ? '⛅' : '☁️',
+            'Rain': '🌧️',
+            'Drizzle': '🌦️',
+            'Thunderstorm': '⛈️',
+            'Snow': '❄️',
+            'Mist': '🌫️',
+            'Fog': '🌫️',
+            'Haze': '🌫️'
+          };
+          return iconMap[weatherMain] || '🌤️';
+        };
+
+        setWeather({
+          condition: data.weather[0].main.toLowerCase(),
+          temperature: Math.round(data.main.temp),
+          location: data.name,
+          description: data.weather[0].description,
+          icon: getWeatherIcon(data.weather[0].main, data.weather[0].icon)
+        });
+        setError(null);
+        
+      } catch (err) {
+        console.log('Weather API failed:', err.message);
+        setError(err.message);
+        fallbackToSimulation();
+      }
+    };
+    
+    const fetchWeatherData = async (lat, lon) => {
+      try {
+        if (!apiKey || apiKey.trim() === '') {
+          throw new Error('No API key provided');
+        }
+        
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+        );
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Invalid API key or key not yet activated');
+          } else {
+            throw new Error(`Weather API error: ${response.status}`);
+          }
+        }
+        
+        const data = await response.json();
+        
+        // Map OpenWeatherMap icons to our emoji system
+        const getWeatherIcon = (weatherMain, icon) => {
+          const iconMap = {
+            'Clear': '☀️',
+            'Clouds': icon.includes('01') ? '☀️' : icon.includes('02') ? '⛅' : '☁️',
+            'Rain': '🌧️',
+            'Drizzle': '🌦️',
+            'Thunderstorm': '⛈️',
+            'Snow': '❄️',
+            'Mist': '🌫️',
+            'Fog': '🌫️',
+            'Haze': '🌫️'
+          };
+          return iconMap[weatherMain] || '🌤️';
+        };
+
+        setWeather({
+          condition: data.weather[0].main.toLowerCase(),
+          temperature: Math.round(data.main.temp),
+          location: data.name,
+          description: data.weather[0].description,
+          icon: getWeatherIcon(data.weather[0].main, data.weather[0].icon)
+        });
+        setError(null);
+        
+      } catch (err) {
+        console.log('Weather API failed, falling back to simulation:', err.message);
+        // Fallback to simulated weather if API fails
+        fallbackToSimulation();
+      }
+    };
+
+    const fallbackToSimulation = () => {
+      const conditions = [
+        { condition: 'sunny', temp: 28, icon: '☀️', desc: 'Clear sky' },
+        { condition: 'cloudy', temp: 24, icon: '☁️', desc: 'Overcast clouds' },
+        { condition: 'rainy', temp: 18, icon: '🌧️', desc: 'Light rain' },
+        { condition: 'partly-cloudy', temp: 25, icon: '⛅', desc: 'Partly cloudy' },
+      ];
+      
+      const hour = new Date().getHours();
+      let weatherIndex = 0;
+      
+      if (hour >= 6 && hour < 12) weatherIndex = 0;
+      else if (hour >= 12 && hour < 15) weatherIndex = 3;
+      else if (hour >= 15 && hour < 18) weatherIndex = 1;
+      else weatherIndex = 3;
+      
+      const selectedWeather = conditions[weatherIndex];
+      setWeather({
+        condition: selectedWeather.condition,
+        temperature: selectedWeather.temp + Math.floor(Math.random() * 6 - 3),
+        location: 'Simulated',
+        description: selectedWeather.desc,
+        icon: selectedWeather.icon
+      });
+    };
+
+    const getLocationAndWeather = () => {
+      if (location && !location.useGeolocation && location.city) {
+        // Use city name from settings
+        fetchWeatherByCity(location.city);
+      } else if (navigator.geolocation) {
+        // Use geolocation
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            fetchWeatherData(latitude, longitude);
+          },
+          (err) => {
+            console.log('Geolocation failed:', err.message);
+            setError('Location access denied');
+            if (location && location.city) {
+              // Try fallback to city if available
+              fetchWeatherByCity(location.city);
+            } else {
+              fallbackToSimulation();
+            }
+          },
+          { timeout: 10000, enableHighAccuracy: true }
+        );
+      } else {
+        setError('Geolocation not supported');
+        if (location && location.city) {
+          // Try fallback to city if available
+          fetchWeatherByCity(location.city);
+        } else {
+          fallbackToSimulation();
+        }
+      }
+    };
+
+    getLocationAndWeather();
+    
+    // Update weather every 10 minutes
+    const interval = setInterval(getLocationAndWeather, 10 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [apiKey, location]);
+
+  const getWeatherDescription = (condition) => {
+    if (weather.description) {
+      return weather.description.charAt(0).toUpperCase() + weather.description.slice(1);
+    }
+    
+    const descriptions = {
+      'clear': 'Clear Sky',
+      'sunny': 'Sunny',
+      'clouds': 'Cloudy',
+      'rain': 'Rainy',
+      'drizzle': 'Drizzle',
+      'thunderstorm': 'Stormy',
+      'snow': 'Snowy',
+      'mist': 'Misty',
+      'fog': 'Foggy',
+      'partly-cloudy': 'Partly Cloudy',
+      'loading': 'Loading...'
+    };
+    return descriptions[condition] || 'Clear';
+  };
+
+  return (
+    <div className="text-left">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-2xl weather-icon-3d cursor-pointer">
+          {weather.condition === 'loading' ? '⏳' : weather.icon}
+        </span>
+        <div>
+          <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+            {getWeatherDescription(weather.condition)}
+          </div>
+          <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+            {weather.temperature === '--' ? '--' : `${weather.temperature}°C`}
+          </div>
+          {error && (
+            <div className="text-xs text-orange-500 dark:text-orange-400">
+              {error} {!error.includes('Invalid API key') && !error.includes('not found') ? '(simulated)' : ''}
+            </div>
+          )}
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            {weather.location}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MoonSunToggle({ checked, onCheckedChange }) {
   return (
     <div className="flex items-center gap-3">
@@ -622,8 +966,28 @@ function SoundtrackCard({ embed }) {
 function Upcoming({ exams, tasks, courses }) {
   const upcomingExams = useMemo(() => exams.slice().sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3), [exams]);
   const upcomingTasks = useMemo(() => tasks.slice().filter(t => !t.done).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 5), [tasks]);
+  
+  // Helper function to calculate D-Day
+  const calculateDDay = (dateString) => {
+    if (!dateString) return null;
+    const targetDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = targetDate - today;
+    let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Add 1 day to all calculations
+    diffDays = diffDays + 1;
+    
+    if (diffDays === 0) return "D-DAY";
+    if (diffDays > 0) return `D-${diffDays}`;
+    return `D+${Math.abs(diffDays)}`;
+  };
+  
   return (
-    <div className="grid gap-4">
+    <div className="grid md:grid-cols-2 gap-6">
       <div>
         <div className="text-xs uppercase tracking-wide text-zinc-500 mb-2">Exams</div>
         <div className="space-y-2">
@@ -634,7 +998,10 @@ function Upcoming({ exams, tasks, courses }) {
                 <span className="font-medium">{e.title}</span>
                 <span className="text-xs text-zinc-500">{courses[e.courseIndex]} · {e.weight || 0}%</span>
               </div>
-              <Badge variant="secondary" className="rounded-full">{e.date}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="rounded-full">{e.date}</Badge>
+                <Badge variant="outline" className="rounded-full text-xs font-mono">{calculateDDay(e.date)}</Badge>
+              </div>
             </div>
           ))}
         </div>
@@ -649,7 +1016,10 @@ function Upcoming({ exams, tasks, courses }) {
                 <span className="font-medium">{t.title}</span>
                 <span className="text-xs text-zinc-500">{courses[t.courseIndex]} · {t.priority}</span>
               </div>
-              <Badge variant="secondary" className="rounded-full">due {t.due}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="rounded-full">due {t.due}</Badge>
+                <Badge variant="outline" className="rounded-full text-xs font-mono">{calculateDDay(t.due)}</Badge>
+              </div>
             </div>
           ))}
         </div>
@@ -1419,7 +1789,7 @@ function Wellness() {
 // -----------------------------
 // Settings
 // -----------------------------
-function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbed, bgImage, setBgImage, gradientStart, setGradientStart, gradientMiddle, setGradientMiddle, gradientEnd, setGradientEnd, darkMode, gradientEnabled, setGradientEnabled, accentColor, setAccentColor, dataTransfer }) {
+function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbed, bgImage, setBgImage, gradientStart, setGradientStart, gradientMiddle, setGradientMiddle, gradientEnd, setGradientEnd, darkMode, gradientEnabled, setGradientEnabled, accentColor, setAccentColor, cardOpacity, setCardOpacity, weatherApiKey, setWeatherApiKey, weatherLocation, setWeatherLocation, dataTransfer }) {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
@@ -1572,6 +1942,49 @@ function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbe
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
+          <CardTitle>Card Opacity</CardTitle>
+          <CardDescription>Adjust card transparency for better visibility</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Light Mode Opacity: {cardOpacity.light}%</Label>
+            <input
+              type="range"
+              min="10"
+              max="100"
+              value={cardOpacity.light}
+              onChange={(e) => setCardOpacity(prev => ({
+                ...prev,
+                light: parseInt(e.target.value)
+              }))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
+            />
+          </div>
+          <div>
+            <Label>Dark Mode Opacity: {cardOpacity.dark}%</Label>
+            <input
+              type="range"
+              min="5"
+              max="100"
+              value={cardOpacity.dark}
+              onChange={(e) => setCardOpacity(prev => ({
+                ...prev,
+                dark: parseInt(e.target.value)
+              }))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
+            />
+          </div>
+          <Button variant="outline" className="rounded-xl w-full" onClick={() => {
+            setCardOpacity({
+              light: 80,
+              dark: 25
+            });
+          }}>Reset to Default</Button>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+        <CardHeader>
           <CardTitle>Background Gradient</CardTitle>
           <CardDescription>Customize the background colors</CardDescription>
         </CardHeader>
@@ -1632,6 +2045,90 @@ function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbe
                 setGradientEnd(prev => ({ ...prev, light: "#a7f3d0" }));
               }
             }}>Reset to Default</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+        <CardHeader>
+          <CardTitle>🌤️ Weather API</CardTitle>
+          <CardDescription>Get real weather data for your location</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="weather-api-key">OpenWeatherMap API Key</Label>
+            <Input
+              id="weather-api-key"
+              type="password"
+              placeholder="Enter your API key here..."
+              value={weatherApiKey}
+              onChange={(e) => setWeatherApiKey(e.target.value)}
+              className="mt-2"
+            />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+              Without an API key, weather will be simulated. Get a free key from{' '}
+              <a 
+                href="https://openweathermap.org/api" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:text-blue-600 underline"
+              >
+                OpenWeatherMap
+              </a>
+            </p>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg text-sm">
+            <p className="font-medium text-blue-800 dark:text-blue-200 mb-1">📋 How to get an API key:</p>
+            <ol className="text-blue-700 dark:text-blue-300 text-xs space-y-1 ml-4 list-decimal">
+              <li>Visit <span className="font-mono">openweathermap.org</span></li>
+              <li>Sign up for a free account</li>
+              <li>Go to "My API keys" in your account</li>
+              <li>Copy your key and paste it above</li>
+              <li><strong>Important:</strong> New API keys may take 2-24 hours to activate!</li>
+            </ol>
+          </div>
+          {weatherApiKey && (
+            <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
+              <p className="text-green-800 dark:text-green-200 text-sm">
+                ✅ API key configured! Real weather data will be used.
+              </p>
+            </div>
+          )}
+          
+          <div className="mt-6 border-t pt-4 border-zinc-200 dark:border-zinc-800">
+            <h3 className="text-md font-medium mb-2">Weather Location Settings</h3>
+            <div className="flex items-center justify-between mb-3">
+              <Label htmlFor="use-geolocation">Use device location</Label>
+              <Switch 
+                id="use-geolocation"
+                checked={weatherLocation.useGeolocation}
+                onCheckedChange={(checked) => setWeatherLocation({
+                  ...weatherLocation,
+                  useGeolocation: checked
+                })}
+              />
+            </div>
+            
+            <div className={weatherLocation.useGeolocation ? "opacity-50" : ""}>
+              <Label htmlFor="city-name">City name</Label>
+              <Input
+                id="city-name"
+                type="text"
+                placeholder="Enter city name (e.g., London, Tokyo, New York)"
+                value={weatherLocation.city}
+                onChange={(e) => setWeatherLocation({
+                  ...weatherLocation,
+                  city: e.target.value
+                })}
+                disabled={weatherLocation.useGeolocation}
+                className="mt-2"
+              />
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                {weatherLocation.useGeolocation 
+                  ? "Turn off device location to enter a city manually" 
+                  : "Enter a city name to get weather for that location"}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
