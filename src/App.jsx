@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
-import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo, CalendarRange } from "lucide-react";
+import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo, CalendarRange, ChevronDown } from "lucide-react";
 import TimetableView from "@/components/TimetableView";
 
 // -----------------------------
@@ -63,7 +63,8 @@ const typeColors = {
   workshop: "bg-amber-500", 
   assistantship: "bg-sky-500",
   exam: "bg-rose-500",
-  task: "bg-amber-500"
+  task: "bg-amber-500",
+  regular: "bg-indigo-500"
 };
 
 // -----------------------------
@@ -157,8 +158,10 @@ export default function StudyPortal() {
   const [timetableEvents, setTimetableEvents] = useLocalState("sp:timetableEvents", []); // {id, courseIndex, eventType, classroom, teacher, day, startTime, endTime, block}
   const [tasks, setTasks] = useLocalState("sp:tasks", []);           // per-course to-dos
   const [exams, setExams] = useLocalState("sp:exams", []);
+  const [regularEvents, setRegularEvents] = useLocalState("sp:regularEvents", []); // multi-day events
   const [sessions, setSessions] = useLocalState("sp:sessions", []);
   const [selectedCourse, setSelectedCourse] = useLocalState("sp:selectedCourse", 0);
+  const [nextUpExpanded, setNextUpExpanded] = useState(0); // Number of additional "pages" shown (0 = collapsed)
 
   // Data transfer instance for import/export
   const dataTransfer = useMemo(() => new DataTransfer(
@@ -167,6 +170,7 @@ export default function StudyPortal() {
       sessions,
       exams,
       tasks,
+      regularEvents,
       schedule,
       sessionTasks,
       courses,
@@ -187,6 +191,7 @@ export default function StudyPortal() {
       if (newState.sessions) setSessions(newState.sessions);
       if (newState.exams) setExams(newState.exams);
       if (newState.tasks) setTasks(newState.tasks);
+      if (newState.regularEvents) setRegularEvents(newState.regularEvents);
       if (newState.schedule) setSchedule(newState.schedule);
       if (newState.timetableEvents) setTimetableEvents(newState.timetableEvents);
       if (newState.sessionTasks) setSessionTasks(newState.sessionTasks);
@@ -209,8 +214,9 @@ export default function StudyPortal() {
   // Theme + cosmetics
   const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const [darkMode, setDarkMode] = useLocalState("sp:dark", prefersDark);
-  const [soundtrackEmbed, setSoundtrackEmbed] = useLocalState("sp:soundtrackEmbed", "");
+  const [soundtrackPosition, setSoundtrackPosition] = useState('dashboard'); // 'dashboard', 'floating', 'hidden'
   const [bgImage, setBgImage] = useLocalState("sp:bgImage", "");
+  const [soundtrackEmbed, setSoundtrackEmbed] = useLocalState("sp:soundtrackEmbed", "");
   const [accentColor, setAccentColor] = useLocalState("sp:accentColor", {
     light: "#7c3aed", // violet-600
     dark: "#8b5cf6"   // violet-500
@@ -427,6 +433,7 @@ button, .button {
     }
     return () => t && clearInterval(t);
   }, [running]);
+  
   function startTimer() { setElapsed(0); startRef.current = Date.now(); setRunning(true); }
   function resetTimer() { setElapsed(0); startRef.current = Date.now(); }
   function stopTimer() {
@@ -519,15 +526,70 @@ button, .button {
             </div>
             <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><CalendarDays className="w-5 h-5" />Next Up</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="w-5 h-5" />
+                  Next Up
+                </CardTitle>
                 <CardDescription>Upcoming exams & tasks</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Upcoming exams={exams} tasks={tasks} courses={courses} />
+                <Upcoming 
+                  exams={exams} 
+                  tasks={tasks} 
+                  courses={courses} 
+                  expanded={nextUpExpanded}
+                  onExpandChange={setNextUpExpanded}
+                />
               </CardContent>
+              {(() => {
+                // Calculate if there are more items to show
+                const allExams = exams.slice().sort((a, b) => a.date.localeCompare(b.date));
+                const allTasks = tasks.slice().filter(t => !t.done).sort((a, b) => a.due.localeCompare(b.due));
+                
+                const currentExamCount = 3 + (nextUpExpanded * 3);
+                const currentTaskCount = 5 + (nextUpExpanded * 3);
+                
+                const hasMoreExams = allExams.length > currentExamCount;
+                const hasMoreTasks = allTasks.length > currentTaskCount;
+                const hasMore = hasMoreExams || hasMoreTasks;
+                
+                // Show button if there are more items OR if currently expanded (to allow collapse)
+                const showButton = hasMore || nextUpExpanded > 0;
+                
+                if (!showButton) return null;
+                
+                return (
+                  <div className="flex justify-center pb-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (hasMore) {
+                          // Show 3 more items
+                          setNextUpExpanded(nextUpExpanded + 1);
+                        } else {
+                          // Collapse to original state
+                          setNextUpExpanded(0);
+                        }
+                      }}
+                      className="h-8 w-8 p-0 hover:bg-white/20 rounded-full transition-all duration-300 ease-in-out"
+                    >
+                      <ChevronDown 
+                        className={`w-4 h-4 transition-all duration-500 ease-in-out transform ${
+                          !hasMore && nextUpExpanded > 0 ? 'rotate-180' : 'rotate-0'
+                        }`} 
+                      />
+                    </Button>
+                  </div>
+                );
+              })()}
             </Card>
 
-            <SoundtrackCard embed={soundtrackEmbed} />
+            <SoundtrackCard 
+              embed={soundtrackEmbed} 
+              position={soundtrackPosition}
+              onPositionChange={setSoundtrackPosition}
+            />
             <TipsRow />
           </TabsContent>
 
@@ -540,6 +602,13 @@ button, .button {
               eventsByDay={eventsForDay}
               exams={exams}
               tasks={tasks}
+              regularEvents={regularEvents}
+              addExam={(e) => setExams(s => [{ ...e, id: uid() }, ...s])}
+              addTask={(t) => setTasks(s => [{ ...t, id: uid(), done: false }, ...s])}
+              addRegularEvent={(e) => setRegularEvents(s => [{ ...e, id: uid() }, ...s])}
+              deleteExam={(id) => setExams(s => s.filter(e => e.id !== id))}
+              deleteTask={(id) => setTasks(s => s.filter(t => t.id !== id))}
+              deleteRegularEvent={(id) => setRegularEvents(s => s.filter(e => e.id !== id))}
             />
           </TabsContent>
 
@@ -629,6 +698,15 @@ button, .button {
             />
           </TabsContent>
         </Tabs>
+        
+        {/* Floating Soundtrack - Persists across all tabs */}
+        {soundtrackPosition === 'floating' && soundtrackEmbed && (
+          <SoundtrackCard 
+            embed={soundtrackEmbed} 
+            position="floating"
+            onPositionChange={setSoundtrackPosition}
+          />
+        )}
       </div>
     </div>
   );
@@ -677,6 +755,10 @@ function CurrentDateTime() {
   );
 }
 
+// -----------------------------
+// -----------------------------
+// Weather Widget Component
+// -----------------------------
 function WeatherWidget({ apiKey, location }) {
   const [weather, setWeather] = useState({
     condition: 'loading',
@@ -941,31 +1023,147 @@ function TipsRow() {
   );
 }
 
-function SoundtrackCard({ embed }) {
+function SoundtrackCard({ embed, position = 'dashboard', onPositionChange }) {
+  const [isMinimized, setIsMinimized] = useState(false);
+  
+  if (position === 'hidden' || !embed) {
+    return position === 'dashboard' ? (
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Music2 className="w-5 h-5" />Soundtrack</CardTitle>
+          <CardDescription>Focus with your own vibe</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-zinc-500">Add an embed URL in <strong>Settings → Soundtrack</strong> (e.g., Spotify/YouTube embed link) and it will show up here.</div>
+        </CardContent>
+      </Card>
+    ) : null;
+  }
+
+  if (position === 'floating') {
+    return (
+      <div className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${
+        isMinimized ? 'w-16 h-16' : 'w-80 h-48'
+      }`}>
+        <Card className="h-full rounded-2xl border-none shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+          {!isMinimized && (
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Music2 className="w-4 h-4" />
+                  Soundtrack
+                </CardTitle>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMinimized(true)}
+                    className="h-6 w-6 p-0 hover:bg-white/20"
+                    title="Minimize"
+                  >
+                    ➖
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onPositionChange && onPositionChange('dashboard')}
+                    className="h-6 w-6 p-0 hover:bg-white/20"
+                    title="Maximize to Dashboard"
+                  >
+                    ⬜
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onPositionChange && onPositionChange('hidden')}
+                    className="h-6 w-6 p-0 hover:bg-white/20"
+                    title="Close"
+                  >
+                    ✖️
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+          )}
+          <CardContent className={`${isMinimized ? 'p-2' : 'p-3 pt-0'} h-full`}>
+            {isMinimized ? (
+              <Button
+                variant="ghost"
+                onClick={() => setIsMinimized(false)}
+                className="w-full h-full p-0 flex items-center justify-center"
+              >
+                <Music2 className="w-6 h-6" />
+              </Button>
+            ) : (
+              <div className="rounded-xl overflow-hidden h-full">
+                <iframe 
+                  src={embed} 
+                  className="w-full h-full" 
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                  loading="lazy" 
+                  title="Study soundtrack" 
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Dashboard position
   return (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Music2 className="w-5 h-5" />Soundtrack</CardTitle>
-        <CardDescription>Focus with your own vibe</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2"><Music2 className="w-5 h-5" />Soundtrack</CardTitle>
+            <CardDescription>Focus with your own vibe</CardDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPositionChange && onPositionChange('floating')}
+            className="h-8 w-8 p-0 hover:bg-white/20"
+            title="Minimize to floating player (plays across all tabs)"
+          >
+            ⬇️
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
-        {embed ? (
-          <div className="rounded-2xl overflow-hidden">
-            <div className="aspect-video">
-              <iframe src={embed} className="w-full h-full" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="Study soundtrack" />
-            </div>
+        <div className="rounded-2xl overflow-hidden">
+          <div className="aspect-video">
+            <iframe src={embed} className="w-full h-full" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="Study soundtrack" />
           </div>
-        ) : (
-          <div className="text-sm text-zinc-500">Add an embed URL in <strong>Settings → Soundtrack</strong> (e.g., Spotify/YouTube embed link) and it will show up here.</div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-function Upcoming({ exams, tasks, courses }) {
-  const upcomingExams = useMemo(() => exams.slice().sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3), [exams]);
-  const upcomingTasks = useMemo(() => tasks.slice().filter(t => !t.done).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 5), [tasks]);
+function Upcoming({ exams, tasks, courses, expanded }) {
+  const upcomingExams = useMemo(() => {
+    const sorted = exams.slice().sort((a, b) => a.date.localeCompare(b.date));
+    const baseCount = 3;
+    const additionalCount = expanded * 3;
+    return sorted.slice(0, baseCount + additionalCount);
+  }, [exams, expanded]);
+  
+  const upcomingTasks = useMemo(() => {
+    const filtered = tasks.slice().filter(t => !t.done).sort((a, b) => a.due.localeCompare(b.due));
+    const baseCount = 5;
+    const additionalCount = expanded * 3;
+    return filtered.slice(0, baseCount + additionalCount);
+  }, [tasks, expanded]);
+
+  // Check if there are more items to show
+  const allExams = useMemo(() => exams.slice().sort((a, b) => a.date.localeCompare(b.date)), [exams]);
+  const allTasks = useMemo(() => tasks.slice().filter(t => !t.done).sort((a, b) => a.due.localeCompare(b.due)), [tasks]);
+  
+  const hasMoreExams = allExams.length > upcomingExams.length;
+  const hasMoreTasks = allTasks.length > upcomingTasks.length;
+  const hasMore = hasMoreExams || hasMoreTasks;
   
   // Helper function to calculate D-Day
   const calculateDDay = (dateString) => {
@@ -992,36 +1190,70 @@ function Upcoming({ exams, tasks, courses }) {
         <div className="text-xs uppercase tracking-wide text-zinc-500 mb-2">Exams</div>
         <div className="space-y-2">
           {upcomingExams.length === 0 && <div className="text-sm text-zinc-500">No exams scheduled yet.</div>}
-          {upcomingExams.map(e => (
-            <div key={e.id} className="flex items-center justify-between bg-white/70 dark:bg-white/5 rounded-xl p-3">
-              <div className="flex flex-col">
-                <span className="font-medium">{e.title}</span>
-                <span className="text-xs text-zinc-500">{courses[e.courseIndex]} · {e.weight || 0}%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="rounded-full">{e.date}</Badge>
-                <Badge variant="outline" className="rounded-full text-xs font-mono">{calculateDDay(e.date)}</Badge>
-              </div>
-            </div>
-          ))}
+          <AnimatePresence mode="popLayout">
+            {upcomingExams.map((e, index) => (
+              <motion.div 
+                key={e.id}
+                initial={{ opacity: 0, height: 0, y: -10 }}
+                animate={{ opacity: 1, height: "auto", y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -10 }}
+                transition={{ 
+                  duration: 0.3, 
+                  ease: "easeInOut",
+                  delay: expanded > 0 ? index * 0.05 : 0
+                }}
+                className="flex items-center justify-between bg-white/70 dark:bg-white/5 rounded-xl p-3 overflow-hidden cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors"
+                onClick={() => {
+                  setActiveTab('courses');
+                  setSelectedCourse(e.courseIndex);
+                }}
+              >
+                <div className="flex flex-col">
+                  <span className="font-medium">{e.title}</span>
+                  <span className="text-xs text-zinc-500">{courses[e.courseIndex]} · {e.weight || 0}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="rounded-full">{e.date}</Badge>
+                  <Badge variant="outline" className="rounded-full text-xs font-mono">{calculateDDay(e.date)}</Badge>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
       <div>
         <div className="text-xs uppercase tracking-wide text-zinc-500 mb-2">Tasks</div>
         <div className="space-y-2">
           {upcomingTasks.length === 0 && <div className="text-sm text-zinc-500">No tasks due soon. Love that for you ✨</div>}
-          {upcomingTasks.map(t => (
-            <div key={t.id} className="flex items-center justify-between bg-white/70 dark:bg-white/5 rounded-xl p-3">
-              <div className="flex flex-col">
-                <span className="font-medium">{t.title}</span>
-                <span className="text-xs text-zinc-500">{courses[t.courseIndex]} · {t.priority}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="rounded-full">due {t.due}</Badge>
-                <Badge variant="outline" className="rounded-full text-xs font-mono">{calculateDDay(t.due)}</Badge>
-              </div>
-            </div>
-          ))}
+          <AnimatePresence mode="popLayout">
+            {upcomingTasks.map((t, index) => (
+              <motion.div 
+                key={t.id}
+                initial={{ opacity: 0, height: 0, y: -10 }}
+                animate={{ opacity: 1, height: "auto", y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -10 }}
+                transition={{ 
+                  duration: 0.3, 
+                  ease: "easeInOut",
+                  delay: expanded > 0 ? index * 0.05 : 0
+                }}
+                className="flex items-center justify-between bg-white/70 dark:bg-white/5 rounded-xl p-3 overflow-hidden cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors"
+                onClick={() => {
+                  setActiveTab('courses');
+                  setSelectedCourse(t.courseIndex);
+                }}
+              >
+                <div className="flex flex-col">
+                  <span className="font-medium">{t.title}</span>
+                  <span className="text-xs text-zinc-500">{courses[t.courseIndex]} · {t.priority}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="rounded-full">due {t.due}</Badge>
+                  <Badge variant="outline" className="rounded-full text-xs font-mono">{calculateDDay(t.due)}</Badge>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </div>
@@ -1031,11 +1263,29 @@ function Upcoming({ exams, tasks, courses }) {
 // -----------------------------
 // Planner (Week + Month views)
 // -----------------------------
-function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks }) {
+function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularEvents, addExam, addTask, addRegularEvent, deleteExam, deleteTask, deleteRegularEvent }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ courseIndex: 0, type: "class", title: "", day: "Mon", start: "10:00", end: "11:30", location: "" });
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, event: null });
+  const [showMultiDayEvents, setShowMultiDayEvents] = useState(false); // Toggle for showing multi-day events on day cards
+  const [editingEvent, setEditingEvent] = useState(null); // Track the event being edited
+  const [form, setForm] = useState({ 
+    eventCategory: "regular", // regular, exam, task
+    courseIndex: -1, // -1 means no course selected 
+    type: "class", 
+    title: "", 
+    startDate: "", 
+    endDate: "", 
+    day: "Mon", 
+    start: "10:00", 
+    end: "11:30", 
+    location: "",
+    weight: 20,
+    priority: "normal",
+    notes: "",
+    color: "#6366f1" // Default color
+  });
   const [filterCourse, setFilterCourse] = useState("all");
-  const [view, setView] = useState("week");
+  const [view, setView] = useState("month");
   const [weekOffset, setWeekOffset] = useState(0);
 
   // Month data
@@ -1072,6 +1322,199 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks }) {
     return `${months[date.getMonth()]} ${date.getDate()}`;
   }
 
+  // Handler for adding new events
+  const handleAddEvent = () => {
+    if (!form.title) return;
+    
+    // If we're editing an existing event, delete the original first
+    if (editingEvent) {
+      if (editingEvent.eventType === 'regular') {
+        deleteRegularEvent(editingEvent.id);
+      } else if (editingEvent.eventType === 'exam') {
+        deleteExam(editingEvent.id);
+      } else if (editingEvent.eventType === 'task') {
+        deleteTask(editingEvent.id);
+      }
+    }
+    
+    if (form.eventCategory === "regular") {
+      const eventData = {
+        courseIndex: form.courseIndex,
+        title: form.title,
+        startDate: form.startDate,
+        location: form.location,
+        notes: form.notes,
+        color: form.color
+      };
+      
+      // Only add endDate if user explicitly provided one that's different from startDate
+      if (form.endDate && form.endDate !== form.startDate) {
+        eventData.endDate = form.endDate;
+        eventData.isMultiDay = true;
+      } else {
+        eventData.isMultiDay = false;
+      }
+      
+      addRegularEvent(eventData);
+    } else if (form.eventCategory === "exam") {
+      addExam({
+        courseIndex: form.courseIndex,
+        title: form.title,
+        date: form.startDate,
+        weight: form.weight,
+        notes: form.notes
+      });
+    } else if (form.eventCategory === "task") {
+      addTask({
+        courseIndex: form.courseIndex,
+        title: form.title,
+        due: form.startDate,
+        priority: form.priority,
+        notes: form.notes
+      });
+    }
+    
+    // Reset form and editing state
+    setForm({
+      eventCategory: "regular",
+      courseIndex: -1, // -1 means no course selected
+      type: "class", 
+      title: "", 
+      startDate: "", 
+      endDate: "", 
+      day: "Mon", 
+      start: "10:00", 
+      end: "11:30", 
+      location: "",
+      weight: 20,
+      priority: "normal",
+      notes: "",
+      color: "#6366f1"
+    });
+    setEditingEvent(null);
+    setOpen(false);
+  };
+
+  // Handle event edit action
+  const handleEditEvent = (event) => {
+    setEditingEvent(event); // Store the original event for potential restoration
+    
+    if (event.eventType === 'regular') {
+      setForm({
+        eventCategory: "regular",
+        courseIndex: event.courseIndex ?? -1,
+        title: event.title || "",
+        startDate: event.startDate ? new Date(event.startDate).toISOString().split('T')[0] : "",
+        endDate: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : "",
+        location: event.location || "",
+        notes: event.notes || "",
+        color: event.color || "#6366f1",
+        type: "class",
+        day: "Mon",
+        start: "10:00",
+        end: "11:30",
+        weight: 20,
+        priority: "normal"
+      });
+    } else if (event.eventType === 'exam') {
+      setForm({
+        eventCategory: "exam",
+        courseIndex: event.courseIndex ?? -1,
+        title: event.title || "",
+        startDate: event.date ? new Date(event.date).toISOString().split('T')[0] : "",
+        weight: event.weight || 20,
+        notes: event.notes || "",
+        color: "#ef4444", // Red for exams
+        endDate: "",
+        location: "",
+        type: "class",
+        day: "Mon",
+        start: "10:00",
+        end: "11:30",
+        priority: "normal"
+      });
+    } else if (event.eventType === 'task') {
+      setForm({
+        eventCategory: "task",
+        courseIndex: event.courseIndex ?? -1,
+        title: event.title || "",
+        startDate: event.due ? new Date(event.due).toISOString().split('T')[0] : "",
+        priority: event.priority || "normal",
+        notes: event.notes || "",
+        color: "#f59e0b", // Amber for tasks
+        endDate: "",
+        location: "",
+        type: "class",
+        day: "Mon",
+        start: "10:00",
+        end: "11:30",
+        weight: 20
+      });
+    }
+    setConfirmDialog({ open: false, event: null });
+    setOpen(true);
+  };
+
+  // Handle event delete action
+  const handleDeleteEvent = (event) => {
+    if (event.eventType === 'regular') {
+      deleteRegularEvent(event.id);
+    } else if (event.eventType === 'exam') {
+      deleteExam(event.id);
+    } else if (event.eventType === 'task') {
+      deleteTask(event.id);
+    }
+    setConfirmDialog({ open: false, event: null });
+  };
+
+  // Handle day click to create new event with pre-filled date
+  const handleDayClick = (date) => {
+    const dateString = date.toISOString().split('T')[0];
+    setForm({
+      eventCategory: "regular",
+      courseIndex: -1,
+      type: "class",
+      title: "",
+      startDate: dateString,
+      endDate: "",
+      day: "Mon",
+      start: "10:00",
+      end: "11:30",
+      location: "",
+      weight: 20,
+      priority: "normal",
+      notes: "",
+      color: "#6366f1"
+    });
+    setEditingEvent(null); // Make sure we're not in edit mode
+    setOpen(true);
+  };
+
+  // Handle dialog close (including cancel)
+  const handleDialogClose = (open) => {
+    if (!open) {
+      // Dialog is being closed - reset editing state and form
+      setEditingEvent(null);
+      setForm({
+        eventCategory: "regular",
+        courseIndex: -1,
+        type: "class", 
+        title: "", 
+        startDate: "", 
+        endDate: "", 
+        day: "Mon", 
+        start: "10:00", 
+        end: "11:30", 
+        location: "",
+        weight: 20,
+        priority: "normal",
+        notes: "",
+        color: "#6366f1"
+      });
+    }
+    setOpen(open);
+  };
+
   // Helper: get all events for a specific date
   function getAllEventsForDate(date) {
     const events = [];
@@ -1088,6 +1531,93 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks }) {
         displayTime: `${e.start}–${e.end}`
       }));
     events.push(...scheduleEvents);
+
+    // Regular events - always include single-day events, multi-day events only if toggle is on
+    const regularEventsForDate = regularEvents
+      .filter(e => {
+        const startDate = new Date(e.startDate);
+        const endDate = e.endDate ? new Date(e.endDate) : startDate;
+        const currentDate = new Date(dateStr);
+        const isMultiDay = e.isMultiDay !== false && (e.endDate && e.endDate !== e.startDate);
+        
+        // Check if current date is within the event range
+        const isInRange = currentDate >= startDate && currentDate <= endDate;
+        
+        // Include if: within range AND (single-day event OR multi-day event with toggle on)
+        return isInRange && 
+               (filterCourse === 'all' || String(e.courseIndex) === filterCourse) &&
+               (!isMultiDay || showMultiDayEvents);
+      })
+      .map(e => ({
+        ...e,
+        eventType: 'regular',
+        time: '00:00',
+        displayTime: 'Event',
+        type: 'regular'
+      }));
+    events.push(...regularEventsForDate);
+
+    // Exams for this date
+    const dayExams = exams
+      .filter(e => e.date === dateStr && (filterCourse === 'all' || String(e.courseIndex) === filterCourse))
+      .map(e => ({
+        ...e,
+        eventType: 'exam',
+        time: '00:00',
+        displayTime: 'Exam',
+        type: 'exam'
+      }));
+    events.push(...dayExams);
+
+    // Tasks due on this date
+    const dayTasks = tasks
+      .filter(t => t.due === dateStr && !t.done && (filterCourse === 'all' || String(t.courseIndex) === filterCourse))
+      .map(t => ({
+        ...t,
+        eventType: 'task',
+        time: '00:00',
+        displayTime: 'Due',
+        type: 'task'
+      }));
+    events.push(...dayTasks);
+
+    return events.sort((a, b) => a.time.localeCompare(b.time));
+  }
+
+  // Helper: get all events for tooltip (including hidden multi-day events)
+  function getAllEventsForTooltip(date) {
+    const events = [];
+    const dateStr = date.toISOString().split('T')[0];
+    const dayName = DAYS[(date.getDay() + 6) % 7];
+
+    // Regular schedule events
+    const scheduleEvents = eventsByDay(dayName)
+      .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
+      .map(e => ({
+        ...e,
+        eventType: 'schedule',
+        time: e.start,
+        displayTime: `${e.start}–${e.end}`
+      }));
+    events.push(...scheduleEvents);
+
+    // ALL Regular events - for tooltip, show all regardless of toggle
+    const regularEventsForDate = regularEvents
+      .filter(e => {
+        const startDate = new Date(e.startDate);
+        const endDate = e.endDate ? new Date(e.endDate) : startDate;
+        const currentDate = new Date(dateStr);
+        return currentDate >= startDate && currentDate <= endDate &&
+               (filterCourse === 'all' || String(e.courseIndex) === filterCourse);
+      })
+      .map(e => ({
+        ...e,
+        eventType: 'regular',
+        time: '00:00',
+        displayTime: 'Event',
+        type: 'regular'
+      }));
+    events.push(...regularEventsForDate);
 
     // Exams for this date
     const dayExams = exams
@@ -1124,6 +1654,22 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks }) {
     return getAllEventsForDate(date);
   }
 
+  // Helper: get regular events that span multiple days for the calendar view
+  const getRegularEventsForCalendar = () => {
+    return regularEvents
+      .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
+      .map(e => {
+        const startDate = new Date(e.startDate);
+        const endDate = new Date(e.endDate || e.startDate);
+        return {
+          ...e,
+          startDate,
+          endDate,
+          durationDays: Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1
+        };
+      });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1159,59 +1705,224 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks }) {
           ) : (
             <div className="flex items-center gap-2 ml-2">
               <Button variant="outline" onClick={() => shiftMonth(-1)} className="rounded-xl">Prev</Button>
-              <div className="font-serif text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r">
+              <div className="text-2xl md:text-3xl font-extrabold text-white dark:text-black">
                 {MONTHS[monthView.month]} {monthView.year}
               </div>
               <Button variant="outline" onClick={() => shiftMonth(1)} className="rounded-xl">Next</Button>
             </div>
           )}
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button className="rounded-xl"><Plus className="w-4 h-4 mr-2" />Add event</Button></DialogTrigger>
-          <DialogContent className="rounded-2xl max-w-md">
+        <div className="flex items-center gap-4">
+          {view === 'month' && (
+            <div className="flex items-center gap-2">
+              <Switch 
+                checked={showMultiDayEvents} 
+                onCheckedChange={setShowMultiDayEvents}
+                className="data-[state=checked]:bg-blue-600"
+              />
+              <Label className="text-sm text-white dark:text-black">Show multi-day events on cards</Label>
+            </div>
+          )}
+          <Dialog open={open} onOpenChange={handleDialogClose}>
+            <DialogTrigger asChild><Button className="rounded-xl"><Plus className="w-4 h-4 mr-2" />Add event</Button></DialogTrigger>
+            <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
             <DialogHeader>
-              <DialogTitle>Add to weekly schedule</DialogTitle>
-              <DialogDescription>Classes, labs, workshops, assistantships</DialogDescription>
+              <DialogTitle>{editingEvent ? 'Edit Event' : 'Add Event'}</DialogTitle>
+              <DialogDescription>
+                {editingEvent ? 'Modify the event details below' : 'Create a regular event, exam, or task'}
+              </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-3">
-              <Label>Course</Label>
-              <Select value={String(form.courseIndex)} onValueChange={(v) => setForm({ ...form, courseIndex: Number(v) })}>
-                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>{courses.map((c, i) => <SelectItem key={i} value={String(i)}>{c}</SelectItem>)}</SelectContent>
-              </Select>
-              <Label>Type</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="class">Class</SelectItem>
-                  <SelectItem value="lab">Lab</SelectItem>
-                  <SelectItem value="workshop">Workshop</SelectItem>
-                  <SelectItem value="assistantship">Assistantship</SelectItem>
-                </SelectContent>
-              </Select>
-              <Label>Title</Label>
-              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="rounded-xl" placeholder="e.g., Lecture, Lab 1" />
+            <div className="grid gap-4">
+              <div>
+                <Label>Event Type</Label>
+                <Select value={form.eventCategory} onValueChange={(v) => setForm({ ...form, eventCategory: v })}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="regular">Regular Event</SelectItem>
+                    <SelectItem value="exam">Exam</SelectItem>
+                    <SelectItem value="task">Task</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Course (Optional)</Label>
+                <Select value={String(form.courseIndex)} onValueChange={(v) => setForm({ ...form, courseIndex: Number(v) })}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select a course (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="-1">No Course</SelectItem>
+                    {courses.map((c, i) => <SelectItem key={i} value={String(i)}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Title</Label>
+                <Input 
+                  value={form.title} 
+                  onChange={(e) => setForm({ ...form, title: e.target.value })} 
+                  className="rounded-xl" 
+                  placeholder={
+                    form.eventCategory === "regular" ? "e.g., Math Olympics Week" :
+                    form.eventCategory === "exam" ? "e.g., Midterm Exam" :
+                    "e.g., Submit Assignment"
+                  } 
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Day</Label>
-                  <Select value={form.day} onValueChange={(v) => setForm({ ...form, day: v })}>
+                  <Label>
+                    {form.eventCategory === "regular" ? "Start Date" : 
+                     form.eventCategory === "exam" ? "Exam Date" : "Due Date"}
+                  </Label>
+                  <Input 
+                    type="date" 
+                    value={form.startDate} 
+                    onChange={(e) => setForm({ ...form, startDate: e.target.value })} 
+                    className="rounded-xl" 
+                  />
+                </div>
+                {form.eventCategory === "regular" && (
+                  <div>
+                    <Label>End Date (Optional)</Label>
+                    <Input 
+                      type="date" 
+                      value={form.endDate} 
+                      onChange={(e) => setForm({ ...form, endDate: e.target.value })} 
+                      className="rounded-xl"
+                      min={form.startDate}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {form.eventCategory === "regular" && (
+                <div>
+                  <Label>Location (Optional)</Label>
+                  <Input 
+                    value={form.location} 
+                    onChange={(e) => setForm({ ...form, location: e.target.value })} 
+                    className="rounded-xl" 
+                    placeholder="e.g., Main Auditorium" 
+                  />
+                </div>
+              )}
+
+              {form.eventCategory === "regular" && (
+                <div>
+                  <Label>Color</Label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={form.color}
+                      onChange={(e) => setForm({ ...form, color: e.target.value })}
+                      className="w-12 h-10 rounded-xl border border-gray-300 cursor-pointer"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        "#6366f1", "#8b5cf6", "#ec4899", "#ef4444", 
+                        "#f97316", "#f59e0b", "#84cc16", "#10b981", 
+                        "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6"
+                      ].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform"
+                          style={{ backgroundColor: color }}
+                          onClick={() => setForm({ ...form, color })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {form.eventCategory === "exam" && (
+                <div>
+                  <Label>Weight (%)</Label>
+                  <Input 
+                    type="number" 
+                    value={form.weight} 
+                    onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} 
+                    className="rounded-xl"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              )}
+
+              {form.eventCategory === "task" && (
+                <div>
+                  <Label>Priority</Label>
+                  <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
                     <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent>{DAYS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Location</Label>
-                  <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="rounded-xl" placeholder="Room 204" />
-                </div>
+              )}
+
+              <div>
+                <Label>Notes (Optional)</Label>
+                <Textarea 
+                  value={form.notes} 
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })} 
+                  className="rounded-xl" 
+                  placeholder={
+                    form.eventCategory === "regular" ? "Event details, agenda, etc." :
+                    form.eventCategory === "exam" ? "Chapters, topics, allowed materials..." :
+                    "Additional task details..."
+                  }
+                  rows={3}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Start</Label><Input type="time" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} className="rounded-xl" /></div>
-                <div><Label>End</Label><Input type="time" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} className="rounded-xl" /></div>
-              </div>
-              <Button onClick={() => { onAdd(form); setOpen(false); }} className="rounded-xl mt-2">Add</Button>
+
+              <Button onClick={handleAddEvent} className="rounded-xl mt-2">
+                {editingEvent ? 'Update' : 'Add'} {form.eventCategory === "regular" ? "Event" : 
+                     form.eventCategory === "exam" ? "Exam" : "Task"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Event Action Confirmation Dialog */}
+        <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ open, event: null })}>
+          <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
+            <DialogHeader>
+              <DialogTitle>Event Actions</DialogTitle>
+              <DialogDescription>
+                What would you like to do with "{confirmDialog.event?.title || confirmDialog.event?.type}"?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-3 mt-4">
+              <Button 
+                onClick={() => handleEditEvent(confirmDialog.event)}
+                className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Edit Event
+              </Button>
+              <Button 
+                onClick={() => handleDeleteEvent(confirmDialog.event)}
+                variant="destructive"
+                className="rounded-xl"
+              >
+                Delete Event
+              </Button>
+              <Button 
+                onClick={() => setConfirmDialog({ open: false, event: null })}
+                variant="outline"
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        </div>
       </div>
 
       {/* Views */}
@@ -1319,36 +2030,190 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks }) {
           ))}
         </div>
       ) : (
-        <div className="space-y-3">
-          <div className="grid grid-cols-7 gap-2 text-xs uppercase tracking-wide text-zinc-500">
-            {DAYS.map(d => <div key={d} className="text-center">{d}</div>)}
+        <div className="space-y-4">
+          <div className="grid grid-cols-7 gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            {DAYS.map(d => <div key={d} className="text-center py-2">{d}</div>)}
           </div>
-          <div className="grid grid-cols-7 gap-2">
+          
+          <div className="grid grid-cols-7 gap-3">
             {matrix.map((date, i) => {
               const inMonth = date.getMonth() === monthView.month;
               const today = new Date(); today.setHours(0, 0, 0, 0);
               const isToday = date.toDateString() === today.toDateString();
-              const dayName = DAYS[(date.getDay() + 6) % 7];
-              const dayEvents = eventsByDay(dayName).filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse);
+              const dayEvents = getAllEventsForDate(date);
+              const tooltipEvents = getAllEventsForTooltip(date); // For tooltip, show all events including hidden multi-day
+              
+              // Check if this day has any multi-day events for border color
+              const allRegularEventsOnDay = tooltipEvents.filter(e => e.eventType === 'regular');
+              const multiDayEventsOnDay = allRegularEventsOnDay.filter(e => e.isMultiDay !== false && (e.endDate && e.endDate !== e.startDate));
+              const hasMultiDayEvent = multiDayEventsOnDay.length > 0;
+              const multiDayEventColor = hasMultiDayEvent ? multiDayEventsOnDay[0].color || '#6366f1' : null;
+              
               return (
-                <div key={i} className={`rounded-xl p-2 bg-white/70 dark:bg-white/5 backdrop-blur border ${isToday ? 'border-fuchsia-500' : 'border-transparent'} ${inMonth ? '' : 'opacity-50'}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="font-serif font-bold">{date.getDate()}</div>
-                    {dayEvents.length > 0 && <Badge variant="secondary" className="rounded-full">{dayEvents.length}</Badge>}
+                <div 
+                  key={i} 
+                  className={`group relative rounded-xl p-3 min-h-[120px] bg-white/70 dark:bg-white/5 backdrop-blur border-2 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer ${
+                    isToday ? 'border-violet-500 bg-violet-50/50 dark:bg-violet-900/20' : 'border-transparent hover:border-violet-200 dark:hover:border-violet-700'
+                  } ${inMonth ? '' : 'opacity-50'} ${hasMultiDayEvent ? 'border-t-4' : ''}`}
+                  style={{
+                    borderTopColor: hasMultiDayEvent ? multiDayEventColor : undefined
+                  }}
+                  onClick={() => handleDayClick(date)}
+                  title="Click to create new event on this date"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={`text-lg font-bold ${isToday ? 'text-violet-700 dark:text-violet-300' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                      {date.getDate()}
+                    </div>
+                    {dayEvents.length > 0 && (
+                      <Badge variant="secondary" className="text-xs rounded-full">
+                        {dayEvents.length}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 3).map((e, idx) => (
-                      <div key={idx} className="text-[11px] truncate flex items-center gap-1">
-                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${typeColors[e.type]}`}></span>
-                        <span>{e.title || e.type}</span>
+                  
+                  <div className="space-y-1">
+                    {dayEvents.slice(0, 4).map((e, idx) => (
+                      <div 
+                        key={idx} 
+                        className="text-xs truncate flex items-center gap-1.5 p-1 rounded bg-white/50 dark:bg-white/10 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setConfirmDialog({ open: true, event: e });
+                        }}
+                        title="Click to edit or delete event"
+                      >
+                        {e.eventType === 'schedule' && (
+                          <span className={`flex-shrink-0 w-2 h-2 rounded-full ${typeColors[e.type]}`}></span>
+                        )}
+                        {e.eventType === 'regular' && (
+                          <span 
+                            className="flex-shrink-0 w-2 h-2 rounded-full" 
+                            style={{ backgroundColor: e.color || '#6366f1' }}
+                          ></span>
+                        )}
+                        {e.eventType === 'exam' && (
+                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-rose-500"></span>
+                        )}
+                        {e.eventType === 'task' && (
+                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-amber-500"></span>
+                        )}
+                        <span className="font-medium truncate">{e.title || e.type}</span>
                       </div>
                     ))}
-                    {dayEvents.length > 3 && <div className="text-[11px] text-zinc-500">+{dayEvents.length - 3} more…</div>}
+                    {dayEvents.length > 4 && (
+                      <div className="text-xs text-zinc-500 font-medium mt-1">
+                        +{dayEvents.length - 4} more...
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Detailed hover tooltip */}
+                  {tooltipEvents.length > 0 && (
+                    <div className="absolute left-1/2 bottom-full mb-2 w-80 bg-white dark:bg-zinc-800 shadow-xl rounded-xl p-4 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform -translate-x-1/2 border border-white/20 dark:border-white/10">
+                      <div className="mb-3">
+                        <div className="font-bold text-zinc-900 dark:text-zinc-100">
+                          {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                        </div>
+                        <div className="text-sm text-zinc-500 dark:text-zinc-400">
+                          {tooltipEvents.length} event{tooltipEvents.length !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {tooltipEvents.map((e, idx) => (
+                          <div key={idx} className="space-y-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/50">
+                            <div className="flex items-center gap-2">
+                              {e.eventType === 'schedule' && (
+                                <span className={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${typeColors[e.type]}`}></span>
+                              )}
+                              {e.eventType === 'regular' && (
+                                <span 
+                                  className="flex-shrink-0 w-2.5 h-2.5 rounded-full" 
+                                  style={{ backgroundColor: e.color || '#6366f1' }}
+                                ></span>
+                              )}
+                              {e.eventType === 'exam' && (
+                                <span className="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                              )}
+                              {e.eventType === 'task' && (
+                                <span className="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                              )}
+                              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                {e.title || e.type}
+                              </span>
+                            </div>
+                            
+                            <div className="text-sm text-zinc-600 dark:text-zinc-300 ml-4">
+                              <div className="font-medium">{courses[e.courseIndex]}</div>
+                              {e.displayTime && <div>{e.displayTime}</div>}
+                              {e.location && <div>📍 {e.location}</div>}
+                              {e.weight && <div>⚖️ Weight: {e.weight}%</div>}
+                              {e.priority && <div>🎯 Priority: {e.priority}</div>}
+                              {e.notes && <div className="italic mt-1">📝 {e.notes}</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Tooltip arrow */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+                        <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white dark:border-t-zinc-800"></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
+          
+          {/* Hidden Multi-Day Events Section */}
+          {!showMultiDayEvents && regularEvents.some(e => e.isMultiDay !== false && (e.endDate && e.endDate !== e.startDate)) && (
+            <div className="mt-6">
+              <h3 className="text-lg font-bold text-white dark:text-black mb-3">Hidden Multi-Day Events</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {regularEvents
+                  .filter(e => (filterCourse === 'all' || String(e.courseIndex) === filterCourse) && 
+                              (e.isMultiDay !== false && (e.endDate && e.endDate !== e.startDate)))
+                  .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+                  .map((event) => (
+                  <div
+                    key={event.id}
+                    className="bg-white/90 dark:bg-white/10 rounded-xl p-4 border-t-4 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                    style={{ borderTopColor: event.color || '#6366f1' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmDialog({ open: true, event: { ...event, eventType: 'regular' } });
+                    }}
+                    title="Click to edit or delete event"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                          {event.title}
+                        </div>
+                        <div className="text-sm text-zinc-600 dark:text-zinc-300 space-y-1">
+                          {event.courseIndex >= 0 && (
+                            <div>📚 {courses[event.courseIndex]}</div>
+                          )}
+                          <div>📅 {event.isMultiDay 
+                            ? `${new Date(event.startDate).toLocaleDateString()} - ${new Date(event.endDate).toLocaleDateString()}`
+                            : new Date(event.startDate).toLocaleDateString()
+                          }</div>
+                          {event.location && <div>📍 {event.location}</div>}
+                          {event.notes && <div className="italic">📝 {event.notes}</div>}
+                        </div>
+                      </div>
+                      <div 
+                        className="w-4 h-4 rounded-full flex-shrink-0 ml-2"
+                        style={{ backgroundColor: event.color || '#6366f1' }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
