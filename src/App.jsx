@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
-import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo, CalendarRange, ChevronDown } from "lucide-react";
+import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo, CalendarRange, ChevronDown, Edit, Save, ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import TimetableView from "@/components/TimetableView";
 
 // -----------------------------
@@ -171,6 +171,7 @@ export default function StudyPortal() {
       exams,
       tasks,
       regularEvents,
+      timetableEvents,
       schedule,
       sessionTasks,
       courses,
@@ -184,7 +185,9 @@ export default function StudyPortal() {
       soundtrackEmbed,
       accentColor,
       cardOpacity,
-      weatherApiKey
+      weatherApiKey,
+      weatherLocation,
+      degreePlan
     }),
     // Set state callback
     (newState) => {
@@ -208,6 +211,7 @@ export default function StudyPortal() {
       if (newState.cardOpacity !== undefined) setCardOpacity(newState.cardOpacity);
       if (newState.weatherApiKey !== undefined) setWeatherApiKey(newState.weatherApiKey);
       if (newState.weatherLocation !== undefined) setWeatherLocation(newState.weatherLocation);
+      if (newState.degreePlan !== undefined) setDegreePlan(newState.degreePlan);
     }
   ), []);
 
@@ -246,6 +250,28 @@ export default function StudyPortal() {
 
   // Study-tracker-only tasks
   const [sessionTasks, setSessionTasks] = useLocalState("sp:sessionTasks", []); // {id, title, done, createdAt}
+  
+  // Degree Plan state
+  const [degreePlan, setDegreePlan] = useLocalState("sp:degreePlan", {
+    semesters: [],
+    totalSemesters: 0,
+    completedCourses: [] // Array of course acronyms that are completed
+  });
+  const [degreePlanDialog, setDegreePlanDialog] = useState(false);
+  const [degreePlanStep, setDegreePlanStep] = useState('setup'); // 'setup', 'courses', 'view'
+  const [currentSemester, setCurrentSemester] = useState(1);
+  const [editingCourse, setEditingCourse] = useState(null); // Track course being edited
+  const [resetConfirmDialog, setResetConfirmDialog] = useState(false); // Confirm reset dialog
+  const [clearConfirmDialog, setClearConfirmDialog] = useState(false); // Confirm clear dialog
+  const [draggedCourse, setDraggedCourse] = useState(null); // Track dragged course
+  const [draggedFromSemester, setDraggedFromSemester] = useState(null); // Track source semester
+  const [semesterForm, setSemesterForm] = useState({
+    acronym: '',
+    name: '',
+    credits: '',
+    prerequisites: '',
+    corequisites: ''
+  });
 
   // Apply theme and accent color before paint + minimal reset for consistency
   useLayoutEffect(() => {
@@ -403,6 +429,16 @@ button, .button {
 .weather-icon-3d:hover {
   transform: perspective(150px) rotateX(25deg) rotateY(-10deg) scale(1.1);
 }
+
+/* Water wave animation for goals */
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
 `;
     document.head.appendChild(style);
   }, []);
@@ -436,6 +472,28 @@ button, .button {
   
   function startTimer() { setElapsed(0); startRef.current = Date.now(); setRunning(true); }
   function resetTimer() { setElapsed(0); startRef.current = Date.now(); }
+  
+  // Function to clear all data related to a specific course
+  function clearCourseData(courseIndex) {
+    // Clear tasks
+    setTasks(tasks.filter(task => task.courseIndex !== courseIndex));
+    
+    // Clear exams
+    setExams(exams.filter(exam => exam.courseIndex !== courseIndex));
+    
+    // Clear timetable events
+    setTimetableEvents(timetableEvents.filter(event => event.courseIndex !== courseIndex));
+    
+    // Clear regular events (multi-day events)
+    setRegularEvents(regularEvents.filter(event => event.courseIndex !== courseIndex));
+    
+    // Clear schedule entries
+    setSchedule(schedule.filter(item => item.courseIndex !== courseIndex));
+    
+    // Clear study sessions related to this course
+    setSessions(sessions.filter(session => session.courseIndex !== courseIndex));
+  }
+  
   function stopTimer() {
     if (!running) return;
     const endTs = Date.now();
@@ -465,6 +523,156 @@ button, .button {
   function addSchedule(item) { setSchedule(s => [...s, { ...item, id: uid() }]); }
   function removeSchedule(id) { setSchedule(s => s.filter(x => x.id !== id)); }
   function eventsForDay(day) { return schedule.filter(e => e.day === day).sort((a, b) => a.start.localeCompare(b.start)); }
+
+  // Degree Plan Management Functions
+  function setupDegreePlan(totalSemesters) {
+    const semesters = Array.from({ length: totalSemesters }, (_, i) => ({
+      id: i + 1,
+      number: i + 1,
+      courses: []
+    }));
+    
+    setDegreePlan(prev => ({
+      ...prev,
+      semesters,
+      totalSemesters
+    }));
+    
+    setDegreePlanStep('courses');
+    setCurrentSemester(1);
+  }
+
+  function addCourseToSemester(semesterNumber, courseData) {
+    setDegreePlan(prev => ({
+      ...prev,
+      semesters: prev.semesters.map(sem => 
+        sem.number === semesterNumber 
+          ? {
+              ...sem,
+              courses: [...sem.courses, {
+                id: uid(),
+                ...courseData,
+                completed: false
+              }]
+            }
+          : sem
+      )
+    }));
+  }
+
+  function toggleCourseCompletion(courseAcronym) {
+    setDegreePlan(prev => {
+      const isCompleted = prev.completedCourses.includes(courseAcronym);
+      return {
+        ...prev,
+        completedCourses: isCompleted 
+          ? prev.completedCourses.filter(c => c !== courseAcronym)
+          : [...prev.completedCourses, courseAcronym]
+      };
+    });
+  }
+
+  function checkPrerequisites(course, semester) {
+    if (!course.prerequisites) return true;
+    
+    const prereqAcronyms = course.prerequisites.split(',').map(p => p.trim());
+    const completedCourses = degreePlan.completedCourses;
+    
+    // Check if ALL prerequisites are completed
+    return prereqAcronyms.every(prereq => completedCourses.includes(prereq));
+  }
+
+  function getCourseColor(course, semester) {
+    const isCompleted = degreePlan.completedCourses.includes(course.acronym);
+    const prerequisitesMet = checkPrerequisites(course, semester);
+    
+    if (isCompleted) {
+      return '#10ac84'; // Green for completed
+    } else if (prerequisitesMet) {
+      return '#3b82f6'; // Blue for available
+    } else {
+      return 'transparent'; // No color for unavailable
+    }
+  }
+
+  function resetDegreePlan() {
+    setDegreePlan({
+      semesters: [],
+      totalSemesters: 0,
+      completedCourses: []
+    });
+    setDegreePlanStep('setup');
+    setCurrentSemester(1);
+    setEditingCourse(null);
+    setSemesterForm({
+      acronym: '',
+      name: '',
+      credits: '',
+      prerequisites: '',
+      corequisites: ''
+    });
+    setDegreePlanDialog(false);
+  }
+
+  // Drag and Drop Functions for Course Management
+  function handleDragStart(course, sourceSemester) {
+    setDraggedCourse(course);
+    setDraggedFromSemester(sourceSemester);
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+  }
+
+  function handleDrop(e, targetSemester) {
+    e.preventDefault();
+    
+    if (!draggedCourse || !draggedFromSemester) return;
+    
+    // Don't allow dropping on the same semester
+    if (draggedFromSemester === targetSemester) {
+      setDraggedCourse(null);
+      setDraggedFromSemester(null);
+      return;
+    }
+
+    // Check if target semester has space (max 8 courses)
+    const targetSemesterData = degreePlan.semesters.find(s => s.number === targetSemester);
+    if (targetSemesterData && targetSemesterData.courses.length >= 8) {
+      setDraggedCourse(null);
+      setDraggedFromSemester(null);
+      return;
+    }
+
+    // Move course from source to target semester
+    setDegreePlan(prev => {
+      const newPlan = { ...prev };
+      
+      // Remove course from source semester
+      const sourceSemesterIndex = newPlan.semesters.findIndex(s => s.number === draggedFromSemester);
+      if (sourceSemesterIndex >= 0) {
+        newPlan.semesters[sourceSemesterIndex] = {
+          ...newPlan.semesters[sourceSemesterIndex],
+          courses: newPlan.semesters[sourceSemesterIndex].courses.filter(c => c.id !== draggedCourse.id)
+        };
+      }
+
+      // Add course to target semester
+      const targetSemesterIndex = newPlan.semesters.findIndex(s => s.number === targetSemester);
+      if (targetSemesterIndex >= 0) {
+        newPlan.semesters[targetSemesterIndex] = {
+          ...newPlan.semesters[targetSemesterIndex],
+          courses: [...newPlan.semesters[targetSemesterIndex].courses, draggedCourse]
+        };
+      }
+
+      return newPlan;
+    });
+
+    // Clear drag state
+    setDraggedCourse(null);
+    setDraggedFromSemester(null);
+  }
 
   return (
     <div
@@ -509,6 +717,7 @@ button, .button {
               <TabsTrigger value="planner" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><CalendarDays className="w-4 h-4 mr-2" />Planner</TabsTrigger>
               <TabsTrigger value="timetable" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><CalendarRange className="w-4 h-4 mr-2" />Timetable</TabsTrigger>
               <TabsTrigger value="courses" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><NotebookPen className="w-4 h-4 mr-2" />Courses</TabsTrigger>
+              <TabsTrigger value="degree-plan" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><GraduationCap className="w-4 h-4 mr-2" />Degree Plan</TabsTrigger>
               <TabsTrigger value="study" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><Brain className="w-4 h-4 mr-2" />Study Tracker</TabsTrigger>
               <TabsTrigger value="wellness" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><HeartPulse className="w-4 h-4 mr-2" />Wellness</TabsTrigger>
               <TabsTrigger value="settings" className="rounded-xl px-4" style={{"--tab-accent": "hsl(var(--accent-h) var(--accent-s) var(--accent-l))", transform: "translateY(-2px)"}}><Settings className="w-4 h-4 mr-2" />Settings</TabsTrigger>
@@ -634,7 +843,629 @@ button, .button {
               exams={exams}
               addExam={(e) => setExams(s => [{ ...e, id: uid() }, ...s])}
               deleteExam={(id) => setExams(s => s.filter(e => e.id !== id))}
+              clearCourseData={clearCourseData}
             />
+          </TabsContent>
+
+          {/* Degree Plan */}
+          <TabsContent value="degree-plan" className="space-y-6">
+            <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5" />
+                      Degree Plan
+                    </CardTitle>
+                    <CardDescription>Plan your academic journey</CardDescription>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="rounded-xl"
+                    onClick={() => {
+                      // If degree plan already exists, go to view step, otherwise start setup
+                      if (degreePlan.totalSemesters > 0) {
+                        setDegreePlanStep('view');
+                      } else {
+                        setDegreePlanStep('setup');
+                      }
+                      setDegreePlanDialog(true);
+                    }}
+                    title="Customize Degree Plan"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {degreePlan.totalSemesters > 0 ? (
+                  <div className="space-y-6">
+                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        💡 <strong>Tip:</strong> Drag and drop courses between semesters to reorganize your degree plan. Click courses to mark as completed.
+                      </p>
+                    </div>
+                    <div className="grid gap-4 lg:gap-6" style={{ 
+                      gridTemplateColumns: degreePlan.totalSemesters <= 2 
+                        ? `repeat(${degreePlan.totalSemesters}, 1fr)` 
+                        : degreePlan.totalSemesters <= 4 
+                          ? `repeat(${Math.min(degreePlan.totalSemesters, 2)}, 1fr)` 
+                          : `repeat(3, 1fr)`
+                    }}>
+                      {degreePlan.semesters.map((semester) => (
+                        <div key={semester.id} className="space-y-3">
+                          <h3 className="font-semibold text-center text-sm px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                            {semester.number}° Semestre
+                          </h3>
+                          <div 
+                            className={`space-y-2 min-h-[200px] p-3 border-2 border-dashed rounded-lg transition-colors ${
+                              draggedCourse && draggedFromSemester !== semester.number
+                                ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-900/20 dark:border-blue-600'
+                                : 'border-zinc-200 dark:border-zinc-700'
+                            }`}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, semester.number)}
+                          >
+                            {semester.courses.map((course) => {
+                              const isCompleted = degreePlan.completedCourses.includes(course.acronym);
+                              const prerequisitesMet = checkPrerequisites(course, semester);
+                              const bgColor = getCourseColor(course, semester);
+                              
+                              return (
+                                <div
+                                  key={course.id}
+                                  draggable
+                                  onDragStart={() => handleDragStart(course, semester.number)}
+                                  className={`p-3 rounded-lg border-2 transition-all hover:shadow-md group ${
+                                    draggedCourse?.id === course.id ? 'opacity-50 cursor-grabbing' : 'cursor-grab'
+                                  } ${
+                                    isCompleted 
+                                      ? 'bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-600' 
+                                      : prerequisitesMet 
+                                        ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-600'
+                                        : 'bg-gray-50 border-dashed border-gray-300 dark:bg-gray-800/50 dark:border-gray-500 opacity-60'
+                                  }`}
+                                  style={bgColor !== 'transparent' ? { backgroundColor: bgColor + '15', borderColor: bgColor + '60' } : {}}
+                                  title={`${isCompleted ? 'Click to mark as incomplete' : prerequisitesMet ? 'Click to mark as completed' : 'Prerequisites not met'} • Drag to move between semesters`}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div 
+                                      className="flex-1"
+                                      onClick={() => prerequisitesMet && toggleCourseCompletion(course.acronym)}
+                                    >
+                                      <div className={`text-xs font-mono font-bold ${isCompleted ? 'line-through text-green-700 dark:text-green-400' : prerequisitesMet ? 'text-blue-700 dark:text-blue-400' : 'text-gray-500'}`}>
+                                        {course.acronym}
+                                      </div>
+                                      <div className={`text-xs mt-1 ${isCompleted ? 'line-through text-green-600 dark:text-green-300' : prerequisitesMet ? 'text-blue-600 dark:text-blue-300' : 'text-gray-400'}`}>
+                                        {course.name}
+                                      </div>
+                                      <div className="text-xs text-zinc-500 mt-1 flex items-center justify-between">
+                                        <span>{course.credits} créditos</span>
+                                        {isCompleted && <Check className="w-3 h-3 text-green-600" />}
+                                      </div>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Set up editing mode for this course
+                                        setEditingCourse(course);
+                                        setSemesterForm({
+                                          acronym: course.acronym,
+                                          name: course.name,
+                                          credits: course.credits,
+                                          prerequisites: course.prerequisites || '',
+                                          corequisites: course.corequisites || ''
+                                        });
+                                        setCurrentSemester(semester.number);
+                                        setDegreePlanStep('courses');
+                                        setDegreePlanDialog(true);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                                      title="Edit course"
+                                    >
+                                      <Edit className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {semester.courses.length === 0 && !draggedCourse && (
+                              <div className="text-center text-zinc-400 py-8 text-sm">
+                                No courses added
+                              </div>
+                            )}
+                            {draggedCourse && draggedFromSemester !== semester.number && (
+                              <div className="text-center text-blue-500 py-4 text-sm border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/20 dark:bg-blue-900/10">
+                                {semester.courses.length >= 8 
+                                  ? "Semester full (8/8 courses)" 
+                                  : `Drop course here (${semester.courses.length}/8 courses)`
+                                }
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-center border-t pt-4">
+                      <div className="text-sm text-zinc-500 mb-3">
+                        Progress: {degreePlan.completedCourses.length} / {degreePlan.semesters.flatMap(s => s.courses).length} courses completed
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setClearConfirmDialog(true)}
+                        className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Clear Degree Plan
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-zinc-500">
+                    Add your semesters and your courses here
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Degree Plan Dialog */}
+            <Dialog open={degreePlanDialog} onOpenChange={setDegreePlanDialog}>
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
+                    <GraduationCap className="w-5 h-5" />
+                    {degreePlanStep === 'setup' && 'Setup Degree Plan'}
+                    {degreePlanStep === 'courses' && `Semester ${currentSemester} Courses${editingCourse ? ' - Editing' : ''}`}
+                    {degreePlanStep === 'view' && 'Degree Plan Overview'}
+                  </DialogTitle>
+                  <DialogDescription className="text-zinc-600 dark:text-zinc-400">
+                    {degreePlanStep === 'setup' && 'Set up your degree plan by specifying the number of semesters.'}
+                    {degreePlanStep === 'courses' && (editingCourse 
+                      ? `Edit course "${editingCourse.acronym}" in semester ${currentSemester}.`
+                      : `Add courses for semester ${currentSemester}. Maximum 8 courses per semester.`
+                    )}
+                    {degreePlanStep === 'view' && 'Review and manage your complete degree plan.'}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {degreePlanStep === 'setup' && (
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <Label className="text-zinc-900 dark:text-zinc-100">Number of Semesters in Your Degree</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="12"
+                        placeholder="e.g., 8"
+                        value={degreePlan.totalSemesters || ''}
+                        onChange={(e) => setDegreePlan(prev => ({ ...prev, totalSemesters: parseInt(e.target.value) || 0 }))}
+                        className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                      />
+                    </div>
+                    <div className="flex justify-between">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setDegreePlanDialog(false)}
+                        className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={() => setupDegreePlan(degreePlan.totalSemesters)}
+                        disabled={!degreePlan.totalSemesters || degreePlan.totalSemesters < 1}
+                        className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                      >
+                        Next <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {degreePlanStep === 'courses' && (
+                  <div className="space-y-6">
+                    <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                      Semester {currentSemester} of {degreePlan.totalSemesters}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
+                          {editingCourse ? 'Edit Course' : 'Add Course'}
+                        </h3>
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-zinc-900 dark:text-zinc-100">Course Acronym</Label>
+                            <Input
+                              placeholder="e.g., MAT101"
+                              value={semesterForm.acronym}
+                              onChange={(e) => setSemesterForm(prev => ({ ...prev, acronym: e.target.value }))}
+                              className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-zinc-900 dark:text-zinc-100">Course Name</Label>
+                            <Input
+                              placeholder="e.g., Calculus I"
+                              value={semesterForm.name}
+                              onChange={(e) => setSemesterForm(prev => ({ ...prev, name: e.target.value }))}
+                              className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-zinc-900 dark:text-zinc-100">Credits</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="12"
+                              placeholder="e.g., 4"
+                              value={semesterForm.credits}
+                              onChange={(e) => setSemesterForm(prev => ({ ...prev, credits: e.target.value }))}
+                              className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-zinc-900 dark:text-zinc-100">Prerequisites (separate with commas)</Label>
+                            <Input
+                              placeholder="e.g., MAT100, PHY101"
+                              value={semesterForm.prerequisites}
+                              onChange={(e) => setSemesterForm(prev => ({ ...prev, prerequisites: e.target.value }))}
+                              className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-zinc-900 dark:text-zinc-100">Co-requisites (separate with commas)</Label>
+                            <Input
+                              placeholder="e.g., LAB101"
+                              value={semesterForm.corequisites}
+                              onChange={(e) => setSemesterForm(prev => ({ ...prev, corequisites: e.target.value }))}
+                              className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                            />
+                          </div>
+                          {editingCourse && (
+                            <Button 
+                              variant="outline"
+                              onClick={() => {
+                                setEditingCourse(null);
+                                setSemesterForm({
+                                  acronym: '',
+                                  name: '',
+                                  credits: '',
+                                  prerequisites: '',
+                                  corequisites: ''
+                                });
+                              }}
+                              className="rounded-xl w-full border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 mb-2"
+                            >
+                              Cancel Editing
+                            </Button>
+                          )}
+                          <Button 
+                            onClick={() => {
+                              if (semesterForm.acronym && semesterForm.name && semesterForm.credits) {
+                                const currentSemesterData = degreePlan.semesters.find(s => s.number === currentSemester);
+                                
+                                if (editingCourse) {
+                                  // Update existing course
+                                  setDegreePlan(prev => ({
+                                    ...prev,
+                                    semesters: prev.semesters.map(sem => 
+                                      sem.number === currentSemester 
+                                        ? {
+                                            ...sem,
+                                            courses: sem.courses.map(c => 
+                                              c.id === editingCourse.id 
+                                                ? { ...c, ...semesterForm }
+                                                : c
+                                            )
+                                          }
+                                        : sem
+                                    )
+                                  }));
+                                  setEditingCourse(null);
+                                } else {
+                                  // Add new course
+                                  if (currentSemesterData && currentSemesterData.courses.length < 7) {
+                                    addCourseToSemester(currentSemester, semesterForm);
+                                  }
+                                }
+                                
+                                setSemesterForm({
+                                  acronym: '',
+                                  name: '',
+                                  credits: '',
+                                  prerequisites: '',
+                                  corequisites: ''
+                                });
+                              }
+                            }}
+                            disabled={!semesterForm.acronym || !semesterForm.name || !semesterForm.credits || 
+                              (!editingCourse && degreePlan.semesters.find(s => s.number === currentSemester)?.courses.length >= 8)}
+                            className="rounded-xl w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            {editingCourse ? 'Update Course' : 'Add Course'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
+                          Semester {currentSemester} Courses ({degreePlan.semesters.find(s => s.number === currentSemester)?.courses.length || 0}/7)
+                        </h3>
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                          {degreePlan.semesters.find(s => s.number === currentSemester)?.courses.map((course) => (
+                            <div key={course.id} className="p-3 border rounded-lg bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="font-mono text-sm font-bold text-zinc-900 dark:text-zinc-100">{course.acronym}</div>
+                                  <div className="text-sm text-zinc-700 dark:text-zinc-300">{course.name}</div>
+                                  <div className="text-xs text-zinc-500 dark:text-zinc-400">{course.credits} credits</div>
+                                  {course.prerequisites && (
+                                    <div className="text-xs text-zinc-400 dark:text-zinc-500">Prereq: {course.prerequisites}</div>
+                                  )}
+                                  {course.corequisites && (
+                                    <div className="text-xs text-zinc-400 dark:text-zinc-500">Co-req: {course.corequisites}</div>
+                                  )}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setDegreePlan(prev => ({
+                                      ...prev,
+                                      semesters: prev.semesters.map(sem => 
+                                        sem.number === currentSemester 
+                                          ? { ...sem, courses: sem.courses.filter(c => c.id !== course.id) }
+                                          : sem
+                                      )
+                                    }));
+                                  }}
+                                  className="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          {(!degreePlan.semesters.find(s => s.number === currentSemester)?.courses.length) && (
+                            <div className="text-center text-zinc-500 dark:text-zinc-400 py-8">
+                              No courses added yet
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingCourse(null);
+                          setSemesterForm({
+                            acronym: '',
+                            name: '',
+                            credits: '',
+                            prerequisites: '',
+                            corequisites: ''
+                          });
+                          if (currentSemester > 1) {
+                            setCurrentSemester(currentSemester - 1);
+                          } else {
+                            setDegreePlanStep('setup');
+                          }
+                        }}
+                        className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        {currentSemester > 1 ? 'Previous Semester' : 'Back to Setup'}
+                      </Button>
+                      
+                      {currentSemester < degreePlan.totalSemesters ? (
+                        <Button 
+                          onClick={() => {
+                            setEditingCourse(null);
+                            setSemesterForm({
+                              acronym: '',
+                              name: '',
+                              credits: '',
+                              prerequisites: '',
+                              corequisites: ''
+                            });
+                            setCurrentSemester(currentSemester + 1);
+                          }}
+                          className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                        >
+                          Next Semester <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => {
+                            setEditingCourse(null);
+                            setSemesterForm({
+                              acronym: '',
+                              name: '',
+                              credits: '',
+                              prerequisites: '',
+                              corequisites: ''
+                            });
+                            setDegreePlanStep('view');
+                            setDegreePlanDialog(false);
+                          }}
+                          className="rounded-xl bg-green-600 hover:bg-green-700 text-white dark:bg-green-500 dark:hover:bg-green-600"
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          Finish Setup
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {degreePlanStep === 'view' && (
+                  <div className="space-y-6">
+                    <div className="grid gap-4 lg:gap-6" style={{ 
+                      gridTemplateColumns: degreePlan.totalSemesters <= 2 
+                        ? `repeat(${degreePlan.totalSemesters}, 1fr)` 
+                        : degreePlan.totalSemesters <= 4 
+                          ? `repeat(2, 1fr)` 
+                          : `repeat(3, 1fr)`
+                    }}>
+                      {degreePlan.semesters.map((semester) => (
+                        <div key={semester.id} className="space-y-3 border rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Semester {semester.number}</h3>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingCourse(null);
+                                setSemesterForm({
+                                  acronym: '',
+                                  name: '',
+                                  credits: '',
+                                  prerequisites: '',
+                                  corequisites: ''
+                                });
+                                setCurrentSemester(semester.number);
+                                setDegreePlanStep('courses');
+                              }}
+                              className="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                            {semester.courses.map((course) => {
+                              const isCompleted = degreePlan.completedCourses.includes(course.acronym);
+                              const prerequisitesMet = checkPrerequisites(course, semester);
+                              
+                              return (
+                                <div
+                                  key={course.id}
+                                  className={`p-2 text-xs border rounded cursor-pointer transition-all hover:shadow-sm ${
+                                    isCompleted 
+                                      ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700' 
+                                      : prerequisitesMet 
+                                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700'
+                                        : 'border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-zinc-800'
+                                  }`}
+                                  onClick={() => toggleCourseCompletion(course.acronym)}
+                                >
+                                  <div className={`font-mono font-bold flex items-center justify-between ${isCompleted ? 'line-through text-green-700 dark:text-green-400' : prerequisitesMet ? 'text-blue-700 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                    {course.acronym}
+                                    {isCompleted && <Check className="w-3 h-3" />}
+                                  </div>
+                                  <div className={`${isCompleted ? 'line-through text-green-600 dark:text-green-300' : prerequisitesMet ? 'text-blue-600 dark:text-blue-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                                    {course.name}
+                                  </div>
+                                  <div className="text-zinc-500 dark:text-zinc-400 mt-1">
+                                    {course.credits} credits
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {semester.courses.length === 0 && (
+                              <div className="text-center text-zinc-400 dark:text-zinc-500 py-4">
+                                No courses
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="border-t pt-4 border-zinc-200 dark:border-zinc-800">
+                      <div className="text-center text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                        Overall Progress: {degreePlan.completedCourses.length} / {degreePlan.semesters.flatMap(s => s.courses).length} courses completed
+                        ({Math.round((degreePlan.completedCourses.length / Math.max(1, degreePlan.semesters.flatMap(s => s.courses).length)) * 100)}%)
+                      </div>
+                      <div className="flex justify-between">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setResetConfirmDialog(true)}
+                          className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        >
+                          Reset Plan
+                        </Button>
+                        <Button 
+                          onClick={() => setDegreePlanDialog(false)}
+                          className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {/* Reset Confirmation Dialog */}
+            <Dialog open={resetConfirmDialog} onOpenChange={setResetConfirmDialog}>
+              <DialogContent className="max-w-md bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
+                <DialogHeader>
+                  <DialogTitle className="text-zinc-900 dark:text-zinc-100">Reset Degree Plan</DialogTitle>
+                  <DialogDescription className="text-zinc-600 dark:text-zinc-400">
+                    Are you sure you want to reset your entire degree plan? This will delete all semesters, courses, and progress. This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-between pt-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setResetConfirmDialog(false)}
+                    className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={() => {
+                      resetDegreePlan();
+                      setResetConfirmDialog(false);
+                    }}
+                    className="rounded-xl"
+                  >
+                    Reset Everything
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Clear Confirmation Dialog */}
+            <Dialog open={clearConfirmDialog} onOpenChange={setClearConfirmDialog}>
+              <DialogContent className="max-w-md bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
+                <DialogHeader>
+                  <DialogTitle className="text-zinc-900 dark:text-zinc-100">Clear Degree Plan</DialogTitle>
+                  <DialogDescription className="text-zinc-600 dark:text-zinc-400">
+                    Are you sure you want to clear your entire degree plan? This will delete all semesters, courses, and progress. This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-between pt-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setClearConfirmDialog(false)}
+                    className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={() => {
+                      resetDegreePlan();
+                      setClearConfirmDialog(false);
+                    }}
+                    className="rounded-xl"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear Everything
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Study Tracker */}
@@ -1268,6 +2099,9 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularE
   const [confirmDialog, setConfirmDialog] = useState({ open: false, event: null });
   const [showMultiDayEvents, setShowMultiDayEvents] = useState(false); // Toggle for showing multi-day events on day cards
   const [editingEvent, setEditingEvent] = useState(null); // Track the event being edited
+  const [weeklyGoals, setWeeklyGoals] = useState([]); // Weekly goals state
+  const [goalForm, setGoalForm] = useState({ title: "" }); // Form for adding goals
+  const [showConfetti, setShowConfetti] = useState(false); // Confetti state
   const [form, setForm] = useState({ 
     eventCategory: "regular", // regular, exam, task
     courseIndex: -1, // -1 means no course selected 
@@ -1309,6 +2143,57 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularE
     d.setHours(0, 0, 0, 0); 
     return d; 
   }, [weekOffset]);
+
+  // Calculate goal progress
+  const completedGoals = weeklyGoals.filter(goal => goal.completed).length;
+  const totalGoals = weeklyGoals.length;
+  const fillPercentage = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
+
+  // Generate random color for each completed task
+  const generateRandomColor = () => {
+    const colors = [
+      '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', 
+      '#dda0dd', '#98d8c8', '#f7dc6f', '#bb8fce', '#85c1e9',
+      '#f8c471', '#82e0aa', '#f1948a', '#85c1e9', '#d7bde2',
+      '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43',
+      '#10ac84', '#ee5a24', '#0984e3', '#6c5ce7', '#a29bfe'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  // Build gradient from completed tasks colors
+  const buildGradientFromCompletedTasks = () => {
+    const completedTasks = weeklyGoals.filter(goal => goal.completed);
+    
+    if (completedTasks.length === 0) {
+      return 'transparent';
+    }
+    
+    if (completedTasks.length === 1) {
+      // Single color for first completed task
+      return completedTasks[0].color || generateRandomColor();
+    }
+    
+    // Multiple colors - create gradient
+    const colors = completedTasks.map(task => task.color || generateRandomColor());
+    const step = 100 / (colors.length - 1);
+    const gradientStops = colors.map((color, index) => 
+      `${color} ${Math.round(index * step)}%`
+    ).join(', ');
+    
+    return `linear-gradient(180deg, ${gradientStops})`;
+  };
+
+  const currentGradient = buildGradientFromCompletedTasks();
+  
+  // Get border color from first completed task
+  const getBorderColor = () => {
+    const firstCompletedTask = weeklyGoals.find(goal => goal.completed);
+    if (firstCompletedTask && firstCompletedTask.color) {
+      return firstCompletedTask.color + '40'; // Add transparency
+    }
+    return '#e5e7eb'; // Default gray border
+  };
   
   function dayNumOfWeek(i) { 
     const d = new Date(startOfWeek); 
@@ -1320,6 +2205,54 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularE
   function formatDate(date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${months[date.getMonth()]} ${date.getDate()}`;
+  }
+
+  // Weekly Goals Management
+  function addGoal() {
+    if (!goalForm.title.trim()) return;
+    const newGoal = {
+      id: Math.random().toString(36).slice(2, 10),
+      title: goalForm.title.trim(),
+      completed: false,
+      createdAt: Date.now()
+    };
+    setWeeklyGoals(prev => [...prev, newGoal]);
+    setGoalForm({ title: "" });
+  }
+
+  function toggleGoal(id) {
+    setWeeklyGoals(prev => {
+      const updated = prev.map(goal => {
+        if (goal.id === id) {
+          const isBeingCompleted = !goal.completed;
+          return { 
+            ...goal, 
+            completed: isBeingCompleted,
+            // Assign random color when completing (but keep existing color if uncompleting)
+            color: isBeingCompleted ? (goal.color || generateRandomColor()) : goal.color
+          };
+        }
+        return goal;
+      });
+      
+      // Check if all goals are completed
+      const allCompleted = updated.every(goal => goal.completed);
+      if (allCompleted && updated.length > 0) {
+        // Trigger confetti
+        setShowConfetti(true);
+        // Reset all goals after a short delay
+        setTimeout(() => {
+          setWeeklyGoals([]);
+          setShowConfetti(false);
+        }, 3000);
+      }
+      
+      return updated;
+    });
+  }
+
+  function deleteGoal(id) {
+    setWeeklyGoals(prev => prev.filter(goal => goal.id !== id));
   }
 
   // Handler for adding new events
@@ -1927,8 +2860,9 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularE
 
       {/* Views */}
       {view === 'week' ? (
-        <div className="grid grid-cols-7 gap-4 relative">
-          {DAYS.map((d, idx) => (
+        <div className="space-y-6">
+          <div className="grid grid-cols-7 gap-4 relative">
+            {DAYS.map((d, idx) => (
             <Card key={d} className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur relative">
               <CardHeader className="relative z-[1]">
                 <CardTitle className="flex items-center gap-2">
@@ -2028,6 +2962,138 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularE
               </CardContent>
             </Card>
           ))}
+        </div>
+        
+        {/* Present Goals Card - Only visible in weekly view */}
+        <Card className="mt-6 rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Present Goals
+            </CardTitle>
+            <CardDescription>Weekly focus goals - stay on track!</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Left Column - Goals List */}
+              <div className="space-y-4">
+                {/* Add Goal Form */}
+                <div className="space-y-2">
+                  <Label htmlFor="goalTitle">Add New Goal</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="goalTitle"
+                      value={goalForm.title}
+                      onChange={(e) => setGoalForm({ title: e.target.value })}
+                      placeholder="Enter your weekly goal..."
+                      className="rounded-xl"
+                      onKeyPress={(e) => e.key === 'Enter' && addGoal()}
+                    />
+                    <Button onClick={addGoal} size="sm" className="rounded-xl px-4">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Goals List */}
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {weeklyGoals.length === 0 ? (
+                    <div className="text-sm text-zinc-500 text-center py-8">
+                      No goals set for this week.<br/>
+                      Add one to get started! 🎯
+                    </div>
+                  ) : (
+                    weeklyGoals.map((goal) => (
+                      <div 
+                        key={goal.id}
+                        className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
+                          goal.completed 
+                            ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
+                            : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700'
+                        }`}
+                      >
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleGoal(goal.id)}
+                          className={`w-6 h-6 rounded-full border-2 p-0 ${
+                            goal.completed
+                              ? 'text-white hover:opacity-80'
+                              : 'border-zinc-300 dark:border-zinc-600 hover:border-green-400'
+                          }`}
+                          style={goal.completed ? {
+                            backgroundColor: goal.color,
+                            borderColor: goal.color
+                          } : {}}
+                        >
+                          {goal.completed && <span className="text-xs">✓</span>}
+                        </Button>
+                        
+                        <span className={`flex-1 ${goal.completed ? 'line-through text-zinc-500' : ''}`}>
+                          {goal.title}
+                        </span>
+                        
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteGoal(goal.id)}
+                          className="w-6 h-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column - Water Fill Circle */}
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="relative w-32 h-32">
+                  {/* Circle Container */}
+                  <div 
+                    className="w-full h-full rounded-full border-4 bg-white dark:bg-zinc-900 overflow-hidden relative transition-all duration-1000"
+                    style={{ borderColor: getBorderColor() }}
+                  >
+                    {/* Water Fill Animation */}
+                    <div 
+                      className="absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-out"
+                      style={{ 
+                        height: `${fillPercentage}%`,
+                        background: currentGradient
+                      }}
+                    >
+                      {/* Water Wave Effect */}
+                      <div 
+                        className="absolute top-0 left-0 right-0 h-2 opacity-70"
+                        style={{
+                          background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.3) 0%, transparent 70%)',
+                          animation: fillPercentage > 0 ? 'wave 2s ease-in-out infinite' : 'none'
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Progress Text */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-zinc-700 dark:text-zinc-300">
+                          {completedGoals}/{totalGoals}
+                        </div>
+                        <div className="text-xs text-zinc-500">goals</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {fillPercentage === 100 && totalGoals > 0 && (
+                  <div className="text-sm font-medium text-green-600 dark:text-green-400 animate-pulse">
+                    🎉 All goals completed!
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         </div>
       ) : (
         <div className="space-y-4">
@@ -2216,6 +3282,19 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularE
           )}
         </div>
       )}
+        
+      {/* Confetti Animation */}
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-50">
+          <ReactConfetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={200}
+            gravity={0.3}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -2223,11 +3302,12 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularE
 // -----------------------------
 // Course Manager
 // -----------------------------
-function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleTask, deleteTask, exams, addExam, deleteExam }) {
+function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleTask, deleteTask, exams, addExam, deleteExam, clearCourseData }) {
   const [taskForm, setTaskForm] = useState({ title: "", due: "", priority: "normal" });
   const [examForm, setExamForm] = useState({ title: "", date: "", weight: 20, notes: "" });
   const [editingExam, setEditingExam] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const courseTasks = tasks.filter(t => t.courseIndex === selected);
   const courseExams = exams.filter(e => e.courseIndex === selected);
   const progress = useMemo(() => { 
@@ -2258,6 +3338,15 @@ function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleT
             <SelectContent>{courses.map((c, i) => <SelectItem key={i} value={String(i)}>{c}</SelectItem>)}</SelectContent>
           </Select>
           <Badge variant="secondary" className="rounded-full"><GraduationCap className="w-3 h-3 mr-1" />{courses[selected]}</Badge>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="ml-auto text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-red-900 dark:hover:bg-red-950"
+            onClick={() => setClearConfirmOpen(true)}
+          >
+            <Trash2 className="w-4 h-4 mr-1" />
+            Clear Course Data
+          </Button>
         </div>
         <div className="text-sm text-zinc-600 dark:text-zinc-400">Task progress</div>
       </div>
@@ -2465,6 +3554,31 @@ function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleT
           </CardContent>
         </Card>
       </div>
+      
+      {/* Confirmation Dialog for clearing course data */}
+      <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+        <DialogContent className="rounded-xl bg-white dark:bg-zinc-950 border-none shadow-xl backdrop-blur">
+          <DialogHeader>
+            <DialogTitle>Clear {courses[selected]} Data</DialogTitle>
+            <DialogDescription>
+              This will permanently delete all tasks, exams, and timetable events associated with the {courses[selected]} course. 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setClearConfirmOpen(false)}>Cancel</Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                clearCourseData(selected);
+                setClearConfirmOpen(false);
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-1" /> Clear Data
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -2621,32 +3735,679 @@ function Wellness() {
   const [water, setWater] = useLocalState("sp:water", 0);
   const [gratitude, setGratitude] = useLocalState("sp:gratitude", "");
   const [breathing, setBreathing] = useState(false);
+  
+  // Mood Bubble States
+  const [moodPercentages, setMoodPercentages] = useLocalState("sp:moodPercentages", {});
+  const [hasInteracted, setHasInteracted] = useLocalState("sp:moodInteracted", false);
+  const [monthlyMoods, setMonthlyMoods] = useLocalState("sp:monthlyMoods", {}); // Store moods by date
+  const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(null); // Track which mood is showing emoji picker
+  const [showWords, setShowWords] = useLocalState("sp:showMoodWords", true); // Toggle for showing words
+  const [moodEmojis, setMoodEmojis] = useLocalState("sp:moodEmojis", {
+    angry: { emoji: "😠", color: "#ff6b6b", word: "Angry" },
+    sad: { emoji: "😔", color: "#ff9f43", word: "Sad" },
+    neutral: { emoji: "😐", color: "#f7dc6f", word: "Neutral" },
+    happy: { emoji: "🙂", color: "#45b7d1", word: "Happy" },
+    excited: { emoji: "😁", color: "#10ac84", word: "Excited" }
+  });
+
+  // Emoji library for picker
+  const emojiLibrary = [
+    "😠", "😡", "🤬", "😤", "💢", // Angry
+    "😔", "😢", "😭", "😿", "💔", // Sad
+    "😐", "😑", "😶", "🙄", "😒", // Neutral
+    "🙂", "😊", "😌", "😇", "☺️", // Happy
+    "😁", "😄", "🤩", "😍", "🥰", // Excited/Love
+    "😴", "😪", "🥱", "😵", "🤕", // Tired/Sick
+    "🤔", "🧐", "😯", "😲", "😳", // Thinking/Surprised
+    "😎", "🤓", "🥳", "🤗", "😏", // Cool/Confident
+    "😰", "😨", "😱", "🫨", "😬", // Anxious/Scared
+    "🤐", "😷", "🤢", "🤮", "🥴"  // Other
+  ];
+
+  // Color palette for picker
+  const colorPalette = [
+    "#ff6b6b", "#ff9f43", "#f7dc6f", "#45b7d1", "#10ac84",
+    "#ff4757", "#ff6348", "#ffa502", "#f1c40f", "#2ed573",
+    "#3742fa", "#2f3542", "#a4b0be", "#ff3838", "#ff9500",
+    "#ffdd59", "#0abde3", "#00d2d3", "#ff006e", "#8e44ad",
+    "#e74c3c", "#f39c12", "#f1c40f", "#27ae60", "#3498db",
+    "#9b59b6", "#34495e", "#95a5a6", "#e67e22", "#16a085"
+  ];
+
+  // Get today's date string
+  const getTodayDateString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // Calendar state for mood tracking
+  const [calendarView, setCalendarView] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+
+  // Generate calendar matrix for mood calendar
+  const generateCalendarMatrix = (year, month) => {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Monday = 0
+    
+    const matrix = [];
+    let currentDate = 1;
+    
+    // Generate 6 weeks (42 days)
+    for (let week = 0; week < 6; week++) {
+      const weekDays = [];
+      for (let day = 0; day < 7; day++) {
+        const dayIndex = week * 7 + day;
+        if (dayIndex < startingDayOfWeek || currentDate > daysInMonth) {
+          weekDays.push(null);
+        } else {
+          weekDays.push(currentDate);
+          currentDate++;
+        }
+      }
+      matrix.push(weekDays);
+    }
+    
+    return matrix;
+  };
+
+  // Navigate calendar months
+  const navigateMonth = (delta) => {
+    setCalendarView(prev => {
+      const newDate = new Date(prev.year, prev.month + delta, 1);
+      return { year: newDate.getFullYear(), month: newDate.getMonth() };
+    });
+  };
+
+  // Get mood for specific date
+  const getMoodForDate = (dateString) => {
+    return monthlyMoods[dateString] || null;
+  };
+
+  // Calculate total mood percentage
+  const totalMoodPercentage = Object.values(moodPercentages).reduce((sum, percentage) => sum + percentage, 0);
+
+  // Generate random color for mood bubble (reusing from Present Goals)
+  const generateRandomColor = () => {
+    const colors = [
+      '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', 
+      '#dda0dd', '#98d8c8', '#f7dc6f', '#bb8fce', '#85c1e9',
+      '#f8c471', '#82e0aa', '#f1948a', '#85c1e9', '#d7bde2',
+      '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43',
+      '#10ac84', '#ee5a24', '#0984e3', '#6c5ce7', '#a29bfe'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  // Build progressive gradient from mood percentages (like Present Goals)
+  const buildMoodGradient = () => {
+    const activeMoods = Object.entries(moodPercentages)
+      .filter(([_, percentage]) => percentage > 0)
+      .sort(([a], [b]) => a.localeCompare(b)); // Sort for consistency
+    
+    if (activeMoods.length === 0) {
+      return 'transparent';
+    }
+    
+    if (activeMoods.length === 1) {
+      // Single color for first mood
+      return moodEmojis[activeMoods[0][0]].color;
+    }
+    
+    // Multiple moods - create progressive gradient like Present Goals
+    const colors = activeMoods.map(([moodKey, _]) => moodEmojis[moodKey].color);
+    const step = 100 / (colors.length - 1);
+    const gradientStops = colors.map((color, index) => 
+      `${color} ${Math.round(index * step)}%`
+    ).join(', ');
+    
+    return `linear-gradient(180deg, ${gradientStops})`;
+  };
+
+  // Get border color from first active mood
+  const getBorderColor = () => {
+    const firstActiveMood = Object.entries(moodPercentages)
+      .filter(([_, percentage]) => percentage > 0)
+      .sort(([a], [b]) => a.localeCompare(b))[0];
+    
+    if (firstActiveMood) {
+      return moodEmojis[firstActiveMood[0]].color + '40'; // Add transparency
+    }
+    return '#e5e7eb'; // Default gray border
+  };
+
+  // Handle mood selection (add 20% each click)
+  const handleMoodSelect = (moodKey) => {
+    setHasInteracted(true);
+    setMoodPercentages(prev => {
+      const currentPercentage = prev[moodKey] || 0;
+      const newPercentage = Math.min(100, currentPercentage + 20);
+      
+      // Calculate if total would exceed 100%
+      const otherMoodsTotal = Object.entries(prev)
+        .filter(([key]) => key !== moodKey)
+        .reduce((sum, [_, percentage]) => sum + percentage, 0);
+      
+      if (otherMoodsTotal + newPercentage > 100) {
+        // Cap at remaining percentage
+        return {
+          ...prev,
+          [moodKey]: Math.max(0, 100 - otherMoodsTotal)
+        };
+      }
+      
+      const updatedMoods = {
+        ...prev,
+        [moodKey]: newPercentage
+      };
+
+      // Save to monthly moods immediately
+      const today = getTodayDateString();
+      const totalPerc = Object.values(updatedMoods).reduce((sum, percentage) => sum + percentage, 0);
+      
+      if (totalPerc > 0) {
+        const activeMoods = Object.entries(updatedMoods)
+          .filter(([_, percentage]) => percentage > 0)
+          .sort(([a], [b]) => a.localeCompare(b));
+        
+        let gradient = 'transparent';
+        if (activeMoods.length === 1) {
+          gradient = moodEmojis[activeMoods[0][0]].color;
+        } else if (activeMoods.length > 1) {
+          const colors = activeMoods.map(([moodKey, _]) => moodEmojis[moodKey].color);
+          const step = 100 / (colors.length - 1);
+          const gradientStops = colors.map((color, index) => 
+            `${color} ${Math.round(index * step)}%`
+          ).join(', ');
+          gradient = `linear-gradient(180deg, ${gradientStops})`;
+        }
+
+        setMonthlyMoods(prevMonthly => ({
+          ...prevMonthly,
+          [today]: {
+            percentages: { ...updatedMoods },
+            gradient: gradient,
+            totalPercentage: totalPerc,
+            savedAt: Date.now()
+          }
+        }));
+      }
+      
+      return updatedMoods;
+    });
+  };
+
+  // Reset mood
+  const resetMood = () => {
+    setMoodPercentages({});
+    setHasInteracted(false);
+  };
+
+  // Handle emoji/color customization
+  const updateMoodCustomization = (moodKey, field, value) => {
+    setMoodEmojis(prev => ({
+      ...prev,
+      [moodKey]: { 
+        ...prev[moodKey], 
+        [field]: value 
+      }
+    }));
+  };
+
+  // Handle emoji selection from library
+  const selectEmoji = (moodKey, emoji) => {
+    updateMoodCustomization(moodKey, 'emoji', emoji);
+    setShowEmojiPicker(null);
+  };
+
   return (
-    <div className="grid md:grid-cols-3 gap-6">
+    <div className="space-y-6">
+      {/* First row - original cards */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+          <CardHeader><CardTitle>Hydration</CardTitle><CardDescription>Goal: 8 cups / day</CardDescription></CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <Button className="rounded-xl" onClick={() => setWater(w => Math.max(0, w - 1))}>-1</Button>
+              <div className="text-4xl font-extrabold tabular-nums">{water}</div>
+              <Button className="rounded-xl" onClick={() => setWater(w => Math.min(12, w + 1))}>+1</Button>
+            </div>
+            <Progress value={(water / 8) * 100} className="mt-4 h-3 rounded-xl" />
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+          <CardHeader><CardTitle>Gratitude note</CardTitle><CardDescription>Protect your vibe 💖</CardDescription></CardHeader>
+          <CardContent><Textarea value={gratitude} onChange={(e) => setGratitude(e.target.value)} className="rounded-xl" placeholder="One thing you're grateful for today…" /></CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+          <CardHeader><CardTitle>Breathing box</CardTitle><CardDescription>4 in · 4 hold · 4 out · 4 hold</CardDescription></CardHeader>
+          <CardContent>
+            <motion.div animate={{ scale: breathing ? [1, 1.2, 1.2, 1, 1] : 1 }} transition={{ duration: 16, repeat: breathing ? Infinity : 0 }} className="w-28 h-28 mx-auto rounded-2xl bg-gradient-to-br from-fuchsia-500 to-sky-500" />
+            <Button onClick={() => setBreathing(b => !b)} className="rounded-xl w-full mt-4">{breathing ? 'Stop' : 'Start'}</Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Mood Bubble Card */}
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-        <CardHeader><CardTitle>Hydration</CardTitle><CardDescription>Goal: 8 cups / day</CardDescription></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span>💭</span>
+            Mood Bubble
+          </CardTitle>
+          <CardDescription>Track and visualize your daily emotions</CardDescription>
+        </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3">
-            <Button className="rounded-xl" onClick={() => setWater(w => Math.max(0, w - 1))}>-1</Button>
-            <div className="text-4xl font-extrabold tabular-nums">{water}</div>
-            <Button className="rounded-xl" onClick={() => setWater(w => Math.min(12, w + 1))}>+1</Button>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Left Column - Today's Mood Bubble */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-4">
+                  Today's Mood Bubble
+                </h3>
+                
+                {/* Mood Circle with Percentage Display */}
+                <div className="flex items-center justify-center gap-6">
+                  {/* Percentage Display */}
+                  {hasInteracted && (
+                    <div className="space-y-2 min-w-[100px]">
+                      <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">
+                        Breakdown
+                      </div>
+                      {Object.entries(moodPercentages)
+                        .filter(([_, percentage]) => percentage > 0)
+                        .map(([moodKey, percentage]) => (
+                          <div key={moodKey} className="flex items-center gap-2">
+                            <span className="text-sm">{moodEmojis[moodKey].emoji}</span>
+                            <div className="flex-1">
+                              <div className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                                {percentage}%
+                              </div>
+                              <div 
+                                className="h-1.5 rounded-full"
+                                style={{ backgroundColor: moodEmojis[moodKey].color + '30' }}
+                              >
+                                <div 
+                                  className="h-full rounded-full transition-all duration-500"
+                                  style={{ 
+                                    width: `${(percentage / 100) * 100}%`,
+                                    backgroundColor: moodEmojis[moodKey].color
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      {totalMoodPercentage > 0 && (
+                        <div className="border-t pt-2 mt-2">
+                          <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                            Total: {totalMoodPercentage}%
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Mood Circle */}
+                  <div className="relative w-24 h-24">
+                    <div 
+                      className="w-full h-full rounded-full border-4 bg-white dark:bg-zinc-900 overflow-hidden relative transition-all duration-1000"
+                      style={{ 
+                        borderColor: getBorderColor()
+                      }}
+                    >
+                      {/* Mood Fill with Gradient */}
+                      {totalMoodPercentage > 0 && (
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-out"
+                          style={{ 
+                            height: `${Math.min(totalMoodPercentage, 100)}%`,
+                            background: buildMoodGradient()
+                          }}
+                        >
+                          {/* Water Wave Effect */}
+                          <div 
+                            className="absolute top-0 left-0 right-0 h-1.5 opacity-70"
+                            style={{
+                              background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.3) 0%, transparent 70%)',
+                              animation: 'wave 2s ease-in-out infinite'
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Mood Status in Center */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          {totalMoodPercentage > 0 ? (
+                            <div>
+                              <div className="text-lg font-bold text-zinc-700 dark:text-zinc-300">
+                                {totalMoodPercentage}%
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="text-lg text-zinc-400">?</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mood Selection Circles */}
+                <div className="flex justify-center gap-3 mt-4">
+                  {Object.entries(moodEmojis).map(([key, mood]) => {
+                    const currentPercentage = moodPercentages[key] || 0;
+                    const isActive = currentPercentage > 0;
+                    
+                    return (
+                      <div key={key} className="flex flex-col items-center gap-1">
+                        <button
+                          onClick={() => handleMoodSelect(key)}
+                          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm transition-all duration-200 hover:scale-110 relative ${
+                            isActive 
+                              ? 'border-white shadow-lg scale-110' 
+                              : 'border-white/50 hover:border-white'
+                          }`}
+                          style={{ 
+                            backgroundColor: mood.color,
+                            boxShadow: isActive ? `0 0 15px ${mood.color}40` : 'none'
+                          }}
+                          title={`${mood.emoji} ${showWords && mood.word ? mood.word : key} - Click to add 20%`}
+                        >
+                          {mood.emoji}
+                          {/* Click indicator */}
+                          {isActive && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center text-xs font-bold text-zinc-800">
+                              {Math.floor(currentPercentage / 20)}
+                            </div>
+                          )}
+                        </button>
+                        
+                        {/* Word label */}
+                        {showWords && mood.word && (
+                          <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400 min-h-[14px] text-center">
+                            {mood.word}
+                          </div>
+                        )}
+                        
+                        {/* Percentage label */}
+                        {hasInteracted && (
+                          <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400 min-h-[14px]">
+                            {currentPercentage > 0 ? `${currentPercentage}%` : ''}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-center gap-2 mt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={resetMood}
+                    className="rounded-xl"
+                    disabled={totalMoodPercentage === 0}
+                  >
+                    Reset
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setCustomizeDialogOpen(true)}
+                    className="rounded-xl"
+                  >
+                    Customize
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Monthly Calendar */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200">
+                  This Month
+                </h3>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigateMonth(-1)}
+                    className="rounded-xl p-2"
+                  >
+                    ‹
+                  </Button>
+                  <div className="text-sm font-medium min-w-[120px] text-center">
+                    {new Date(calendarView.year, calendarView.month).toLocaleDateString('en-US', { 
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigateMonth(1)}
+                    className="rounded-xl p-2"
+                  >
+                    ›
+                  </Button>
+                </div>
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="space-y-2">
+                {/* Day Headers */}
+                <div className="grid grid-cols-7 gap-1 text-xs font-medium text-zinc-500 text-center">
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                    <div key={i} className="py-1">{day}</div>
+                  ))}
+                </div>
+                
+                {/* Calendar Days */}
+                <div className="grid grid-cols-7 gap-1">
+                  {generateCalendarMatrix(calendarView.year, calendarView.month).flat().map((day, index) => {
+                    if (!day) {
+                      return <div key={index} className="h-8" />;
+                    }
+                    
+                    const dateString = `${calendarView.year}-${String(calendarView.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayMood = getMoodForDate(dateString);
+                    const isToday = dateString === getTodayDateString();
+                    
+                    return (
+                      <div
+                        key={index}
+                        className={`group relative h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-200 hover:scale-110 ${
+                          isToday 
+                            ? 'ring-2 ring-blue-500 ring-offset-1' 
+                            : ''
+                        }`}
+                        style={{
+                          background: dayMood 
+                            ? dayMood.gradient 
+                            : isToday 
+                              ? '#f1f5f9' 
+                              : 'transparent',
+                          color: dayMood ? '#fff' : isToday ? '#334155' : '#64748b'
+                        }}
+                      >
+                        {day}
+                        
+                        {/* Hover Tooltip for Mood Breakdown */}
+                        {dayMood && (
+                          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div className="bg-white dark:bg-zinc-800 shadow-xl rounded-xl p-3 border border-white/20 dark:border-white/10 min-w-[200px]">
+                              {/* Date Header */}
+                              <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2 text-center">
+                                {new Date(`${calendarView.year}-${String(calendarView.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`).toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}
+                              </div>
+                              
+                              {/* Total Percentage */}
+                              <div className="text-center mb-3">
+                                <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                                  {dayMood.totalPercentage}%
+                                </div>
+                                <div className="text-xs text-zinc-500">total mood</div>
+                              </div>
+                              
+                              {/* Mood Breakdown */}
+                              <div className="space-y-2">
+                                {Object.entries(dayMood.percentages || {})
+                                  .filter(([_, percentage]) => percentage > 0)
+                                  .sort(([a], [b]) => a.localeCompare(b))
+                                  .map(([moodKey, percentage]) => {
+                                    const moodConfig = moodEmojis[moodKey] || { emoji: '😐', word: moodKey, color: '#6b7280' };
+                                    return (
+                                      <div key={moodKey} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm">{moodConfig.emoji}</span>
+                                          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 capitalize">
+                                            {moodConfig.word}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <div 
+                                            className="w-3 h-3 rounded-full" 
+                                            style={{ backgroundColor: moodConfig.color }}
+                                          />
+                                          <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                                            {percentage}%
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                              
+                              {/* Tooltip Arrow */}
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+                                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white dark:border-t-zinc-800"></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Streak Indicator */}
+                <div className="flex items-center justify-center gap-2 mt-4 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                  <span className="text-orange-600 text-sm">🔥</span>
+                  <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                    {Object.keys(monthlyMoods).length} day{Object.keys(monthlyMoods).length !== 1 ? 's' : ''} tracked
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <Progress value={(water / 8) * 100} className="mt-4 h-3 rounded-xl" />
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-        <CardHeader><CardTitle>Gratitude note</CardTitle><CardDescription>Protect your vibe 💖</CardDescription></CardHeader>
-        <CardContent><Textarea value={gratitude} onChange={(e) => setGratitude(e.target.value)} className="rounded-xl" placeholder="One thing you're grateful for today…" /></CardContent>
-      </Card>
+      {/* Customize Dialog */}
+      <Dialog open={customizeDialogOpen} onOpenChange={setCustomizeDialogOpen}>
+        <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
+          <DialogHeader>
+            <DialogTitle>Customize Mood Emojis</DialogTitle>
+            <DialogDescription>
+              Personalize your mood emojis and colors
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Word Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800">
+              <Label className="font-medium">Show mood words</Label>
+              <Switch 
+                checked={showWords}
+                onCheckedChange={setShowWords}
+                className="data-[state=checked]:bg-blue-600"
+              />
+            </div>
 
-      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-        <CardHeader><CardTitle>Breathing box</CardTitle><CardDescription>4 in · 4 hold · 4 out · 4 hold</CardDescription></CardHeader>
-        <CardContent>
-          <motion.div animate={{ scale: breathing ? [1, 1.2, 1.2, 1, 1] : 1 }} transition={{ duration: 16, repeat: breathing ? Infinity : 0 }} className="w-28 h-28 mx-auto rounded-2xl bg-gradient-to-br from-fuchsia-500 to-sky-500" />
-          <Button onClick={() => setBreathing(b => !b)} className="rounded-xl w-full mt-4">{breathing ? 'Stop' : 'Start'}</Button>
-        </CardContent>
-      </Card>
+            {Object.entries(moodEmojis).map(([key, mood]) => (
+              <div key={key} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800">
+                <div className="flex items-center gap-2 flex-1">
+                  {/* Emoji Input with Picker */}
+                  <div className="relative">
+                    <Input 
+                      value={mood.emoji}
+                      onChange={(e) => updateMoodCustomization(key, 'emoji', e.target.value)}
+                      className="w-16 text-center rounded-xl cursor-pointer"
+                      placeholder="😊"
+                      onClick={() => setShowEmojiPicker(showEmojiPicker === key ? null : key)}
+                      readOnly
+                    />
+                    {/* Emoji Picker Dropdown */}
+                    {showEmojiPicker === key && (
+                      <div className="absolute top-full left-0 mt-1 p-3 rounded-xl bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 shadow-lg z-50 w-64 max-h-48 overflow-y-auto">
+                        <div className="grid grid-cols-8 gap-2">
+                          {emojiLibrary.map((emoji, index) => (
+                            <button
+                              key={index}
+                              onClick={() => selectEmoji(key, emoji)}
+                              className="w-8 h-8 rounded hover:bg-zinc-100 dark:hover:bg-zinc-600 flex items-center justify-center text-lg transition-colors"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Color Picker */}
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={mood.color}
+                      onChange={(e) => updateMoodCustomization(key, 'color', e.target.value)}
+                      className="w-8 h-8 rounded-full border-2 border-white cursor-pointer"
+                      title="Click to change color"
+                    />
+                  </div>
+
+                  {/* Word Input (only when words are enabled) */}
+                  {showWords && (
+                    <Input 
+                      value={mood.word || ''}
+                      onChange={(e) => updateMoodCustomization(key, 'word', e.target.value)}
+                      className="flex-1 rounded-xl text-sm"
+                      placeholder={key}
+                    />
+                  )}
+                </div>
+                <Label className="capitalize text-sm text-zinc-600 dark:text-zinc-400 min-w-[60px]">
+                  {showWords && mood.word ? mood.word : key}
+                </Label>
+              </div>
+            ))}
+            <Button 
+              onClick={() => {
+                setCustomizeDialogOpen(false);
+                setShowEmojiPicker(null);
+                setShowColorPicker(null);
+              }}
+              className="w-full rounded-xl mt-4"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
