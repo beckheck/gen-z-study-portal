@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
-import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo, CalendarRange, ChevronDown, Edit, Save, ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { CalendarDays, Clock, Flame, ListTodo, NotebookPen, Plus, Settings, Sparkles, Brain, HeartHandshake, HeartPulse, Target, TimerReset, Download, Trash2, Coffee, Music2, GraduationCap, Undo, CalendarRange, ChevronDown, Edit, Save, ArrowLeft, ArrowRight, Check, X, AlertTriangle } from "lucide-react";
 import TimetableView from "@/components/TimetableView";
 
 // -----------------------------
@@ -674,6 +674,41 @@ button, .button {
     setDraggedFromSemester(null);
   }
 
+  // Credit calculation functions
+  const getTotalCredits = () => {
+    return degreePlan.semesters.reduce((total, semester) => {
+      return total + semester.courses.reduce((semesterTotal, course) => {
+        return semesterTotal + parseInt(course.credits || 0);
+      }, 0);
+    }, 0);
+  };
+
+  const getCompletedCredits = () => {
+    return degreePlan.semesters.reduce((total, semester) => {
+      return total + semester.courses.reduce((semesterTotal, course) => {
+        const isCompleted = degreePlan.completedCourses.includes(course.acronym);
+        return semesterTotal + (isCompleted ? parseInt(course.credits || 0) : 0);
+      }, 0);
+    }, 0);
+  };
+
+  // Add new semester function
+  const addNewSemester = () => {
+    const newSemesterNumber = degreePlan.semesters.length + 1;
+    setDegreePlan(prev => ({
+      ...prev,
+      totalSemesters: prev.totalSemesters + 1,
+      semesters: [
+        ...prev.semesters,
+        {
+          id: Math.random().toString(36).slice(2, 10),
+          number: newSemesterNumber,
+          courses: []
+        }
+      ]
+    }));
+  };
+
   return (
     <div
       className="min-h-screen relative text-zinc-900 dark:text-zinc-100"
@@ -859,15 +894,26 @@ button, .button {
                     </CardTitle>
                     <CardDescription>Plan your academic journey</CardDescription>
                   </div>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="rounded-xl"
-                    onClick={() => {
-                      // If degree plan already exists, go to view step, otherwise start setup
-                      if (degreePlan.totalSemesters > 0) {
-                        setDegreePlanStep('view');
-                      } else {
+                  <div className="flex items-center gap-3">
+                    {degreePlan.totalSemesters > 0 && (
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          {getCompletedCredits()}/{getTotalCredits()} credits done ✨
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          {getTotalCredits() > 0 ? Math.round((getCompletedCredits() / getTotalCredits()) * 100) : 0}% complete
+                        </div>
+                      </div>
+                    )}
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="rounded-xl"
+                      onClick={() => {
+                        // If degree plan already exists, go to view step, otherwise start setup
+                        if (degreePlan.totalSemesters > 0) {
+                          setDegreePlanStep('view');
+                        } else {
                         setDegreePlanStep('setup');
                       }
                       setDegreePlanDialog(true);
@@ -876,6 +922,7 @@ button, .button {
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1391,12 +1438,22 @@ button, .button {
                         >
                           Reset Plan
                         </Button>
-                        <Button 
-                          onClick={() => setDegreePlanDialog(false)}
-                          className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
-                        >
-                          Close
-                        </Button>
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline" 
+                            onClick={addNewSemester}
+                            className="rounded-xl border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add New Semester
+                          </Button>
+                          <Button 
+                            onClick={() => setDegreePlanDialog(false)}
+                            className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                          >
+                            Close
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2045,7 +2102,19 @@ function Upcoming({ exams, tasks, courses, expanded }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="rounded-full">{e.date}</Badge>
-                  <Badge variant="outline" className="rounded-full text-xs font-mono">{calculateDDay(e.date)}</Badge>
+                  <Badge 
+                    variant="outline" 
+                    className={`rounded-full text-xs font-mono flex items-center gap-1 ${
+                      calculateDDay(e.date)?.startsWith('D+') 
+                        ? 'border-yellow-400 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-900/20' 
+                        : ''
+                    }`}
+                  >
+                    {calculateDDay(e.date)?.startsWith('D+') && (
+                      <AlertTriangle className="w-3 h-3" />
+                    )}
+                    {calculateDDay(e.date)}
+                  </Badge>
                 </div>
               </motion.div>
             ))}
@@ -2080,7 +2149,19 @@ function Upcoming({ exams, tasks, courses, expanded }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="rounded-full">due {t.due}</Badge>
-                  <Badge variant="outline" className="rounded-full text-xs font-mono">{calculateDDay(t.due)}</Badge>
+                  <Badge 
+                    variant="outline" 
+                    className={`rounded-full text-xs font-mono flex items-center gap-1 ${
+                      calculateDDay(t.due)?.startsWith('D+') 
+                        ? 'border-yellow-400 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-900/20' 
+                        : ''
+                    }`}
+                  >
+                    {calculateDDay(t.due)?.startsWith('D+') && (
+                      <AlertTriangle className="w-3 h-3" />
+                    )}
+                    {calculateDDay(t.due)}
+                  </Badge>
                 </div>
               </motion.div>
             ))}
