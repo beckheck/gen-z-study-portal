@@ -6,6 +6,13 @@ export class DataTransfer {
 
   exportData() {
     const state = this.getState();
+    console.log("State for export:", {
+      hasTimetableEvents: !!state.timetableEvents,
+      timetableEventsCount: state.timetableEvents ? state.timetableEvents.length : 0,
+      hasRegularEvents: !!state.regularEvents,
+      regularEventsCount: state.regularEvents ? state.regularEvents.length : 0
+    });
+    
     const data = {
       // Core data
       sessions: state.sessions.map(s => ({
@@ -44,6 +51,26 @@ export class DataTransfer {
         end: e.end,
         location: e.location
       })),
+      timetableEvents: state.timetableEvents.map(e => ({
+        type: "timetableEvent",
+        course: state.courses[e.courseIndex],
+        eventType: e.eventType,
+        classroom: e.classroom,
+        teacher: e.teacher,
+        day: e.day,
+        startTime: e.startTime,
+        endTime: e.endTime,
+        block: e.block,
+        hexColor: e.hexColor
+      })),
+      regularEvents: state.regularEvents.map(e => ({
+        type: "regularEvent",
+        course: state.courses[e.courseIndex],
+        title: e.title,
+        startDate: e.startDate,
+        endDate: e.endDate,
+        hexColor: e.hexColor
+      })),
       sessionTasks: state.sessionTasks,
       
       // Settings
@@ -58,7 +85,11 @@ export class DataTransfer {
           end: state.gradientEnd
         },
         bgImage: state.bgImage,
-        soundtrackEmbed: state.soundtrackEmbed
+        soundtrackEmbed: state.soundtrackEmbed,
+        accentColor: state.accentColor,
+        cardOpacity: state.cardOpacity,
+        weatherApiKey: state.weatherApiKey,
+        weatherLocation: state.weatherLocation
       }
     };
 
@@ -81,6 +112,23 @@ export class DataTransfer {
       const text = await file.text();
       const data = JSON.parse(text);
       
+      console.log("Import data structure:", {
+        hasSettings: !!data.settings,
+        hasSessions: !!data.sessions,
+        hasExams: !!data.exams,
+        hasTasks: !!data.tasks,
+        hasSchedule: !!data.schedule,
+        hasTimetableEvents: !!data.timetableEvents,
+        hasRegularEvents: !!data.regularEvents,
+        hasSessionTasks: !!data.sessionTasks
+      });
+      
+      // Check for missing props in the timetable events
+      if (data.timetableEvents && data.timetableEvents.length > 0) {
+        const sampleEvent = data.timetableEvents[0];
+        console.log("Sample timetable event:", sampleEvent);
+      }
+      
       // Helper to find course index
       const findCourseIndex = (courseName, courses) => {
         const index = courses.indexOf(courseName);
@@ -98,7 +146,11 @@ export class DataTransfer {
           gradientMiddle: data.settings.gradient.middle,
           gradientEnd: data.settings.gradient.end,
           bgImage: data.settings.bgImage,
-          soundtrackEmbed: data.settings.soundtrackEmbed
+          soundtrackEmbed: data.settings.soundtrackEmbed,
+          accentColor: data.settings.accentColor,
+          cardOpacity: data.settings.cardOpacity,
+          weatherApiKey: data.settings.weatherApiKey,
+          weatherLocation: data.settings.weatherLocation
         });
       }
 
@@ -153,6 +205,40 @@ export class DataTransfer {
           location: e.location
         }));
         this.setState({ schedule });
+      }
+
+      if (data.timetableEvents) {
+        const timetableEvents = data.timetableEvents.map(e => ({
+          id: crypto.randomUUID(),
+          courseIndex: findCourseIndex(e.course, data.settings.courses),
+          eventType: e.eventType,
+          classroom: e.classroom,
+          teacher: e.teacher,
+          day: e.day,
+          startTime: e.startTime,
+          endTime: e.endTime,
+          block: e.block,
+          hexColor: e.hexColor
+        }));
+        console.log("Importing timetable events:", timetableEvents);
+        this.setState({ timetableEvents });
+      } else {
+        console.log("No timetable events found in import data");
+      }
+
+      if (data.regularEvents) {
+        const regularEvents = data.regularEvents.map(e => ({
+          id: crypto.randomUUID(),
+          courseIndex: findCourseIndex(e.course, data.settings.courses),
+          title: e.title,
+          startDate: e.startDate,
+          endDate: e.endDate,
+          hexColor: e.hexColor
+        }));
+        console.log("Importing regular events:", regularEvents);
+        this.setState({ regularEvents });
+      } else {
+        console.log("No regular events found in import data");
       }
 
       if (data.sessionTasks) {
