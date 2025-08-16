@@ -35,6 +35,7 @@ const DEFAULT_COURSES = [
   "Economics",
   "Programming",
   "Elective",
+  "Optional Course",
 ];
 
 const useLocalState = (key, initial) => {
@@ -162,6 +163,18 @@ export default function StudyPortal() {
   const [sessions, setSessions] = useLocalState("sp:sessions", []);
   const [selectedCourse, setSelectedCourse] = useLocalState("sp:selectedCourse", 0);
   const [nextUpExpanded, setNextUpExpanded] = useState(0); // Number of additional "pages" shown (0 = collapsed)
+
+  // Ensure courses array always has 7 courses (migration for existing users)
+  useEffect(() => {
+    if (courses.length < DEFAULT_COURSES.length) {
+      const updatedCourses = [...courses];
+      // Add missing courses from DEFAULT_COURSES
+      for (let i = courses.length; i < DEFAULT_COURSES.length; i++) {
+        updatedCourses.push(DEFAULT_COURSES[i]);
+      }
+      setCourses(updatedCourses);
+    }
+  }, [courses, setCourses]);
 
   // Data transfer instance for import/export
   const dataTransfer = useMemo(() => new DataTransfer(
@@ -4502,7 +4515,7 @@ function SettingsTab({ courses, renameCourse, soundtrackEmbed, setSoundtrackEmbe
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
           <CardTitle>Courses</CardTitle>
-          <CardDescription>Rename your 6 courses</CardDescription>
+          <CardDescription>Rename your 7 courses</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           {courses.map((c, i) => (
