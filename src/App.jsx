@@ -159,6 +159,7 @@ export default function StudyPortal() {
   const [timetableEvents, setTimetableEvents] = useLocalState("sp:timetableEvents", []); // {id, courseIndex, eventType, classroom, teacher, day, startTime, endTime, block}
   const [tasks, setTasks] = useLocalState("sp:tasks", []);           // per-course to-dos
   const [exams, setExams] = useLocalState("sp:exams", []);
+  const [examGrades, setExamGrades] = useLocalState("sp:examGrades", []); // {examId, grade}
   const [regularEvents, setRegularEvents] = useLocalState("sp:regularEvents", []); // multi-day events
   const [sessions, setSessions] = useLocalState("sp:sessions", []);
   const [selectedCourse, setSelectedCourse] = useLocalState("sp:selectedCourse", 0);
@@ -182,6 +183,7 @@ export default function StudyPortal() {
     () => ({
       sessions,
       exams,
+      examGrades,
       tasks,
       regularEvents,
       timetableEvents,
@@ -200,12 +202,21 @@ export default function StudyPortal() {
       cardOpacity,
       weatherApiKey,
       weatherLocation,
-      degreePlan
+      degreePlan,
+      // Wellness data
+      water,
+      gratitude,
+      moodPercentages,
+      hasInteracted,
+      monthlyMoods,
+      showWords,
+      moodEmojis
     }),
     // Set state callback
     (newState) => {
       if (newState.sessions) setSessions(newState.sessions);
       if (newState.exams) setExams(newState.exams);
+      if (newState.examGrades) setExamGrades(newState.examGrades);
       if (newState.tasks) setTasks(newState.tasks);
       if (newState.regularEvents) setRegularEvents(newState.regularEvents);
       if (newState.schedule) setSchedule(newState.schedule);
@@ -225,6 +236,14 @@ export default function StudyPortal() {
       if (newState.weatherApiKey !== undefined) setWeatherApiKey(newState.weatherApiKey);
       if (newState.weatherLocation !== undefined) setWeatherLocation(newState.weatherLocation);
       if (newState.degreePlan !== undefined) setDegreePlan(newState.degreePlan);
+      // Wellness state setters
+      if (newState.water !== undefined) setWater(newState.water);
+      if (newState.gratitude !== undefined) setGratitude(newState.gratitude);
+      if (newState.moodPercentages !== undefined) setMoodPercentages(newState.moodPercentages);
+      if (newState.hasInteracted !== undefined) setHasInteracted(newState.hasInteracted);
+      if (newState.monthlyMoods !== undefined) setMonthlyMoods(newState.monthlyMoods);
+      if (newState.showWords !== undefined) setShowWords(newState.showWords);
+      if (newState.moodEmojis !== undefined) setMoodEmojis(newState.moodEmojis);
     }
   ), []);
 
@@ -263,6 +282,21 @@ export default function StudyPortal() {
 
   // Study-tracker-only tasks
   const [sessionTasks, setSessionTasks] = useLocalState("sp:sessionTasks", []); // {id, title, done, createdAt}
+  
+  // Wellness/Mood Bubble state
+  const [water, setWater] = useLocalState("sp:water", 0);
+  const [gratitude, setGratitude] = useLocalState("sp:gratitude", "");
+  const [moodPercentages, setMoodPercentages] = useLocalState("sp:moodPercentages", {});
+  const [hasInteracted, setHasInteracted] = useLocalState("sp:moodInteracted", false);
+  const [monthlyMoods, setMonthlyMoods] = useLocalState("sp:monthlyMoods", {}); // Store moods by date
+  const [showWords, setShowWords] = useLocalState("sp:showMoodWords", true); // Toggle for showing words
+  const [moodEmojis, setMoodEmojis] = useLocalState("sp:moodEmojis", {
+    angry: { emoji: "😠", color: "#ff6b6b", word: "Angry" },
+    sad: { emoji: "😔", color: "#ff9f43", word: "Sad" },
+    neutral: { emoji: "😐", color: "#f7dc6f", word: "Neutral" },
+    happy: { emoji: "🙂", color: "#45b7d1", word: "Happy" },
+    excited: { emoji: "😁", color: "#10ac84", word: "Excited" }
+  });
   
   // Degree Plan state
   const [degreePlan, setDegreePlan] = useLocalState("sp:degreePlan", {
@@ -492,7 +526,11 @@ button, .button {
     setTasks(tasks.filter(task => task.courseIndex !== courseIndex));
     
     // Clear exams
+    const examIdsToDelete = exams.filter(exam => exam.courseIndex === courseIndex).map(exam => exam.id);
     setExams(exams.filter(exam => exam.courseIndex !== courseIndex));
+    
+    // Clear exam grades for this course's exams
+    setExamGrades(examGrades.filter(grade => !examIdsToDelete.includes(grade.examId)));
     
     // Clear timetable events
     setTimetableEvents(timetableEvents.filter(event => event.courseIndex !== courseIndex));
@@ -796,6 +834,13 @@ button, .button {
                   courses={courses} 
                   expanded={nextUpExpanded}
                   onExpandChange={setNextUpExpanded}
+                  onTaskComplete={(taskId) => setTasks(s => s.map(t => t.id === taskId ? { ...t, done: true } : t))}
+                  onTaskClick={(task) => {
+                    setSelectedCourse(task.courseIndex);
+                  }}
+                  onExamClick={(exam) => {
+                    setSelectedCourse(exam.courseIndex);
+                  }}
                 />
               </CardContent>
               {(() => {
@@ -863,7 +908,10 @@ button, .button {
               addExam={(e) => setExams(s => [{ ...e, id: uid() }, ...s])}
               addTask={(t) => setTasks(s => [{ ...t, id: uid(), done: false }, ...s])}
               addRegularEvent={(e) => setRegularEvents(s => [{ ...e, id: uid() }, ...s])}
-              deleteExam={(id) => setExams(s => s.filter(e => e.id !== id))}
+              deleteExam={(id) => {
+                setExams(s => s.filter(e => e.id !== id));
+                setExamGrades(g => g.filter(grade => grade.examId !== id));
+              }}
               deleteTask={(id) => setTasks(s => s.filter(t => t.id !== id))}
               deleteRegularEvent={(id) => setRegularEvents(s => s.filter(e => e.id !== id))}
             />
@@ -890,7 +938,12 @@ button, .button {
               deleteTask={(id) => setTasks(s => s.filter(t => t.id !== id))}
               exams={exams}
               addExam={(e) => setExams(s => [{ ...e, id: uid() }, ...s])}
-              deleteExam={(id) => setExams(s => s.filter(e => e.id !== id))}
+              deleteExam={(id) => {
+                setExams(s => s.filter(e => e.id !== id));
+                setExamGrades(g => g.filter(grade => grade.examId !== id));
+              }}
+              examGrades={examGrades}
+              setExamGrades={setExamGrades}
               clearCourseData={clearCourseData}
             />
           </TabsContent>
@@ -1566,7 +1619,22 @@ button, .button {
 
           {/* Wellness */}
           <TabsContent value="wellness">
-            <Wellness />
+            <Wellness 
+              water={water}
+              setWater={setWater}
+              gratitude={gratitude}
+              setGratitude={setGratitude}
+              moodPercentages={moodPercentages}
+              setMoodPercentages={setMoodPercentages}
+              hasInteracted={hasInteracted}
+              setHasInteracted={setHasInteracted}
+              monthlyMoods={monthlyMoods}
+              setMonthlyMoods={setMonthlyMoods}
+              showWords={showWords}
+              setShowWords={setShowWords}
+              moodEmojis={moodEmojis}
+              setMoodEmojis={setMoodEmojis}
+            />
           </TabsContent>
 
           {/* Settings */}
@@ -2043,7 +2111,7 @@ function SoundtrackCard({ embed, position = 'dashboard', onPositionChange }) {
   );
 }
 
-function Upcoming({ exams, tasks, courses, expanded }) {
+function Upcoming({ exams, tasks, courses, expanded, onTaskComplete, onExamClick, onTaskClick }) {
   const upcomingExams = useMemo(() => {
     const sorted = exams.slice().sort((a, b) => a.date.localeCompare(b.date));
     const baseCount = 3;
@@ -2084,6 +2152,156 @@ function Upcoming({ exams, tasks, courses, expanded }) {
     if (diffDays > 0) return `D-${diffDays}`;
     return `D+${Math.abs(diffDays)}`;
   };
+  
+  // Swipeable Task Component - Memoized for stability
+  const SwipeableTask = React.memo(({ task, index, courses, calculateDDay, onComplete, onClick }) => {
+    const [dragX, setDragX] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const dragRef = useRef(0);
+    const isDraggingRef = useRef(false);
+    
+    const COMPLETE_THRESHOLD = 80; // Drag 80px right to complete
+    
+    const handleStart = (e) => {
+      e.preventDefault();
+      const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+      setStartX(clientX);
+      setIsDragging(true);
+      isDraggingRef.current = true;
+      dragRef.current = 0;
+    };
+    
+    const handleMove = (e) => {
+      if (!isDraggingRef.current) return;
+      
+      e.preventDefault();
+      const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+      const deltaX = clientX - startX;
+      
+      // Only allow right swipe (positive values) with smoother updates
+      if (deltaX >= 0) {
+        const newDragX = Math.min(deltaX, 120); // Max drag distance
+        dragRef.current = newDragX;
+        
+        // Use requestAnimationFrame for smoother updates
+        requestAnimationFrame(() => {
+          setDragX(newDragX);
+        });
+      }
+    };
+    
+    const handleEnd = (e) => {
+      if (!isDraggingRef.current) return;
+      
+      e?.preventDefault();
+      isDraggingRef.current = false;
+      
+      const finalDragX = dragRef.current;
+      
+      if (finalDragX >= COMPLETE_THRESHOLD) {
+        // Complete the task
+        onComplete(task.id);
+      }
+      
+      // Reset position smoothly
+      setIsDragging(false);
+      setDragX(0);
+      dragRef.current = 0;
+    };
+    
+    // Cleanup on unmount
+    useEffect(() => {
+      return () => {
+        isDraggingRef.current = false;
+        dragRef.current = 0;
+      };
+    }, []);
+    
+    const completionProgress = Math.abs(dragX) / Math.abs(COMPLETE_THRESHOLD);
+    const shouldComplete = dragX >= COMPLETE_THRESHOLD;
+    
+    return (
+      <motion.div 
+        key={task.id}
+        initial={{ opacity: 0, height: 0, y: -10 }}
+        animate={{ opacity: 1, height: "auto", y: 0 }}
+        exit={{ opacity: 0, height: 0, y: -10 }}
+        transition={{ 
+          duration: 0.3, 
+          ease: "easeInOut",
+          delay: expanded > 0 ? index * 0.05 : 0
+        }}
+        className="relative overflow-hidden rounded-xl"
+        style={{ position: 'relative' }} // Ensure positioning context
+      >
+        {/* Background action area - only show when dragging */}
+        <div 
+          className="absolute inset-0 flex items-center justify-start pl-4 pointer-events-none"
+          style={{
+            background: isDragging && dragX > 0 
+              ? (shouldComplete 
+                  ? 'linear-gradient(270deg, #10b981, #059669)' 
+                  : `linear-gradient(270deg, rgba(16, 185, 129, ${completionProgress * 0.3}), rgba(5, 150, 105, ${completionProgress * 0.5}))`)
+              : 'transparent',
+            opacity: isDragging && dragX > 0 ? 1 : 0,
+            transition: isDragging ? 'none' : 'opacity 0.2s ease-out'
+          }}
+        >
+          {isDragging && dragX > 0 && (
+            <Check className={`w-6 h-6 ${shouldComplete ? 'text-white' : 'text-emerald-600'}`} />
+          )}
+        </div>
+        
+        {/* Task item */}
+        <div
+          className="relative bg-white/70 dark:bg-white/5 p-3 cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors will-change-transform"
+          style={{
+            transform: `translate3d(${dragX}px, 0, 0)`,
+            transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+            zIndex: 1,
+            position: 'relative'
+          }}
+          onMouseDown={handleStart}
+          onMouseMove={handleMove}
+          onMouseUp={handleEnd}
+          onMouseLeave={handleEnd}
+          onTouchStart={handleStart}
+          onTouchMove={handleMove}
+          onTouchEnd={handleEnd}
+          onTouchCancel={handleEnd}
+          onClick={(e) => {
+            if (Math.abs(dragX) < 5 && onClick) { // Only trigger click if not dragging
+              onClick();
+            }
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="font-medium">{task.title}</span>
+              <span className="text-xs text-zinc-500">{courses[task.courseIndex]} · {task.priority}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="rounded-full">due {task.due}</Badge>
+              <Badge 
+                variant="outline" 
+                className={`rounded-full text-xs font-mono flex items-center gap-1 ${
+                  calculateDDay(task.due)?.startsWith('D+') 
+                    ? 'border-yellow-400 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-900/20' 
+                    : ''
+                }`}
+              >
+                {calculateDDay(task.due)?.startsWith('D+') && (
+                  <AlertTriangle className="w-3 h-3" />
+                )}
+                {calculateDDay(task.due)}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  });
   
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -2140,43 +2358,15 @@ function Upcoming({ exams, tasks, courses, expanded }) {
           {upcomingTasks.length === 0 && <div className="text-sm text-zinc-500">No tasks due soon. Love that for you ✨</div>}
           <AnimatePresence mode="popLayout">
             {upcomingTasks.map((t, index) => (
-              <motion.div 
+              <SwipeableTask
                 key={t.id}
-                initial={{ opacity: 0, height: 0, y: -10 }}
-                animate={{ opacity: 1, height: "auto", y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -10 }}
-                transition={{ 
-                  duration: 0.3, 
-                  ease: "easeInOut",
-                  delay: expanded > 0 ? index * 0.05 : 0
-                }}
-                className="flex items-center justify-between bg-white/70 dark:bg-white/5 rounded-xl p-3 overflow-hidden cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors"
-                onClick={() => {
-                  setActiveTab('courses');
-                  setSelectedCourse(t.courseIndex);
-                }}
-              >
-                <div className="flex flex-col">
-                  <span className="font-medium">{t.title}</span>
-                  <span className="text-xs text-zinc-500">{courses[t.courseIndex]} · {t.priority}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="rounded-full">due {t.due}</Badge>
-                  <Badge 
-                    variant="outline" 
-                    className={`rounded-full text-xs font-mono flex items-center gap-1 ${
-                      calculateDDay(t.due)?.startsWith('D+') 
-                        ? 'border-yellow-400 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-900/20' 
-                        : ''
-                    }`}
-                  >
-                    {calculateDDay(t.due)?.startsWith('D+') && (
-                      <AlertTriangle className="w-3 h-3" />
-                    )}
-                    {calculateDDay(t.due)}
-                  </Badge>
-                </div>
-              </motion.div>
+                task={t}
+                index={index}
+                courses={courses}
+                calculateDDay={calculateDDay}
+                onComplete={onTaskComplete}
+                onClick={() => onTaskClick && onTaskClick(t)}
+              />
             ))}
           </AnimatePresence>
         </div>
@@ -3396,7 +3586,7 @@ function Planner({ courses, onAdd, onRemove, eventsByDay, exams, tasks, regularE
 // -----------------------------
 // Course Manager
 // -----------------------------
-function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleTask, deleteTask, exams, addExam, deleteExam, clearCourseData }) {
+function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleTask, deleteTask, exams, addExam, deleteExam, examGrades, setExamGrades, clearCourseData }) {
   const [taskForm, setTaskForm] = useState({ title: "", due: "", priority: "normal" });
   const [examForm, setExamForm] = useState({ title: "", date: "", weight: 20, notes: "" });
   const [editingExam, setEditingExam] = useState(null);
@@ -3404,6 +3594,48 @@ function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleT
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const courseTasks = tasks.filter(t => t.courseIndex === selected);
   const courseExams = exams.filter(e => e.courseIndex === selected);
+  
+  // Grade calculation logic
+  const courseGrades = examGrades.filter(g => {
+    const exam = exams.find(e => e.id === g.examId);
+    return exam && exam.courseIndex === selected;
+  });
+  
+  const calculateCourseAverage = () => {
+    const examsWithGrades = courseExams.filter(exam => 
+      courseGrades.some(grade => grade.examId === exam.id)
+    );
+    
+    if (examsWithGrades.length === 0) return null;
+    
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+    
+    examsWithGrades.forEach(exam => {
+      const grade = courseGrades.find(g => g.examId === exam.id);
+      if (grade && grade.grade >= 1 && grade.grade <= 7) {
+        totalWeightedScore += grade.grade * exam.weight;
+        totalWeight += exam.weight;
+      }
+    });
+    
+    return totalWeight > 0 ? (totalWeightedScore / totalWeight).toFixed(1) : null;
+  };
+  
+  const updateExamGrade = (examId, grade) => {
+    const gradeValue = parseFloat(grade);
+    if (gradeValue < 1 || gradeValue > 7) return;
+    
+    setExamGrades(prev => {
+      const existing = prev.find(g => g.examId === examId);
+      if (existing) {
+        return prev.map(g => g.examId === examId ? { ...g, grade: gradeValue } : g);
+      } else {
+        return [...prev, { examId, grade: gradeValue }];
+      }
+    });
+  };
+  
   const progress = useMemo(() => { 
     const d = courseTasks.filter(t => t.done).length; 
     const tot = courseTasks.length || 1; 
@@ -3648,6 +3880,83 @@ function CourseManager({ courses, selected, setSelected, tasks, addTask, toggleT
           </CardContent>
         </Card>
       </div>
+
+      {/* Grade Calculator - Standalone Card */}
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 002 2z" />
+            </svg>
+            Grade Calculator
+          </CardTitle>
+          <CardDescription>Track exam grades (1-7 scale)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {courseExams.length === 0 ? (
+            <div className="text-sm text-zinc-500 text-center py-6">
+              Add exams first to track grades
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Left Column - Exam Grades Input */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm text-zinc-700 dark:text-zinc-300 mb-3">Exam Grades</h4>
+                {courseExams.map(exam => {
+                  const currentGrade = courseGrades.find(g => g.examId === exam.id);
+                  return (
+                    <div key={exam.id} className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{exam.title}</div>
+                        <div className="text-xs text-zinc-500">{exam.weight}% weight</div>
+                      </div>
+                      <div className="ml-3">
+                        <Input
+                          type="number"
+                          min="1"
+                          max="7"
+                          step="0.1"
+                          placeholder="Grade"
+                          value={currentGrade?.grade || ''}
+                          onChange={(e) => updateExamGrade(exam.id, e.target.value)}
+                          className="w-20 h-8 text-center rounded-lg"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Right Column - Course Average Display */}
+              <div className="flex flex-col justify-center items-center bg-white/40 dark:bg-white/5 p-6 rounded-xl">
+                <h4 className="font-medium text-sm text-zinc-700 dark:text-zinc-300 mb-4">Course Average</h4>
+                <div className="text-center">
+                  {calculateCourseAverage() ? (
+                    <div className={`text-4xl font-bold mb-2 ${
+                      parseFloat(calculateCourseAverage()) >= 4.0 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : parseFloat(calculateCourseAverage()) >= 3.0
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {calculateCourseAverage()}
+                    </div>
+                  ) : (
+                    <div className="text-4xl font-bold text-zinc-400 mb-2">--</div>
+                  )}
+                  <div className="text-sm text-zinc-500 mb-3">out of 7.0</div>
+                  
+                  {calculateCourseAverage() && (
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                      {courseGrades.length} of {courseExams.length} exams graded
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       
       {/* Confirmation Dialog for clearing course data */}
       <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
@@ -3825,25 +4134,20 @@ function MoodSlider({ label, value, onChange }) {
 // -----------------------------
 // Wellness
 // -----------------------------
-function Wellness() {
-  const [water, setWater] = useLocalState("sp:water", 0);
-  const [gratitude, setGratitude] = useLocalState("sp:gratitude", "");
+function Wellness({ 
+  water, setWater, 
+  gratitude, setGratitude, 
+  moodPercentages, setMoodPercentages, 
+  hasInteracted, setHasInteracted, 
+  monthlyMoods, setMonthlyMoods, 
+  showWords, setShowWords, 
+  moodEmojis, setMoodEmojis 
+}) {
   const [breathing, setBreathing] = useState(false);
   
-  // Mood Bubble States
-  const [moodPercentages, setMoodPercentages] = useLocalState("sp:moodPercentages", {});
-  const [hasInteracted, setHasInteracted] = useLocalState("sp:moodInteracted", false);
-  const [monthlyMoods, setMonthlyMoods] = useLocalState("sp:monthlyMoods", {}); // Store moods by date
+  // Local state for UI only (not persisted)
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(null); // Track which mood is showing emoji picker
-  const [showWords, setShowWords] = useLocalState("sp:showMoodWords", true); // Toggle for showing words
-  const [moodEmojis, setMoodEmojis] = useLocalState("sp:moodEmojis", {
-    angry: { emoji: "😠", color: "#ff6b6b", word: "Angry" },
-    sad: { emoji: "😔", color: "#ff9f43", word: "Sad" },
-    neutral: { emoji: "😐", color: "#f7dc6f", word: "Neutral" },
-    happy: { emoji: "🙂", color: "#45b7d1", word: "Happy" },
-    excited: { emoji: "😁", color: "#10ac84", word: "Excited" }
-  });
 
   // Emoji library for picker
   const emojiLibrary = [

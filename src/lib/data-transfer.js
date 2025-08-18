@@ -4,6 +4,41 @@ export class DataTransfer {
     this.setState = setState;
   }
 
+  // Helper function to merge events preserving user customizations
+  mergeEvents(existingEvents, importedEvents, keyFields = ['title', 'day'], preserveFields = ['color', 'hexColor']) {
+    const merged = [...existingEvents];
+    
+    importedEvents.forEach(importedEvent => {
+      // Find existing event that matches the key fields
+      const existingIndex = merged.findIndex(existing => {
+        return keyFields.every(field => existing[field] === importedEvent[field]);
+      });
+      
+      if (existingIndex >= 0) {
+        // Event exists, merge while preserving user customizations
+        const existing = merged[existingIndex];
+        const mergedEvent = { ...importedEvent };
+        
+        // Preserve user customizations
+        preserveFields.forEach(field => {
+          if (existing[field] !== undefined && existing[field] !== null) {
+            mergedEvent[field] = existing[field];
+          }
+        });
+        
+        // Keep the existing ID to maintain references
+        mergedEvent.id = existing.id;
+        
+        merged[existingIndex] = mergedEvent;
+      } else {
+        // New event, add it
+        merged.push(importedEvent);
+      }
+    });
+    
+    return merged;
+  }
+
   exportData() {
     const state = this.getState();
     console.log("State for export:", {
@@ -34,6 +69,7 @@ export class DataTransfer {
         weight: e.weight,
         notes: (e.notes || "").replace(/[\r\n]+/g, " ")
       })),
+      examGrades: state.examGrades || [],
       tasks: state.tasks.map(t => ({
         type: "task",
         course: state.courses[t.courseIndex],
@@ -49,7 +85,8 @@ export class DataTransfer {
         day: e.day,
         start: e.start,
         end: e.end,
-        location: e.location
+        location: e.location,
+        color: e.color
       })),
       timetableEvents: state.timetableEvents.map(e => ({
         type: "timetableEvent",
@@ -61,7 +98,7 @@ export class DataTransfer {
         startTime: e.startTime,
         endTime: e.endTime,
         block: e.block,
-        hexColor: e.hexColor
+        color: e.color // Export as 'color' not 'hexColor'
       })),
       regularEvents: state.regularEvents.map(e => ({
         type: "regularEvent",
@@ -69,9 +106,26 @@ export class DataTransfer {
         title: e.title,
         startDate: e.startDate,
         endDate: e.endDate,
-        hexColor: e.hexColor
+        isMultiDay: e.isMultiDay,
+        location: e.location,
+        notes: e.notes,
+        color: e.color
       })),
       sessionTasks: state.sessionTasks,
+      
+      // Degree Plan data
+      degreePlan: state.degreePlan,
+      
+      // Wellness data
+      wellness: {
+        water: state.water,
+        gratitude: state.gratitude,
+        moodPercentages: state.moodPercentages,
+        hasInteracted: state.hasInteracted,
+        monthlyMoods: state.monthlyMoods,
+        showWords: state.showWords,
+        moodEmojis: state.moodEmojis
+      },
       
       // Settings
       settings: {
@@ -89,7 +143,8 @@ export class DataTransfer {
         accentColor: state.accentColor,
         cardOpacity: state.cardOpacity,
         weatherApiKey: state.weatherApiKey,
-        weatherLocation: state.weatherLocation
+        weatherLocation: state.weatherLocation,
+        degreePlan: state.degreePlan
       }
     };
 
@@ -116,6 +171,7 @@ export class DataTransfer {
         hasSettings: !!data.settings,
         hasSessions: !!data.sessions,
         hasExams: !!data.exams,
+        hasExamGrades: !!data.examGrades,
         hasTasks: !!data.tasks,
         hasSchedule: !!data.schedule,
         hasTimetableEvents: !!data.timetableEvents,
@@ -150,11 +206,20 @@ export class DataTransfer {
           accentColor: data.settings.accentColor,
           cardOpacity: data.settings.cardOpacity,
           weatherApiKey: data.settings.weatherApiKey,
-          weatherLocation: data.settings.weatherLocation
+          weatherLocation: data.settings.weatherLocation,
+          degreePlan: data.settings.degreePlan || { semesters: [], totalSemesters: 0, completedCourses: [] }
         });
       }
 
-      // Then import data with proper course indices
+      // Import degree plan data (for backward compatibility)
+      if (data.degreePlan) {
+        this.setState({ degreePlan: data.degreePlan });
+      }
+
+      // Get current state to preserve user customizations
+      const currentState = this.getState();
+
+      // Then import data with proper course indices, preserving user customizations
       if (data.sessions) {
         const sessions = data.sessions.map(s => ({
           id: crypto.randomUUID(),
@@ -182,6 +247,11 @@ export class DataTransfer {
         this.setState({ exams });
       }
 
+      // Import exam grades
+      if (data.examGrades) {
+        this.setState({ examGrades: data.examGrades });
+      }
+
       if (data.tasks) {
         const tasks = data.tasks.map(t => ({
           id: crypto.randomUUID(),
@@ -195,20 +265,29 @@ export class DataTransfer {
       }
 
       if (data.schedule) {
-        const schedule = data.schedule.map(e => ({
+        const importedSchedule = data.schedule.map(e => ({
           id: crypto.randomUUID(),
           courseIndex: findCourseIndex(e.course, data.settings.courses),
           title: e.title,
           day: e.day,
           start: e.start,
           end: e.end,
-          location: e.location
+          location: e.location,
+          color: e.color
         }));
-        this.setState({ schedule });
+        
+        // Merge with existing schedule, preserving user-assigned colors
+        const mergedSchedule = this.mergeEvents(
+          currentState.schedule || [], 
+          importedSchedule, 
+          ['title', 'day', 'start', 'end'], // Key fields to match events
+          ['color'] // Fields to preserve from existing events
+        );
+        this.setState({ schedule: mergedSchedule });
       }
 
       if (data.timetableEvents) {
-        const timetableEvents = data.timetableEvents.map(e => ({
+        const importedTimetableEvents = data.timetableEvents.map(e => ({
           id: crypto.randomUUID(),
           courseIndex: findCourseIndex(e.course, data.settings.courses),
           eventType: e.eventType,
@@ -218,25 +297,44 @@ export class DataTransfer {
           startTime: e.startTime,
           endTime: e.endTime,
           block: e.block,
-          hexColor: e.hexColor
+          color: e.color || e.hexColor // Support both color formats for backward compatibility
         }));
-        console.log("Importing timetable events:", timetableEvents);
-        this.setState({ timetableEvents });
+        
+        // Merge with existing timetable events, preserving user-assigned colors
+        const mergedTimetableEvents = this.mergeEvents(
+          currentState.timetableEvents || [], 
+          importedTimetableEvents, 
+          ['day', 'startTime', 'endTime', 'eventType'], // Key fields to match events
+          ['color'] // Fields to preserve from existing events (changed from 'hexColor' to 'color')
+        );
+        console.log("Importing timetable events with preserved colors:", mergedTimetableEvents);
+        this.setState({ timetableEvents: mergedTimetableEvents });
       } else {
         console.log("No timetable events found in import data");
       }
 
       if (data.regularEvents) {
-        const regularEvents = data.regularEvents.map(e => ({
+        const importedRegularEvents = data.regularEvents.map(e => ({
           id: crypto.randomUUID(),
           courseIndex: findCourseIndex(e.course, data.settings.courses),
           title: e.title,
           startDate: e.startDate,
           endDate: e.endDate,
-          hexColor: e.hexColor
+          isMultiDay: e.isMultiDay,
+          location: e.location,
+          notes: e.notes,
+          color: e.color || e.hexColor // Support both color formats for backward compatibility
         }));
-        console.log("Importing regular events:", regularEvents);
-        this.setState({ regularEvents });
+        
+        // Merge with existing regular events, preserving user-assigned colors
+        const mergedRegularEvents = this.mergeEvents(
+          currentState.regularEvents || [], 
+          importedRegularEvents, 
+          ['title', 'startDate'], // Key fields to match events
+          ['color'] // Fields to preserve from existing events
+        );
+        console.log("Importing regular events with preserved colors:", mergedRegularEvents);
+        this.setState({ regularEvents: mergedRegularEvents });
       } else {
         console.log("No regular events found in import data");
       }
@@ -247,6 +345,25 @@ export class DataTransfer {
           id: crypto.randomUUID()
         }));
         this.setState({ sessionTasks });
+      }
+
+      // Import wellness data
+      if (data.wellness) {
+        this.setState({
+          water: data.wellness.water || 0,
+          gratitude: data.wellness.gratitude || "",
+          moodPercentages: data.wellness.moodPercentages || {},
+          hasInteracted: data.wellness.hasInteracted || false,
+          monthlyMoods: data.wellness.monthlyMoods || {},
+          showWords: data.wellness.showWords !== undefined ? data.wellness.showWords : true,
+          moodEmojis: data.wellness.moodEmojis || {
+            angry: { emoji: "😠", color: "#ff6b6b", word: "Angry" },
+            sad: { emoji: "😔", color: "#ff9f43", word: "Sad" },
+            neutral: { emoji: "😐", color: "#f7dc6f", word: "Neutral" },
+            happy: { emoji: "🙂", color: "#45b7d1", word: "Happy" },
+            excited: { emoji: "😁", color: "#10ac84", word: "Excited" }
+          }
+        });
       }
 
       return true;
