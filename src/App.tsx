@@ -131,15 +131,8 @@ export default function StudyPortal(): React.JSX.Element {
           sessionTasks,
           courses,
           selectedCourse,
-          darkMode: theme.darkMode,
-          gradientEnabled: theme.gradientEnabled,
-          gradientStart: theme.gradientStart,
-          gradientMiddle: theme.gradientMiddle,
-          gradientEnd: theme.gradientEnd,
-          bgImage: theme.bgImage,
+          theme: theme.get,
           soundtrackEmbed,
-          accentColor: theme.accentColor,
-          cardOpacity: theme.cardOpacity,
           weatherApiKey,
           weatherLocation,
           degreePlan,
@@ -164,15 +157,18 @@ export default function StudyPortal(): React.JSX.Element {
           if (newState.sessionTasks) setSessionTasks(newState.sessionTasks);
           if (newState.courses) setCourses(newState.courses);
           if (newState.selectedCourse !== undefined) setSelectedCourse(newState.selectedCourse);
-          if (newState.darkMode !== undefined) theme.setDarkMode(newState.darkMode);
-          if (newState.gradientEnabled !== undefined) theme.setGradientEnabled(newState.gradientEnabled);
-          if (newState.gradientStart) theme.setGradientStart(newState.gradientStart);
-          if (newState.gradientMiddle) theme.setGradientMiddle(newState.gradientMiddle);
-          if (newState.gradientEnd) theme.setGradientEnd(newState.gradientEnd);
-          if (newState.bgImage !== undefined) theme.setBgImage(newState.bgImage);
+          if (newState.theme) {
+            const themeState = newState.theme;
+            if (themeState.darkMode !== undefined) theme.set.darkMode(themeState.darkMode);
+            if (themeState.gradientEnabled !== undefined) theme.set.gradientEnabled(themeState.gradientEnabled);
+            if (themeState.gradientStart) theme.set.gradientStart(themeState.gradientStart);
+            if (themeState.gradientMiddle) theme.set.gradientMiddle(themeState.gradientMiddle);
+            if (themeState.gradientEnd) theme.set.gradientEnd(themeState.gradientEnd);
+            if (themeState.bgImage !== undefined) theme.set.bgImage(themeState.bgImage);
+            if (themeState.accentColor !== undefined) theme.set.accentColor(themeState.accentColor);
+            if (themeState.cardOpacity !== undefined) theme.set.cardOpacity(themeState.cardOpacity);
+          }
           if (newState.soundtrackEmbed !== undefined) setSoundtrackEmbed(newState.soundtrackEmbed);
-          if (newState.accentColor !== undefined) theme.setAccentColor(newState.accentColor);
-          if (newState.cardOpacity !== undefined) theme.setCardOpacity(newState.cardOpacity);
           if (newState.weatherApiKey !== undefined) setWeatherApiKey(newState.weatherApiKey);
           if (newState.weatherLocation !== undefined) setWeatherLocation(newState.weatherLocation);
           if (newState.degreePlan !== undefined) setDegreePlan(newState.degreePlan);
@@ -191,6 +187,7 @@ export default function StudyPortal(): React.JSX.Element {
 
   // Theme state
   const theme = useTheme();
+
 
   // Study timer - using custom hook with session completion callback
   const studyTimer = useStudyTimer(session => {
@@ -237,21 +234,21 @@ export default function StudyPortal(): React.JSX.Element {
     <div
       className="min-h-screen relative text-zinc-900 dark:text-zinc-100"
       style={
-        theme.gradientEnabled
+        theme.get.gradientEnabled
           ? {
               background: `linear-gradient(to bottom right, ${
-                theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light
-              }, ${theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light}, ${
-                theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light
+                theme.get.darkMode ? theme.get.gradientStart.dark : theme.get.gradientStart.light
+              }, ${theme.get.darkMode ? theme.get.gradientMiddle.dark : theme.get.gradientMiddle.light}, ${
+                theme.get.darkMode ? theme.get.gradientEnd.dark : theme.get.gradientEnd.light
               })`,
             }
           : {}
       }
     >
-      {theme.bgImage && (
+      {theme.get.bgImage && (
         <div
           className="pointer-events-none absolute inset-0 bg-center bg-cover bg-no-repeat opacity-60 mix-blend-luminosity"
-          style={{ backgroundImage: `url(${theme.bgImage})` }}
+          style={{ backgroundImage: `url(${theme.get.bgImage})` }}
           aria-hidden="true"
         />
       )}
@@ -275,7 +272,7 @@ export default function StudyPortal(): React.JSX.Element {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur">
-              <MoonSunToggle checked={theme.darkMode} onCheckedChange={theme.setDarkMode} />
+              <MoonSunToggle checked={theme.get.darkMode} onCheckedChange={theme.set.darkMode} />
             </div>
           </div>
         </motion.header>

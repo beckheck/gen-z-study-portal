@@ -2,7 +2,7 @@ import useAccentColor from '@/hooks/useAccentColor';
 import useBaseStyles from '@/hooks/useBaseStyles';
 import useCardOpacityStyles from '@/hooks/useCardOpacityStyles';
 import useDarkMode from '@/hooks/useDarkMode';
-import { ColorTheme, OpacityTheme, Theme } from '@/types';
+import { ThemeState, ColorTheme, OpacityTheme, Theme, ThemeSetters } from '@/types';
 import useLocalState from './useLocalState';
 
 /**
@@ -49,30 +49,33 @@ export default function useTheme(): Theme {
   useBaseStyles();
   useCardOpacityStyles(cardOpacity, darkMode);
 
-  // Return all theme-related state and setters
-  return {
-    // Core theme state
+  // Theme state (getters)
+  const themeState: ThemeState = {
     darkMode,
-    setDarkMode,
-
-    // Background and visual settings
-    bgImage,
-    setBgImage,
-
-    // Accent and opacity settings
-    accentColor,
-    setAccentColor,
-    cardOpacity,
-    setCardOpacity,
-
-    // Gradient settings
     gradientEnabled,
-    setGradientEnabled,
     gradientStart,
-    setGradientStart,
     gradientMiddle,
-    setGradientMiddle,
     gradientEnd,
-    setGradientEnd,
+    bgImage,
+    accentColor,
+    cardOpacity,
+  };
+
+  // Theme setters
+  const themeSetters: ThemeSetters = {
+    darkMode: setDarkMode,
+    bgImage: setBgImage,
+    accentColor: setAccentColor,
+    cardOpacity: setCardOpacity,
+    gradientEnabled: setGradientEnabled,
+    gradientStart: setGradientStart,
+    gradientMiddle: setGradientMiddle,
+    gradientEnd: setGradientEnd,
+  };
+
+  // Return combined theme object with grouped properties
+  return {
+    get: themeState,
+    set: themeSetters,
   };
 }

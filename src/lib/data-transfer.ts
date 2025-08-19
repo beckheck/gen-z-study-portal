@@ -59,13 +59,6 @@ export class DataTransfer {
 
   exportData(): void {
     const state = this.getState();
-    console.log('State for export:', {
-      hasTimetableEvents: !!state.timetableEvents,
-      timetableEventsCount: state.timetableEvents ? state.timetableEvents.length : 0,
-      hasRegularEvents: !!state.regularEvents,
-      regularEventsCount: state.regularEvents ? state.regularEvents.length : 0,
-    });
-
     const data = {
       // Core data
       sessions: state.sessions.map(s => ({
@@ -149,17 +142,17 @@ export class DataTransfer {
       settings: {
         courses: state.courses,
         selectedCourse: state.selectedCourse,
-        darkMode: state.darkMode,
+        darkMode: state.theme.darkMode,
         gradient: {
-          enabled: state.gradientEnabled,
-          start: state.gradientStart,
-          middle: state.gradientMiddle,
-          end: state.gradientEnd,
+          enabled: state.theme.gradientEnabled,
+          start: state.theme.gradientStart,
+          middle: state.theme.gradientMiddle,
+          end: state.theme.gradientEnd,
         },
-        bgImage: state.bgImage,
+        bgImage: state.theme.bgImage,
         soundtrackEmbed: state.soundtrackEmbed,
-        accentColor: state.accentColor,
-        cardOpacity: state.cardOpacity,
+        accentColor: state.theme.accentColor,
+        cardOpacity: state.theme.cardOpacity,
         weatherApiKey: state.weatherApiKey,
         weatherLocation: state.weatherLocation,
         degreePlan: state.degreePlan,
@@ -185,24 +178,6 @@ export class DataTransfer {
       const text = await file.text();
       const data = JSON.parse(text);
 
-      console.log('Import data structure:', {
-        hasSettings: !!data.settings,
-        hasSessions: !!data.sessions,
-        hasExams: !!data.exams,
-        hasExamGrades: !!data.examGrades,
-        hasTasks: !!data.tasks,
-        hasSchedule: !!data.schedule,
-        hasTimetableEvents: !!data.timetableEvents,
-        hasRegularEvents: !!data.regularEvents,
-        hasSessionTasks: !!data.sessionTasks,
-      });
-
-      // Check for missing props in the timetable events
-      if (data.timetableEvents && data.timetableEvents.length > 0) {
-        const sampleEvent = data.timetableEvents[0];
-        console.log('Sample timetable event:', sampleEvent);
-      }
-
       // Helper to find course index
       const findCourseIndex = (courseName: string, courses: string[]): number => {
         const index = courses.indexOf(courseName);
@@ -214,15 +189,17 @@ export class DataTransfer {
         this.setState({
           courses: data.settings.courses,
           selectedCourse: data.settings.selectedCourse,
-          darkMode: data.settings.darkMode,
-          gradientEnabled: data.settings.gradient.enabled,
-          gradientStart: data.settings.gradient.start,
-          gradientMiddle: data.settings.gradient.middle,
-          gradientEnd: data.settings.gradient.end,
-          bgImage: data.settings.bgImage,
+          theme: {
+            darkMode: data.settings.darkMode,
+            gradientEnabled: data.settings.gradient.enabled,
+            gradientStart: data.settings.gradient.start,
+            gradientMiddle: data.settings.gradient.middle,
+            gradientEnd: data.settings.gradient.end,
+            bgImage: data.settings.bgImage,
+            accentColor: data.settings.accentColor,
+            cardOpacity: data.settings.cardOpacity,
+          },
           soundtrackEmbed: data.settings.soundtrackEmbed,
-          accentColor: data.settings.accentColor,
-          cardOpacity: data.settings.cardOpacity,
           weatherApiKey: data.settings.weatherApiKey,
           weatherLocation: data.settings.weatherLocation,
           degreePlan: data.settings.degreePlan || { semesters: [], totalSemesters: 0, completedCourses: [] },
@@ -325,10 +302,7 @@ export class DataTransfer {
           ['day', 'startTime', 'endTime', 'eventType'], // Key fields to match events
           ['color'] // Fields to preserve from existing events (changed from 'hexColor' to 'color')
         );
-        console.log('Importing timetable events with preserved colors:', mergedTimetableEvents);
         this.setState({ timetableEvents: mergedTimetableEvents });
-      } else {
-        console.log('No timetable events found in import data');
       }
 
       if (data.regularEvents) {
@@ -351,10 +325,7 @@ export class DataTransfer {
           ['title', 'startDate'], // Key fields to match events
           ['color'] // Fields to preserve from existing events
         );
-        console.log('Importing regular events with preserved colors:', mergedRegularEvents);
         this.setState({ regularEvents: mergedRegularEvents });
-      } else {
-        console.log('No regular events found in import data');
       }
 
       if (data.sessionTasks) {

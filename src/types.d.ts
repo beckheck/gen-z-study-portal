@@ -288,25 +288,41 @@ export interface OpacityTheme {
 }
 
 /**
- * Complete theme configuration object with all theme-related state and setters
+ * Theme-specific properties for application state
+ */
+export interface ThemeState {
+  darkMode: boolean;
+  bgImage: string;
+  accentColor: ColorTheme;
+  cardOpacity: OpacityTheme;
+  gradientEnabled: boolean;
+  gradientStart: ColorTheme;
+  gradientMiddle: ColorTheme;
+  gradientEnd: ColorTheme;
+}
+
+/**
+ * Theme setter functions interface
+ */
+export interface ThemeSetters {
+  darkMode: (value: boolean) => void;
+  bgImage: (value: string | ((prev: string) => string)) => void;
+  accentColor: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
+  cardOpacity: (value: OpacityTheme | ((prev: OpacityTheme) => OpacityTheme)) => void;
+  gradientEnabled: (value: boolean) => void;
+  gradientStart: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
+  gradientMiddle: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
+  gradientEnd: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
+}
+
+/**
+ * Complete theme configuration object with grouped state and setters
  */
 export interface Theme {
-  darkMode: boolean;
-  setDarkMode: (value: boolean) => void;
-  bgImage: string;
-  setBgImage: (value: string | ((prev: string) => string)) => void;
-  accentColor: ColorTheme;
-  setAccentColor: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
-  cardOpacity: OpacityTheme;
-  setCardOpacity: (value: OpacityTheme | ((prev: OpacityTheme) => OpacityTheme)) => void;
-  gradientEnabled: boolean;
-  setGradientEnabled: (value: boolean) => void;
-  gradientStart: ColorTheme;
-  setGradientStart: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
-  gradientMiddle: ColorTheme;
-  setGradientMiddle: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
-  gradientEnd: ColorTheme;
-  setGradientEnd: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
+  /** Grouped theme state properties */
+  get: Readonly<ThemeState>;
+  /** Grouped theme setter functions */
+  set: ThemeSetters;
 }
 
 /**
@@ -425,15 +441,8 @@ export interface AppState {
   sessionTasks: SessionTask[];
   courses: string[];
   selectedCourse: number;
-  darkMode: boolean;
-  gradientEnabled: boolean;
-  gradientStart: ColorTheme;
-  gradientMiddle: ColorTheme;
-  gradientEnd: ColorTheme;
-  bgImage: string;
+  theme: ThemeState;
   soundtrackEmbed: string;
-  accentColor: ColorTheme;
-  cardOpacity: OpacityTheme;
   weatherApiKey: string;
   weatherLocation: WeatherLocation;
   degreePlan: DegreePlan;
