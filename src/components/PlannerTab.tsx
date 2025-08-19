@@ -682,7 +682,7 @@ export default function PlannerTab() {
               <Button variant="outline" onClick={() => shiftMonth(-1)} className="rounded-xl">
                 Prev
               </Button>
-              <div className="text-2xl md:text-3xl font-extrabold text-white dark:text-black">
+              <div className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-gray-100">
                 {MONTHS_LONG[monthView.month]} {monthView.year}
               </div>
               <Button variant="outline" onClick={() => shiftMonth(1)} className="rounded-xl">
@@ -699,7 +699,7 @@ export default function PlannerTab() {
                 onCheckedChange={setShowMultiDayEvents}
                 className="data-[state=checked]:bg-blue-600"
               />
-              <Label className="text-sm text-white dark:text-black">Show multi-day events on cards</Label>
+              <Label className="text-sm text-gray-900 dark:text-gray-100">Show multi-day events on cards</Label>
             </div>
           )}
           <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -709,16 +709,16 @@ export default function PlannerTab() {
                 Add event
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
+            <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
               <DialogHeader className="">
-                <DialogTitle>{editingEvent ? 'Edit Event' : 'Add Event'}</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-gray-900 dark:text-gray-100">{editingEvent ? 'Edit Event' : 'Add Event'}</DialogTitle>
+                <DialogDescription className="text-gray-600 dark:text-gray-300">
                   {editingEvent ? 'Modify the event details below' : 'Create a regular event, exam, or task'}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4">
                 <div>
-                  <Label>Event Type</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">Event Type</Label>
                   <Select value={form.eventCategory} onValueChange={v => setForm({ ...form, eventCategory: v })}>
                     <SelectTrigger className="rounded-xl">
                       <SelectValue />
@@ -732,7 +732,7 @@ export default function PlannerTab() {
                 </div>
 
                 <div>
-                  <Label>Course (Optional)</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">Course (Optional)</Label>
                   <Select
                     value={String(form.courseIndex)}
                     onValueChange={v => setForm({ ...form, courseIndex: Number(v) })}
@@ -752,7 +752,7 @@ export default function PlannerTab() {
                 </div>
 
                 <div>
-                  <Label>Title</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">Title</Label>
                   <Input
                     value={form.title}
                     onChange={e => setForm({ ...form, title: e.target.value })}
@@ -769,7 +769,7 @@ export default function PlannerTab() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>
+                    <Label className="text-gray-700 dark:text-gray-300">
                       {form.eventCategory === 'regular'
                         ? 'Start Date'
                         : form.eventCategory === 'exam'
@@ -785,7 +785,7 @@ export default function PlannerTab() {
                   </div>
                   {form.eventCategory === 'regular' && (
                     <div>
-                      <Label>End Date (Optional)</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">End Date (Optional)</Label>
                       <Input
                         type="date"
                         value={form.endDate}
@@ -799,7 +799,7 @@ export default function PlannerTab() {
 
                 {form.eventCategory === 'regular' && (
                   <div>
-                    <Label>Location (Optional)</Label>
+                    <Label className="text-gray-700 dark:text-gray-300">Location (Optional)</Label>
                     <Input
                       value={form.location}
                       onChange={e => setForm({ ...form, location: e.target.value })}
@@ -811,7 +811,7 @@ export default function PlannerTab() {
 
                 {form.eventCategory === 'regular' && (
                   <div>
-                    <Label>Color</Label>
+                    <Label className="text-gray-700 dark:text-gray-300">Color</Label>
                     <div className="flex items-center gap-3">
                       <input
                         type="color"
@@ -849,7 +849,7 @@ export default function PlannerTab() {
 
                 {form.eventCategory === 'exam' && (
                   <div>
-                    <Label>Weight (%)</Label>
+                    <Label className="text-gray-700 dark:text-gray-300">Weight (%)</Label>
                     <Input
                       type="number"
                       value={form.weight}
@@ -863,7 +863,7 @@ export default function PlannerTab() {
 
                 {form.eventCategory === 'task' && (
                   <div>
-                    <Label>Priority</Label>
+                    <Label className="text-gray-700 dark:text-gray-300">Priority</Label>
                     <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
                       <SelectTrigger className="rounded-xl">
                         <SelectValue />
@@ -878,7 +878,7 @@ export default function PlannerTab() {
                 )}
 
                 <div>
-                  <Label>Notes (Optional)</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">Notes (Optional)</Label>
                   <Textarea
                     value={form.notes}
                     onChange={e => setForm({ ...form, notes: e.target.value })}
@@ -904,10 +904,10 @@ export default function PlannerTab() {
 
           {/* Event Action Confirmation Dialog */}
           <Dialog open={confirmDialog.open} onOpenChange={open => setConfirmDialog({ open, event: null })}>
-            <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
+            <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
               <DialogHeader className="">
-                <DialogTitle>Event Actions</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-gray-900 dark:text-gray-100">Event Actions</DialogTitle>
+                <DialogDescription className="text-gray-600 dark:text-gray-300">
                   What would you like to do with "{confirmDialog.event?.title || confirmDialog.event?.type}"?
                 </DialogDescription>
               </DialogHeader>
@@ -1053,7 +1053,7 @@ export default function PlannerTab() {
                       </div>
                     </div>
                   ))}
-                  {eventsForWeekdayName(d).length === 0 && <div className="text-sm text-zinc-500">No events.</div>}
+                  {eventsForWeekdayName(d).length === 0 && <div className="text-sm text-zinc-500 dark:text-zinc-400">No events.</div>}
                 </CardContent>
               </Card>
             ))}
@@ -1074,7 +1074,7 @@ export default function PlannerTab() {
                 <div className="space-y-4">
                   {/* Add Goal Form */}
                   <div className="space-y-2">
-                    <Label htmlFor="goalTitle">Add New Goal</Label>
+                    <Label htmlFor="goalTitle" className="text-gray-700 dark:text-gray-300">Add New Goal</Label>
                     <div className="flex gap-2">
                       <Input
                         id="goalTitle"
@@ -1093,7 +1093,7 @@ export default function PlannerTab() {
                   {/* Goals List */}
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {weeklyGoals.length === 0 ? (
-                      <div className="text-sm text-zinc-500 text-center py-8">
+                      <div className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
                         No goals set for this week.
                         <br />
                         Add one to get started! 🎯
@@ -1129,7 +1129,7 @@ export default function PlannerTab() {
                             {goal.completed && <span className="text-xs">✓</span>}
                           </Button>
 
-                          <span className={`flex-1 ${goal.completed ? 'line-through text-zinc-500' : ''}`}>
+                          <span className={`flex-1 ${goal.completed ? 'line-through text-zinc-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
                             {goal.title}
                           </span>
 
@@ -1179,7 +1179,7 @@ export default function PlannerTab() {
                           <div className="text-lg font-bold text-zinc-700 dark:text-zinc-300">
                             {completedGoals}/{totalGoals}
                           </div>
-                          <div className="text-xs text-zinc-500">goals</div>
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400">goals</div>
                         </div>
                       </div>
                     </div>
@@ -1281,7 +1281,7 @@ export default function PlannerTab() {
                       </div>
                     ))}
                     {dayEvents.length > 4 && (
-                      <div className="text-xs text-zinc-500 font-medium mt-1">+{dayEvents.length - 4} more...</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1">+{dayEvents.length - 4} more...</div>
                     )}
                   </div>
 
@@ -1348,7 +1348,7 @@ export default function PlannerTab() {
           {!showMultiDayEvents &&
             regularEvents.some(e => e.isMultiDay !== false && e.endDate && e.endDate !== e.startDate) && (
               <div className="mt-6">
-                <h3 className="text-lg font-bold text-white dark:text-black mb-3">Hidden Multi-Day Events</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Hidden Multi-Day Events</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {regularEvents
                     .filter(
