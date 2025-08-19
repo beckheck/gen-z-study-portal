@@ -1,0 +1,302 @@
+import { proxy, subscribe, ref } from 'valtio';
+import type { AppState, DegreePlan, MoodEmojis, WeatherLocation } from '../types';
+
+// Default values
+const DEFAULT_COURSES = [
+  'Calculus',
+  'Chemistry',
+  'Linear Algebra',
+  'Economics',
+  'Programming',
+  'Elective',
+  'Optional Course',
+];
+
+const DEFAULT_MOOD_EMOJIS: MoodEmojis = {
+  angry: { emoji: '😠', color: '#ff6b6b', word: 'Angry' },
+  sad: { emoji: '😔', color: '#ff9f43', word: 'Sad' },
+  neutral: { emoji: '😐', color: '#f7dc6f', word: 'Neutral' },
+  happy: { emoji: '🙂', color: '#45b7d1', word: 'Happy' },
+  excited: { emoji: '😁', color: '#10ac84', word: 'Excited' },
+};
+
+const DEFAULT_DEGREE_PLAN: DegreePlan = {
+  semesters: [],
+  completedCourses: [],
+};
+
+const DEFAULT_WEATHER_LOCATION: WeatherLocation = {
+  useGeolocation: true,
+  city: '',
+};
+
+// Create the initial state with proper defaults
+function createInitialState(): AppState {
+  // Detect system preference for dark mode
+  const prefersDark =
+    typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  return {
+    // Core data
+    sessions: [],
+    exams: [],
+    examGrades: [],
+    tasks: [],
+    schedule: [],
+    timetableEvents: [],
+    regularEvents: [],
+    sessionTasks: [],
+    courses: [...DEFAULT_COURSES],
+    selectedCourse: 0,
+
+    // Theme configuration
+    theme: {
+      darkMode: prefersDark,
+      bgImage: '',
+      accentColor: { light: '#7c3aed', dark: '#8b5cf6' },
+      cardOpacity: { light: 0.8, dark: 0.25 },
+      gradientEnabled: true,
+      gradientStart: { light: '#ffd2e9', dark: '#18181b' },
+      gradientMiddle: { light: '#bae6fd', dark: '#0f172a' },
+      gradientEnd: { light: '#a7f3d0', dark: '#1e293b' },
+    },
+
+    // External services
+    soundtrack: {
+      embed: '',
+      position: 'dashboard',
+    },
+    weatherApiKey: '',
+    weatherLocation: { ...DEFAULT_WEATHER_LOCATION },
+
+    // Academic planning
+    degreePlan: { ...DEFAULT_DEGREE_PLAN },
+
+    // Wellness tracking
+    wellness: {
+      water: 0,
+      gratitude: '',
+      moodPercentages: {},
+      hasInteracted: false,
+      monthlyMoods: {},
+      showWords: true,
+      moodEmojis: { ...DEFAULT_MOOD_EMOJIS },
+    },
+  };
+}
+
+// Migration map for localStorage keys
+const MIGRATION_MAP = {
+  // Core data
+  'sp:courses': (value: any) => ({ courses: value }),
+  'sp:schedule': (value: any) => ({ schedule: value }),
+  'sp:timetableEvents': (value: any) => ({ timetableEvents: value }),
+  'sp:tasks': (value: any) => ({ tasks: value }),
+  'sp:exams': (value: any) => ({ exams: value }),
+  'sp:examGrades': (value: any) => ({ examGrades: value }),
+  'sp:regularEvents': (value: any) => ({ regularEvents: value }),
+  'sp:sessions': (value: any) => ({ sessions: value }),
+  'sp:sessionTasks': (value: any) => ({ sessionTasks: value }),
+  'sp:selectedCourse': (value: any) => ({ selectedCourse: value }),
+  'sp:degreePlan': (value: any) => ({ degreePlan: value }),
+
+  // Theme settings
+  'sp:dark': (value: any) => ({ theme: { darkMode: value } }),
+  'sp:bgImage': (value: any) => ({ theme: { bgImage: value } }),
+  'sp:accentColor': (value: any) => ({ theme: { accentColor: value } }),
+  'sp:cardOpacity': (value: any) => ({ theme: { cardOpacity: value } }),
+  'sp:gradientEnabled': (value: any) => ({ theme: { gradientEnabled: value } }),
+  'sp:gradientStart': (value: any) => ({ theme: { gradientStart: value } }),
+  'sp:gradientMiddle': (value: any) => ({ theme: { gradientMiddle: value } }),
+  'sp:gradientEnd': (value: any) => ({ theme: { gradientEnd: value } }),
+
+  // External services
+  'sp:soundtrackEmbed': (value: any) => ({ soundtrack: { embed: value, position: 'dashboard' } }),
+  'sp:weatherApiKey': (value: any) => ({ weatherApiKey: value }),
+  'sp:weatherLocation': (value: any) => ({ weatherLocation: value }),
+
+  // Wellness data
+  'sp:water': (value: any) => ({ wellness: { water: value } }),
+  'sp:gratitude': (value: any) => ({ wellness: { gratitude: value } }),
+  'sp:moodPercentages': (value: any) => ({ wellness: { moodPercentages: value } }),
+  'sp:moodInteracted': (value: any) => ({ wellness: { hasInteracted: value } }),
+  'sp:monthlyMoods': (value: any) => ({ wellness: { monthlyMoods: value } }),
+  'sp:showMoodWords': (value: any) => ({ wellness: { showWords: value } }),
+  'sp:moodEmojis': (value: any) => ({ wellness: { moodEmojis: value } }),
+};
+
+// Load and migrate existing localStorage data
+function migrateFromLocalStorage(): Partial<AppState> {
+  const migratedState: any = {};
+
+  // Migrate each localStorage key
+  Object.entries(MIGRATION_MAP).forEach(([key, migrator]) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw !== null) {
+        const value = JSON.parse(raw);
+        const migrated = migrator(value);
+
+        // Deep merge the migrated data
+        Object.keys(migrated).forEach(stateKey => {
+          if (stateKey === 'wellness' && migratedState.wellness) {
+            migratedState.wellness = { ...migratedState.wellness, ...migrated[stateKey] };
+          } else if (stateKey === 'theme' && migratedState.theme) {
+            migratedState.theme = { ...migratedState.theme, ...migrated[stateKey] };
+          } else {
+            migratedState[stateKey] = migrated[stateKey];
+          }
+        });
+      }
+    } catch (error) {
+      console.warn(`Failed to migrate localStorage key ${key}:`, error);
+    }
+  });
+
+  return migratedState;
+}
+
+// Load state from localStorage or create initial state
+function loadState(): AppState {
+  try {
+    // First, try to load from the new centralized key
+    const centralizedRaw = localStorage.getItem('sp:appState');
+    if (centralizedRaw) {
+      const parsed = JSON.parse(centralizedRaw);
+
+      // Ensure all required fields exist by merging with defaults
+      const initialState = createInitialState();
+      const mergedState = {
+        ...initialState,
+        ...parsed,
+        // Deep merge theme and wellness objects to preserve default values
+        theme: { ...initialState.theme, ...parsed.theme },
+        soundtrack: { ...initialState.soundtrack, ...parsed.soundtrack },
+        wellness: { ...initialState.wellness, ...parsed.wellness },
+      };
+
+      if (mergedState.soundtrack?.position === 'hidden') {
+        mergedState.soundtrack.position = 'dashboard';
+      }
+
+      return mergedState;
+    }
+
+    // If no centralized state exists, migrate from old localStorage keys
+    const migratedState = migrateFromLocalStorage();
+    const initialState = createInitialState();
+
+    const mergedState = {
+      ...initialState,
+      ...migratedState,
+      // Deep merge theme, soundtrack, and wellness objects to preserve default values
+      theme: { ...initialState.theme, ...migratedState.theme },
+      soundtrack: { ...initialState.soundtrack, ...migratedState.soundtrack },
+      wellness: { ...initialState.wellness, ...migratedState.wellness },
+    };
+
+    // If we migrated data, save it to the new centralized key and clean up old keys
+    if (Object.keys(migratedState).length > 0) {
+      localStorage.setItem('sp:appState', JSON.stringify(mergedState));
+
+      // Clean up old localStorage keys
+      Object.keys(MIGRATION_MAP).forEach(key => {
+        localStorage.removeItem(key);
+      });
+    }
+
+    return mergedState;
+  } catch (error) {
+    console.error('Failed to load state from localStorage:', error);
+    const fallbackState = createInitialState();
+    return fallbackState;
+  }
+}
+
+// Create the Valtio store
+export const store = proxy<AppState>(loadState());
+
+// Function to update the store state (for data import)
+export const patchStoreState = (newState: Partial<AppState>) => {
+  updateProxyFromState(store, newState, true);
+};
+
+// Flag to track if we're currently applying changes from storage
+let isApplyingFromStorage = false;
+
+// Subscribe to changes and persist to localStorage
+subscribe(store, () => {
+  // Skip persistence if this change came from a storage event
+  if (isApplyingFromStorage) {
+    return;
+  }
+
+  try {
+    localStorage.setItem('sp:appState', JSON.stringify(store));
+    // Note: Browser's native storage events will notify other tabs automatically
+  } catch (error) {
+    console.error('Failed to persist state to localStorage:', error);
+  }
+});
+
+// Listen for storage changes from other tabs (browser's native storage events only)
+window.addEventListener('storage', e => {
+  if (e.key === 'sp:appState' && e.newValue) {
+    try {
+      isApplyingFromStorage = true;
+      const newState = JSON.parse(e.newValue);
+
+      // Properly update the proxy by mutating individual properties
+      // This is how Valtio expects updates to work
+      updateProxyFromState(store, newState);
+
+    } catch (error) {
+      console.error('Failed to sync state from storage event:', error);
+    } finally {
+      // Reset flag after a brief delay to ensure all operations complete
+      setTimeout(() => {
+        isApplyingFromStorage = false;
+      }, 0);
+    }
+  }
+});
+
+// Helper function to recursively update proxy properties
+function updateProxyFromState(proxy: any, newState: any, patch = false) {
+  if (!patch) {
+    // Remove properties that don't exist in newState
+    Object.keys(proxy).forEach(key => {
+      if (!(key in newState)) {
+        delete proxy[key];
+      }
+    });
+  }
+
+  // Update/add properties from newState
+  Object.keys(newState).forEach(key => {
+    const newValue = newState[key];
+    const currentValue = proxy[key];
+
+    if (newValue && typeof newValue === 'object' && !Array.isArray(newValue)) {
+      // For nested objects, recursively update if current value is also an object
+      if (currentValue && typeof currentValue === 'object' && !Array.isArray(currentValue)) {
+        updateProxyFromState(currentValue, newValue);
+      } else {
+        // Replace with new object if current is not an object
+        proxy[key] = newValue;
+      }
+    } else {
+      // For primitive values and arrays, direct assignment
+      proxy[key] = newValue;
+    }
+  });
+}
+
+// Ensure courses array always has the correct length (migration helper)
+if (store.courses.length < DEFAULT_COURSES.length) {
+  const updatedCourses = [...store.courses];
+  for (let i = store.courses.length; i < DEFAULT_COURSES.length; i++) {
+    updatedCourses.push(DEFAULT_COURSES[i]);
+  }
+  store.courses = updatedCourses;
+}

@@ -23,18 +23,21 @@ A modern, interactive study portal built specifically for Generation Z students,
 ## 📦 Installation
 
 1. Clone the repository:
-   ```bash
+
+   ```sh
    git clone https://github.com/beckheck/gen-z-study-portal.git
    cd gen-z-study-portal
    ```
 
 2. Install dependencies:
-   ```bash
+
+   ```sh
    npm install
    ```
 
 3. Start the development server:
-   ```bash
+
+   ```sh
    npm run dev
    ```
 
