@@ -1,4 +1,5 @@
-import { Exam, SoundtrackPosition, Task, WeatherLocation } from '@/types';
+import { SoundtrackPosition } from '@/types';
+import { useCourses, useTasks, useExams, useExternalServices, useSoundtrack } from '@/hooks/useStore';
 import { CalendarDays, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import CurrentDateTime from './CurrentDateTime';
@@ -10,35 +11,19 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 interface DashboardTabProps {
-  weatherApiKey: string;
-  weatherLocation: WeatherLocation;
-  exams: Exam[];
-  tasks: Task[];
-  courses: string[];
-  setTasks: (tasks: Task[] | ((prev: Task[]) => Task[])) => void;
-  setSelectedCourse: (courseIndex: number) => void;
   onTabChange: (tab: string) => void;
-  soundtrackEmbed: string;
-  soundtrackPosition: SoundtrackPosition;
-  setSoundtrackPosition: (position: SoundtrackPosition) => void;
 }
 
 /**
  * Dashboard Tab Component
  */
-export default function DashboardTab({
-  weatherApiKey,
-  weatherLocation,
-  exams,
-  tasks,
-  courses,
-  setTasks,
-  setSelectedCourse,
-  onTabChange,
-  soundtrackEmbed,
-  soundtrackPosition,
-  setSoundtrackPosition,
-}: DashboardTabProps) {
+export default function DashboardTab({ onTabChange }: DashboardTabProps) {
+  const { setSelectedCourse } = useCourses();
+  const { tasks, setTasks } = useTasks();
+  const { exams } = useExams();
+  const { weatherApiKey, weatherLocation } = useExternalServices();
+  const { soundtrack, setSoundtrackPosition } = useSoundtrack();
+
   const [nextUpExpanded, setNextUpExpanded] = useState<number>(0); // Number of additional "pages" shown (0 = collapsed)
   return (
     <div className="space-y-6">
@@ -56,11 +41,11 @@ export default function DashboardTab({
         </CardHeader>
         <CardContent className="space-y-4">
           <Upcoming
-            exams={exams}
-            tasks={tasks}
-            courses={courses}
             expanded={nextUpExpanded}
-            onTaskComplete={taskId => setTasks(s => s.map(t => (t.id === taskId ? { ...t, done: true } : t)))}
+            onTaskComplete={taskId => {
+              const updatedTasks = tasks.map(t => (t.id === taskId ? { ...t, done: true } : t));
+              setTasks(updatedTasks);
+            }}
             onTabChange={onTabChange}
             onCourseSelect={setSelectedCourse}
             onTaskClick={task => {
@@ -115,7 +100,10 @@ export default function DashboardTab({
         })()}
       </Card>
 
-      <SoundtrackCard embed={soundtrackEmbed} position={soundtrackPosition} onPositionChange={setSoundtrackPosition} />
+      {soundtrack.position === 'dashboard' && soundtrack.embed && (
+        <SoundtrackCard embed={soundtrack.embed} position={'dashboard'} onPositionChange={setSoundtrackPosition} />
+      )}
+
       <TipsRow />
     </div>
   );

@@ -29,7 +29,8 @@
     "react-dom": "^18.2.0",
     "react-particles": "^2.12.2",
     "recharts": "^2.10.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "valtio": "^2.1.7"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",

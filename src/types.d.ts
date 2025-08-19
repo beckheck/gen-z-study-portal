@@ -159,7 +159,7 @@ export interface OpenWeatherMapResponse {
 }
 
 /**
- * Soundtrack position type - can be 'dashboard', 'floating', or 'hidden'
+ * Soundtrack position type
  */
 export type SoundtrackPosition = 'dashboard' | 'floating' | 'hidden';
 
@@ -423,8 +423,17 @@ export interface Semester {
  */
 export interface DegreePlan {
   semesters: Semester[];
-  totalSemesters: number;
   completedCourses: string[];
+}
+
+/**
+ * Soundtrack configuration object
+ */
+export interface Soundtrack {
+  /** Embed URL for soundtrack (Spotify/YouTube) */
+  embed: string;
+  /** Position of the soundtrack player */
+  position: SoundtrackPosition;
 }
 
 /**
@@ -442,7 +451,7 @@ export interface AppState {
   courses: string[];
   selectedCourse: number;
   theme: ThemeState;
-  soundtrackEmbed: string;
+  soundtrack: Soundtrack;
   weatherApiKey: string;
   weatherLocation: WeatherLocation;
   degreePlan: DegreePlan;

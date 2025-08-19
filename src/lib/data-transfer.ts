@@ -1,4 +1,4 @@
-import { AppState } from '@/types';
+import { AppState, SoundtrackPosition } from '@/types';
 import { uid } from './utils';
 
 type StateUpdater = (updates: Partial<AppState>) => void;
@@ -19,7 +19,7 @@ export class DataTransfer {
 
   exportData(): void {
     const state = this.getState();
-    const data: DataFormatV1 = {
+    const data: ExchangeFormatV1 = {
       // Core data
       sessions: state.sessions.map(o => ({
         id: o.id,
@@ -82,16 +82,9 @@ export class DataTransfer {
         notes: o.notes,
         color: o.color,
       })),
-
       sessionTasks: state.sessionTasks,
-
-      // Degree Plan data
       degreePlan: state.degreePlan,
-
-      // Wellness data
       wellness: state.wellness,
-
-      // Settings
       settings: {
         courses: state.courses,
         selectedCourse: state.selectedCourse,
@@ -103,12 +96,11 @@ export class DataTransfer {
           end: state.theme.gradientEnd,
         },
         bgImage: state.theme.bgImage,
-        soundtrackEmbed: state.soundtrackEmbed,
+        soundtrackEmbed: state.soundtrack.embed,
         accentColor: state.theme.accentColor,
         cardOpacity: state.theme.cardOpacity,
         weatherApiKey: state.weatherApiKey,
         weatherLocation: state.weatherLocation,
-        degreePlan: state.degreePlan,
       },
     };
 
@@ -129,7 +121,7 @@ export class DataTransfer {
   async importData(file: File): Promise<boolean> {
     try {
       const text = await file.text();
-      const data: DataFormatV1 = JSON.parse(text);
+      const data: ExchangeFormatV1 = JSON.parse(text);
 
       if (data.version == null) {
         this.importDataV1(data);
@@ -142,7 +134,7 @@ export class DataTransfer {
     }
   }
 
-  private importDataV1(data: DataFormatV1) {
+  private importDataV1(data: ExchangeFormatV1) {
     // Extract settings first
     if (data.settings) {
       this.setState({
@@ -158,10 +150,13 @@ export class DataTransfer {
           accentColor: data.settings.accentColor,
           cardOpacity: data.settings.cardOpacity,
         },
-        soundtrackEmbed: data.settings.soundtrackEmbed,
+        soundtrack: {
+          embed: data.settings.soundtrackEmbed,
+          position: 'dashboard' as SoundtrackPosition,
+        },
         weatherApiKey: data.settings.weatherApiKey,
         weatherLocation: data.settings.weatherLocation,
-        degreePlan: data.settings.degreePlan || { semesters: [], totalSemesters: 0, completedCourses: [] },
+        degreePlan: data.settings.degreePlan || { semesters: [], completedCourses: [] },
       });
     }
 
@@ -360,7 +355,7 @@ function findCourseIndex(courseName: string, courses: string[]): number {
   return index === -1 ? 0 : index; // fallback to first course if not found
 }
 
-interface DataFormatV1 {
+interface ExchangeFormatV1 {
   version?: undefined;
   sessions?: Array<{
     id: string;
@@ -434,24 +429,7 @@ interface DataFormatV1 {
     done: boolean;
     createdAt: number;
   }>;
-  degreePlan?: {
-    semesters: Array<{
-      id: string | number;
-      name?: string;
-      number?: number;
-      courses: Array<{
-        id: string;
-        acronym: string;
-        name: string;
-        credits: string;
-        prerequisites?: string;
-        corequisites?: string;
-        completed: boolean;
-      }>;
-    }>;
-    totalSemesters: number;
-    completedCourses: string[];
-  };
+  degreePlan?: ExchangeFormatV1_DegreePlan;
   wellness?: {
     water?: number;
     gratitude?: string;
@@ -502,23 +480,24 @@ interface DataFormatV1 {
       useGeolocation: boolean;
       city: string;
     };
-    degreePlan: {
-      semesters: Array<{
-        id: string | number;
-        name?: string;
-        number?: number;
-        courses: Array<{
-          id: string;
-          acronym: string;
-          name: string;
-          credits: string;
-          prerequisites?: string;
-          corequisites?: string;
-          completed: boolean;
-        }>;
-      }>;
-      totalSemesters: number;
-      completedCourses: string[];
-    };
+    degreePlan?: ExchangeFormatV1_DegreePlan;
   };
+}
+
+interface ExchangeFormatV1_DegreePlan {
+  semesters: Array<{
+    id: string | number;
+    name?: string;
+    number?: number;
+    courses: Array<{
+      id: string;
+      acronym: string;
+      name: string;
+      credits: string;
+      prerequisites?: string;
+      corequisites?: string;
+      completed: boolean;
+    }>;
+  }>;
+  completedCourses: string[];
 }

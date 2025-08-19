@@ -7,44 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useCourseData, useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import { CalendarDays, GraduationCap, ListTodo, NotebookPen, Plus, Trash2, Undo } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
-import { Exam, ExamGrade, ExamInput, Task, TaskInput } from '../types';
 
-interface CourseManagerTabProps {
-  tasks: Task[];
-  exams: Exam[];
-  examGrades: ExamGrade[];
-  courses: string[];
-  selected: number;
-  setSelected: (index: number) => void;
-  addTask: (task: TaskInput) => void;
-  toggleTask: (id: string) => void;
-  deleteTask: (id: string) => void;
-  addExam: (exam: ExamInput) => void;
-  updateExam: (id: string, exam: ExamInput) => void;
-  deleteExam: (id: string) => void;
-  setExamGrades: (grades: ExamGrade[] | ((prev: ExamGrade[]) => ExamGrade[])) => void;
-  clearCourseData: (courseIndex: number) => void;
-}
-export default function CourseManagerTab({
-  courses,
-  selected,
-  setSelected,
-  tasks,
-  addTask,
-  toggleTask,
-  deleteTask,
-  exams,
-  addExam,
-  updateExam,
-  deleteExam,
-  examGrades,
-  setExamGrades,
-  clearCourseData,
-}: CourseManagerTabProps) {
+export default function CourseManagerTab() {
+  const { courses, selectedCourse, setSelectedCourse } = useCourses();
+  const { tasks, addTask, toggleTask, deleteTask } = useTasks();
+  const { exams, examGrades, addExam, updateExam, setExamGrades } = useExams();
+  const { clearCourseData } = useCourseData();
   const [taskForm, setTaskForm] = useState<{
     title: string;
     due: string;
@@ -59,13 +32,13 @@ export default function CourseManagerTab({
   const [editingExam, setEditingExam] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
-  const courseTasks = tasks.filter(t => t.courseIndex === selected);
-  const courseExams = exams.filter(e => e.courseIndex === selected);
+  const courseTasks = tasks.filter(t => t.courseIndex === selectedCourse);
+  const courseExams = exams.filter(e => e.courseIndex === selectedCourse);
 
   // Grade calculation logic
   const courseGrades = examGrades.filter(g => {
     const exam = exams.find(e => e.id === g.examId);
-    return exam && exam.courseIndex === selected;
+    return exam && exam.courseIndex === selectedCourse;
   });
 
   const calculateCourseAverage = (): string | null => {
@@ -91,14 +64,12 @@ export default function CourseManagerTab({
     const gradeValue = parseFloat(grade);
     if (gradeValue < 1 || gradeValue > 7) return;
 
-    setExamGrades(prev => {
-      const existing = prev.find(g => g.examId === examId);
-      if (existing) {
-        return prev.map(g => (g.examId === examId ? { ...g, grade: gradeValue } : g));
-      } else {
-        return [...prev, { examId, grade: gradeValue }];
-      }
-    });
+    const existing = examGrades.find(g => g.examId === examId);
+    if (existing) {
+      setExamGrades(examGrades.map(g => (g.examId === examId ? { ...g, grade: gradeValue } : g)));
+    } else {
+      setExamGrades([...examGrades, { examId, grade: gradeValue }]);
+    }
   };
 
   const progress = useMemo(() => {
@@ -124,7 +95,7 @@ export default function CourseManagerTab({
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Select value={String(selected)} onValueChange={v => setSelected(Number(v))}>
+          <Select value={String(selectedCourse)} onValueChange={v => setSelectedCourse(Number(v))}>
             <SelectTrigger className="w-56 rounded-xl">
               <SelectValue />
             </SelectTrigger>
@@ -138,7 +109,7 @@ export default function CourseManagerTab({
           </Select>
           <Badge variant="secondary" className="rounded-full">
             <GraduationCap className="w-3 h-3 mr-1" />
-            {courses[selected]}
+            {courses[selectedCourse]}
           </Badge>
           <Button
             variant="outline"
@@ -200,7 +171,7 @@ export default function CourseManagerTab({
               <Button
                 onClick={() => {
                   if (!taskForm.title) return;
-                  addTask({ ...taskForm, courseIndex: selected });
+                  addTask({ ...taskForm, courseIndex: selectedCourse });
                   setTaskForm({ title: '', due: '', priority: 'normal' });
                 }}
                 className="rounded-xl w-full"
@@ -390,10 +361,10 @@ export default function CourseManagerTab({
                 onClick={() => {
                   if (!examForm.title || !examForm.date) return;
                   if (editingExam) {
-                    updateExam(editingExam, { ...examForm, courseIndex: selected });
+                    updateExam(editingExam, { ...examForm, courseIndex: selectedCourse });
                     setEditingExam(null);
                   } else {
-                    addExam({ ...examForm, courseIndex: selected });
+                    addExam({ ...examForm, courseIndex: selectedCourse });
                   }
                   setExamForm({ title: '', date: '', weight: 20, notes: '' });
                 }}
@@ -512,10 +483,10 @@ export default function CourseManagerTab({
       <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
         <DialogContent className="rounded-xl bg-white dark:bg-zinc-950 border-none shadow-xl backdrop-blur">
           <DialogHeader className="">
-            <DialogTitle>Clear {courses[selected]} Data</DialogTitle>
+            <DialogTitle>Clear {courses[selectedCourse]} Data</DialogTitle>
             <DialogDescription>
               This will permanently delete all tasks, exams, and timetable events associated with the{' '}
-              {courses[selected]} course. This action cannot be undone.
+              {courses[selectedCourse]} course. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2">
@@ -525,7 +496,7 @@ export default function CourseManagerTab({
             <Button
               variant="destructive"
               onClick={() => {
-                clearCourseData(selected);
+                clearCourseData(selectedCourse);
                 setClearConfirmOpen(false);
               }}
             >

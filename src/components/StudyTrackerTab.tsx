@@ -5,38 +5,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { uid } from '@/lib/utils';
-import { Session, SessionTask, StudyTimer } from '@/types';
+import { useCourses, useSessions } from '@/hooks/useStore';
+import useStudyTimer from '@/hooks/useStudyTimer';
 import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
-interface StudyTrackerTabProps {
-  courses: string[];
-  selectedCourse: number;
-  setSelectedCourse: (courseIndex: number) => void;
-  studyTimer: StudyTimer;
-  sessions: Session[];
-  setSessions: (sessions: Session[] | ((prev: Session[]) => Session[])) => void;
-  sessionTasks: SessionTask[];
-  setSessionTasks: (tasks: SessionTask[] | ((prev: SessionTask[]) => SessionTask[])) => void;
-}
+export default function StudyTrackerTab() {
+  const { courses, selectedCourse, setSelectedCourse } = useCourses();
+  const {
+    sessions,
+    sessionTasks,
+    addSession,
+    deleteSession,
+    addSessionTask,
+    toggleSessionTask,
+    deleteSessionTask,
+    clearCompletedSessionTasks,
+  } = useSessions();
 
-export default function StudyTrackerTab({
-  courses,
-  selectedCourse,
-  setSelectedCourse,
-  studyTimer,
-  sessions,
-  setSessions,
-  sessionTasks,
-  setSessionTasks,
-}: StudyTrackerTabProps) {
-  /**
-   * Delete a session by ID
-   */
-  function deleteSession(id: string): void {
-    setSessions(s => s.filter(x => x.id !== id));
-  }
+  // Study timer with session completion callback
+  const studyTimer = useStudyTimer(session => {
+    addSession(session);
+  });
 
   const elapsedMin = Math.floor(studyTimer.elapsed / 60)
     .toString()
@@ -44,38 +34,17 @@ export default function StudyTrackerTab({
   const elapsedSec = (studyTimer.elapsed % 60).toString().padStart(2, '0');
 
   // Session-only tasks
-  const [stTitle, setStTitle] = useState<string>('');
+  const [sessionTaskTitle, setSessionTaskTitle] = useState<string>('');
 
   /**
    * Add a new session task
    */
-  function addST(): void {
-    const title = stTitle.trim();
+  const addSessionTaskAndClearInput = useCallback((): void => {
+    const title = sessionTaskTitle.trim();
     if (!title) return;
-    setSessionTasks(s => [{ id: uid(), title, done: false, createdAt: Date.now() }, ...s]);
-    setStTitle('');
-  }
-
-  /**
-   * Toggle the completion status of a session task
-   */
-  function toggleST(id: string): void {
-    setSessionTasks(s => s.map(t => (t.id === id ? { ...t, done: !t.done } : t)));
-  }
-
-  /**
-   * Delete a session task by ID
-   */
-  function delST(id: string): void {
-    setSessionTasks(s => s.filter(t => t.id !== id));
-  }
-
-  /**
-   * Clear all completed session tasks
-   */
-  function clearDone(): void {
-    setSessionTasks(s => s.filter(t => !t.done));
-  }
+    addSessionTask(title);
+    setSessionTaskTitle('');
+  }, [sessionTaskTitle, addSessionTask]);
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
@@ -179,12 +148,12 @@ export default function StudyTrackerTab({
         <CardContent className="space-y-3">
           <div className="flex gap-2">
             <Input
-              value={stTitle}
-              onChange={e => setStTitle(e.target.value)}
+              value={sessionTaskTitle}
+              onChange={e => setSessionTaskTitle(e.target.value)}
               className="rounded-xl"
               placeholder="Quick task…"
             />
-            <Button onClick={addST} className="rounded-xl">
+            <Button onClick={addSessionTaskAndClearInput} className="rounded-xl">
               <Plus className="w-4 h-4 mr-1" />
               Add
             </Button>
@@ -203,10 +172,15 @@ export default function StudyTrackerTab({
                 >
                   <div className="font-medium">{t.title}</div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => toggleST(t.id)}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="rounded-xl"
+                      onClick={() => toggleSessionTask(t.id)}
+                    >
                       Done
                     </Button>
-                    <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => delST(t.id)}>
+                    <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSessionTask(t.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -224,14 +198,14 @@ export default function StudyTrackerTab({
                   className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl opacity-70"
                 >
                   <div className="line-through">{t.title}</div>
-                  <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => delST(t.id)}>
+                  <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSessionTask(t.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
           </div>
           {sessionTasks.some(t => t.done) && (
-            <Button variant="outline" size="sm" onClick={clearDone} className="rounded-xl mt-2">
+            <Button variant="outline" size="sm" onClick={clearCompletedSessionTasks} className="rounded-xl mt-2">
               Clear completed
             </Button>
           )}

@@ -38,9 +38,9 @@ export default function SoundtrackCard({ embed, position = 'dashboard', onPositi
       <div
         className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${isMinimized ? 'w-16 h-16' : 'w-80 h-48'}`}
       >
-        <Card className="h-full rounded-2xl border-none shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+        <Card className="h-full rounded-2xl border-none shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur flex flex-col">
           {!isMinimized && (
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-sm">
                   <Music2 className="w-4 h-4" />
@@ -78,26 +78,25 @@ export default function SoundtrackCard({ embed, position = 'dashboard', onPositi
               </div>
             </CardHeader>
           )}
-          <CardContent className={`${isMinimized ? 'p-2' : 'p-3 pt-0'} h-full`}>
-            {isMinimized ? (
+          <CardContent className={`${isMinimized ? 'p-2' : 'p-2 pt-0'} flex-1 relative min-h-0`}>
+            {isMinimized && (
               <Button
                 variant="ghost"
                 onClick={() => setIsMinimized(false)}
-                className="w-full h-full p-0 flex items-center justify-center"
+                className="w-full h-full p-0 flex items-center justify-center absolute inset-0 z-10"
               >
                 <Music2 className="w-6 h-6" />
               </Button>
-            ) : (
-              <div className="rounded-xl overflow-hidden h-full">
-                <iframe
-                  src={embed}
-                  className="w-full h-full"
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  title="Study soundtrack"
-                />
-              </div>
             )}
+            <div className={`rounded-xl overflow-hidden h-full ${isMinimized ? 'opacity-0 pointer-events-none' : ''}`}>
+              <iframe
+                src={embed}
+                className="w-full h-full"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                title="Study soundtrack"
+              />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -119,7 +118,7 @@ export default function SoundtrackCard({ embed, position = 'dashboard', onPositi
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onPositionChange && onPositionChange('floating')}
+            onClick={() => onPositionChange?.('floating')}
             className="h-8 w-8 p-0 hover:bg-white/20"
             title="Minimize to floating player (plays across all tabs)"
           >

@@ -14,10 +14,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
+import { uid } from '@/lib/utils';
 import { CalendarDays, Plus, Target, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
-import { CalendarView, Exam, ExamInput, RegularEvent, RegularEventInput, Task, TaskInput } from '../types';
+import { CalendarView } from '../types';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 type DayName = (typeof DAYS)[number];
@@ -63,41 +65,33 @@ interface PlannerForm {
   color: string;
 }
 
-interface PlannerTabProps {
-  courses: string[];
-  onAdd: (event: any) => void;
-  onRemove: (id: string) => void;
-  eventsByDay: (day: string) => any[];
-  exams: Exam[];
-  tasks: Task[];
-  regularEvents: RegularEvent[];
-  addExam: (exam: ExamInput) => void;
-  addTask: (task: TaskInput) => void;
-  addRegularEvent: (event: RegularEventInput) => void;
-  deleteExam: (id: string) => void;
-  deleteTask: (id: string) => void;
-  deleteRegularEvent: (id: string) => void;
-}
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_LONG = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
 // -----------------------------
 // Planner (Week + Month views)
 // -----------------------------
 
-export default function PlannerTab({
-  courses,
-  onAdd,
-  onRemove,
-  eventsByDay,
-  exams,
-  tasks,
-  regularEvents,
-  addExam,
-  addTask,
-  addRegularEvent,
-  deleteExam,
-  deleteTask,
-  deleteRegularEvent,
-}: PlannerTabProps) {
+export default function PlannerTab() {
+  const { courses } = useCourses();
+  const { tasks, addTask, deleteTask } = useTasks();
+  const { exams, addExam, deleteExam } = useExams();
+  const { regularEvents, addRegularEvent, deleteRegularEvent } = useRegularEvents();
+  const { eventsForDay, removeSchedule } = useSchedule();
+
   const [open, setOpen] = useState<boolean>(false);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>({ open: false, event: null });
   const [showMultiDayEvents, setShowMultiDayEvents] = useState<boolean>(false);
@@ -128,20 +122,7 @@ export default function PlannerTab({
   // Month data
   const now = new Date();
   const [monthView, setMonthView] = useState<CalendarView>({ year: now.getFullYear(), month: now.getMonth() });
-  const MONTHS = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
+
   function monthMatrix(y: number, m: number): Date[] {
     const first = new Date(y, m, 1);
     const offset = (first.getDay() + 6) % 7; // Mon=0
@@ -240,15 +221,14 @@ export default function PlannerTab({
 
   // Format date for display
   function formatDate(date: Date): string {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${months[date.getMonth()]} ${date.getDate()}`;
+    return `${MONTHS_SHORT[date.getMonth()]} ${date.getDate()}`;
   }
 
   // Weekly Goals Management
   function addGoal(): void {
     if (!goalForm.title.trim()) return;
     const newGoal = {
-      id: Math.random().toString(36).slice(2, 10),
+      id: uid(),
       title: goalForm.title.trim(),
       completed: false,
       createdAt: Date.now(),
@@ -492,7 +472,7 @@ export default function PlannerTab({
     const dayName = DAYS[(date.getDay() + 6) % 7];
 
     // Regular schedule events
-    const scheduleEvents = eventsByDay(dayName)
+    const scheduleEvents = eventsForDay(dayName)
       .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
       .map(e => ({
         ...e,
@@ -563,7 +543,7 @@ export default function PlannerTab({
     const dayName = DAYS[(date.getDay() + 6) % 7];
 
     // Regular schedule events
-    const scheduleEvents = eventsByDay(dayName)
+    const scheduleEvents = eventsForDay(dayName)
       .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
       .map(e => ({
         ...e,
@@ -703,7 +683,7 @@ export default function PlannerTab({
                 Prev
               </Button>
               <div className="text-2xl md:text-3xl font-extrabold text-white dark:text-black">
-                {MONTHS[monthView.month]} {monthView.year}
+                {MONTHS_LONG[monthView.month]} {monthView.year}
               </div>
               <Button variant="outline" onClick={() => shiftMonth(1)} className="rounded-xl">
                 Next
@@ -1019,7 +999,7 @@ export default function PlannerTab({
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => onRemove(e.id)}
+                          onClick={() => removeSchedule(e.id)}
                           className="flex-shrink-0 rounded-xl"
                         >
                           <Trash2 className="w-4 h-4" />

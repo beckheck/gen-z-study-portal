@@ -3,11 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import useLocalState from '@/hooks/useLocalState';
+import { useDegreePlan } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Check, Edit, GraduationCap, Plus, Trash2, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { DegreeCourse, DegreePlan, Semester } from '../types';
+import { DegreeCourse } from '../types';
 
 interface SemesterForm {
   acronym: string;
@@ -19,11 +19,8 @@ interface SemesterForm {
 
 export default function DegreePlanTab() {
   // State management
-  const [degreePlan, setDegreePlan] = useLocalState<DegreePlan>('sp:degreePlan', {
-    semesters: [],
-    totalSemesters: 0,
-    completedCourses: [], // Array of course acronyms that are completed
-  });
+  const { degreePlan, setDegreePlan, setSemesters, addCompletedCourse, removeCompletedCourse, removeSemester } =
+    useDegreePlan();
   const [degreePlanDialog, setDegreePlanDialog] = useState<boolean>(false);
   const [degreePlanStep, setDegreePlanStep] = useState<'setup' | 'courses' | 'view'>('setup');
   const [currentSemester, setCurrentSemester] = useState<number>(1);
@@ -32,6 +29,7 @@ export default function DegreePlanTab() {
   const [clearConfirmDialog, setClearConfirmDialog] = useState<boolean>(false);
   const [draggedCourse, setDraggedCourse] = useState<DegreeCourse | null>(null);
   const [draggedFromSemester, setDraggedFromSemester] = useState<number | null>(null);
+  const [totalSemestersInput, setTotalSemestersInput] = useState<number>(0);
   const [semesterForm, setSemesterForm] = useState<SemesterForm>({
     acronym: '',
     name: '',
@@ -48,50 +46,41 @@ export default function DegreePlanTab() {
       courses: [],
     }));
 
-    setDegreePlan(prev => ({
-      ...prev,
-      semesters,
-      totalSemesters,
-    }));
+    setSemesters(semesters);
 
     setDegreePlanStep('courses');
     setCurrentSemester(1);
   }
 
   function addCourseToSemester(semesterNumber: number, courseData: Omit<DegreeCourse, 'id' | 'completed'>): void {
-    setDegreePlan(prev => ({
-      ...prev,
-      semesters: prev.semesters.map(sem =>
-        sem.number === semesterNumber
-          ? {
-              ...sem,
-              courses: [
-                ...sem.courses,
-                {
-                  id: uid(),
-                  ...courseData,
-                  completed: false,
-                },
-              ],
-            }
-          : sem
-      ),
-    }));
+    const newSemesters = degreePlan.semesters.map(sem =>
+      sem.number === semesterNumber
+        ? {
+            ...sem,
+            courses: [
+              ...sem.courses,
+              {
+                id: uid(),
+                ...courseData,
+                completed: false,
+              },
+            ],
+          }
+        : sem
+    );
+    setSemesters(newSemesters);
   }
 
   function toggleCourseCompletion(courseAcronym: string): void {
-    setDegreePlan(prev => {
-      const isCompleted = prev.completedCourses.includes(courseAcronym);
-      return {
-        ...prev,
-        completedCourses: isCompleted
-          ? prev.completedCourses.filter(c => c !== courseAcronym)
-          : [...prev.completedCourses, courseAcronym],
-      };
-    });
+    const isCompleted = degreePlan.completedCourses.includes(courseAcronym);
+    if (isCompleted) {
+      removeCompletedCourse(courseAcronym);
+    } else {
+      addCompletedCourse(courseAcronym);
+    }
   }
 
-  function checkPrerequisites(course: DegreeCourse, semester: Semester): boolean {
+  function checkPrerequisites(course: DegreeCourse, semester: any): boolean {
     if (!course.prerequisites) return true;
 
     const prereqAcronyms = course.prerequisites.split(',').map(p => p.trim());
@@ -101,7 +90,7 @@ export default function DegreePlanTab() {
     return prereqAcronyms.every(prereq => completedCourses.includes(prereq));
   }
 
-  function getCourseColor(course: DegreeCourse, semester: Semester): string {
+  function getCourseColor(course: DegreeCourse, semester: any): string {
     const isCompleted = degreePlan.completedCourses.includes(course.acronym);
     const prerequisitesMet = checkPrerequisites(course, semester);
 
@@ -117,7 +106,6 @@ export default function DegreePlanTab() {
   function resetDegreePlan(): void {
     setDegreePlan({
       semesters: [],
-      totalSemesters: 0,
       completedCourses: [],
     });
     setDegreePlanStep('setup');
@@ -164,29 +152,24 @@ export default function DegreePlanTab() {
     }
 
     // Move course from source to target semester
-    setDegreePlan(prev => {
-      const newPlan = { ...prev };
-
-      // Remove course from source semester
-      const sourceSemesterIndex = newPlan.semesters.findIndex(s => s.number === draggedFromSemester);
-      if (sourceSemesterIndex >= 0) {
-        newPlan.semesters[sourceSemesterIndex] = {
-          ...newPlan.semesters[sourceSemesterIndex],
-          courses: newPlan.semesters[sourceSemesterIndex].courses.filter(c => c.id !== draggedCourse.id),
+    const newSemesters = degreePlan.semesters.map(semester => {
+      if (semester.number === draggedFromSemester) {
+        // Remove course from source semester
+        return {
+          ...semester,
+          courses: semester.courses.filter(c => c.id !== draggedCourse.id),
+        };
+      } else if (semester.number === targetSemester) {
+        // Add course to target semester
+        return {
+          ...semester,
+          courses: [...semester.courses, draggedCourse],
         };
       }
-
-      // Add course to target semester
-      const targetSemesterIndex = newPlan.semesters.findIndex(s => s.number === targetSemester);
-      if (targetSemesterIndex >= 0) {
-        newPlan.semesters[targetSemesterIndex] = {
-          ...newPlan.semesters[targetSemesterIndex],
-          courses: [...newPlan.semesters[targetSemesterIndex].courses, draggedCourse],
-        };
-      }
-
-      return newPlan;
+      return semester;
     });
+
+    setSemesters(newSemesters);
 
     // Clear drag state
     setDraggedCourse(null);
@@ -220,18 +203,13 @@ export default function DegreePlanTab() {
   // Add new semester function
   const addNewSemester = (): void => {
     const newSemesterNumber = degreePlan.semesters.length + 1;
-    setDegreePlan(prev => ({
-      ...prev,
-      totalSemesters: prev.totalSemesters + 1,
-      semesters: [
-        ...prev.semesters,
-        {
-          id: Math.random().toString(36).slice(2, 10),
-          number: newSemesterNumber,
-          courses: [],
-        },
-      ],
-    }));
+    const newSemester = {
+      id: uid(),
+      number: newSemesterNumber,
+      courses: [],
+    };
+
+    setSemesters([...degreePlan.semesters, newSemester]);
   };
 
   return (
@@ -247,7 +225,7 @@ export default function DegreePlanTab() {
               <CardDescription>Plan your academic journey</CardDescription>
             </div>
             <div className="flex items-center gap-3">
-              {degreePlan.totalSemesters > 0 && (
+              {degreePlan.semesters.length > 0 && (
                 <div className="text-right">
                   <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     {getCompletedCredits()}/{getTotalCredits()} credits done ✨
@@ -264,7 +242,7 @@ export default function DegreePlanTab() {
                 className="rounded-xl"
                 onClick={() => {
                   // If degree plan already exists, go to view step, otherwise start setup
-                  if (degreePlan.totalSemesters > 0) {
+                  if (degreePlan.semesters.length > 0) {
                     setDegreePlanStep('view');
                   } else {
                     setDegreePlanStep('setup');
@@ -279,7 +257,7 @@ export default function DegreePlanTab() {
           </div>
         </CardHeader>
         <CardContent>
-          {degreePlan.totalSemesters > 0 ? (
+          {degreePlan.semesters.length > 0 ? (
             <div className="space-y-6">
               <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -291,18 +269,20 @@ export default function DegreePlanTab() {
                 className="grid gap-4 lg:gap-6"
                 style={{
                   gridTemplateColumns:
-                    degreePlan.totalSemesters <= 2
-                      ? `repeat(${degreePlan.totalSemesters}, 1fr)`
-                      : degreePlan.totalSemesters <= 4
-                      ? `repeat(${Math.min(degreePlan.totalSemesters, 2)}, 1fr)`
+                    degreePlan.semesters.length <= 2
+                      ? `repeat(${degreePlan.semesters.length}, 1fr)`
+                      : degreePlan.semesters.length <= 4
+                      ? `repeat(${Math.min(degreePlan.semesters.length, 2)}, 1fr)`
                       : `repeat(3, 1fr)`,
                 }}
               >
                 {degreePlan.semesters.map(semester => (
                   <div key={semester.id} className="space-y-3">
-                    <h3 className="font-semibold text-center text-sm px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                      {semester.number}° Semestre
-                    </h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-center text-sm px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex-1">
+                        {semester.number}° Semestre
+                      </h3>
+                    </div>
                     <div
                       className={`space-y-2 min-h-[200px] p-3 border-2 border-dashed rounded-lg transition-colors ${
                         draggedCourse && draggedFromSemester !== semester.number
@@ -472,13 +452,8 @@ export default function DegreePlanTab() {
                   min="1"
                   max="12"
                   placeholder="e.g., 8"
-                  value={degreePlan.totalSemesters || ''}
-                  onChange={e =>
-                    setDegreePlan(prev => ({
-                      ...prev,
-                      totalSemesters: parseInt(e.target.value) || 0,
-                    }))
-                  }
+                  value={totalSemestersInput || ''}
+                  onChange={e => setTotalSemestersInput(parseInt(e.target.value) || 0)}
                   className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
                 />
               </div>
@@ -491,8 +466,8 @@ export default function DegreePlanTab() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={() => setupDegreePlan(degreePlan.totalSemesters)}
-                  disabled={!degreePlan.totalSemesters || degreePlan.totalSemesters < 1}
+                  onClick={() => setupDegreePlan(totalSemestersInput)}
+                  disabled={!totalSemestersInput || totalSemestersInput < 1}
                   className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                 >
                   Next <ArrowRight className="w-4 h-4 ml-2" />
@@ -504,7 +479,7 @@ export default function DegreePlanTab() {
           {degreePlanStep === 'courses' && (
             <div className="space-y-6">
               <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                Semester {currentSemester} of {degreePlan.totalSemesters}
+                Semester {currentSemester} of {degreePlan.semesters.length}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -611,19 +586,17 @@ export default function DegreePlanTab() {
 
                           if (editingCourse) {
                             // Update existing course
-                            setDegreePlan(prev => ({
-                              ...prev,
-                              semesters: prev.semesters.map(sem =>
-                                sem.number === currentSemester
-                                  ? {
-                                      ...sem,
-                                      courses: sem.courses.map(c =>
-                                        c.id === editingCourse.id ? { ...c, ...semesterForm } : c
-                                      ),
-                                    }
-                                  : sem
-                              ),
-                            }));
+                            const updatedSemesters = degreePlan.semesters.map(sem =>
+                              sem.number === currentSemester
+                                ? {
+                                    ...sem,
+                                    courses: sem.courses.map(c =>
+                                      c.id === editingCourse.id ? { ...c, ...semesterForm } : c
+                                    ),
+                                  }
+                                : sem
+                            );
+                            setSemesters(updatedSemesters);
                             setEditingCourse(null);
                           } else {
                             // Add new course
@@ -692,17 +665,15 @@ export default function DegreePlanTab() {
                               size="sm"
                               variant="ghost"
                               onClick={() => {
-                                setDegreePlan(prev => ({
-                                  ...prev,
-                                  semesters: prev.semesters.map(sem =>
-                                    sem.number === currentSemester
-                                      ? {
-                                          ...sem,
-                                          courses: sem.courses.filter(c => c.id !== course.id),
-                                        }
-                                      : sem
-                                  ),
-                                }));
+                                const updatedSemesters = degreePlan.semesters.map(sem =>
+                                  sem.number === currentSemester
+                                    ? {
+                                        ...sem,
+                                        courses: sem.courses.filter(c => c.id !== course.id),
+                                      }
+                                    : sem
+                                );
+                                setSemesters(updatedSemesters);
                               }}
                               className="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                             >
@@ -742,7 +713,7 @@ export default function DegreePlanTab() {
                   {currentSemester > 1 ? 'Previous Semester' : 'Back to Setup'}
                 </Button>
 
-                {currentSemester < degreePlan.totalSemesters ? (
+                {currentSemester < degreePlan.semesters.length ? (
                   <Button
                     onClick={() => {
                       setEditingCourse(null);
@@ -789,9 +760,9 @@ export default function DegreePlanTab() {
                 className="grid gap-4 lg:gap-6"
                 style={{
                   gridTemplateColumns:
-                    degreePlan.totalSemesters <= 2
-                      ? `repeat(${degreePlan.totalSemesters}, 1fr)`
-                      : degreePlan.totalSemesters <= 4
+                    degreePlan.semesters.length <= 2
+                      ? `repeat(${degreePlan.semesters.length}, 1fr)`
+                      : degreePlan.semesters.length <= 4
                       ? `repeat(2, 1fr)`
                       : `repeat(3, 1fr)`,
                 }}
@@ -803,25 +774,39 @@ export default function DegreePlanTab() {
                   >
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Semester {semester.number}</h3>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingCourse(null);
-                          setSemesterForm({
-                            acronym: '',
-                            name: '',
-                            credits: '',
-                            prerequisites: '',
-                            corequisites: '',
-                          });
-                          setCurrentSemester(semester.number);
-                          setDegreePlanStep('courses');
-                        }}
-                        className="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingCourse(null);
+                            setSemesterForm({
+                              acronym: '',
+                              name: '',
+                              credits: '',
+                              prerequisites: '',
+                              corequisites: '',
+                            });
+                            setCurrentSemester(semester.number);
+                            setDegreePlanStep('courses');
+                          }}
+                          className="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                          title="Edit semester"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        {semester.courses.length === 0 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeSemester(semester.number)}
+                            className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            title="Remove empty semester"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-2 max-h-[300px] overflow-y-auto">
                       {semester.courses.map(course => {

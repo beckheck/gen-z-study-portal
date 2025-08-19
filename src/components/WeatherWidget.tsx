@@ -67,7 +67,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
         setError(null);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        console.log('Weather API failed:', errorMessage);
+        console.error('Weather API failed:', errorMessage);
         setError(errorMessage);
         fallbackToSimulation();
       }
@@ -119,7 +119,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
         setError(null);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        console.log('Weather API failed, falling back to simulation:', errorMessage);
+        console.error('Weather API failed, falling back to simulation:', errorMessage);
         // Fallback to simulated weather if API fails
         fallbackToSimulation();
       }
@@ -163,7 +163,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
             fetchWeatherData(latitude, longitude);
           },
           (err: GeolocationPositionError) => {
-            console.log('Geolocation failed:', err.message);
+            console.error('Geolocation failed:', err.message);
             setError('Location access denied');
             if (location && location.city) {
               // Try fallback to city if available

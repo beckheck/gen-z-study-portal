@@ -3,17 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCourses, useTimetable } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
 import React, { useEffect, useRef, useState } from 'react';
-import type { Course, Position, TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
+import type { Position, TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
 
-interface TimetableTabProps {
-  courses: Course[];
-  timetableEvents: TimetableEvent[];
-  setTimetableEvents: (events: TimetableEvent[] | ((prev: TimetableEvent[]) => TimetableEvent[])) => void;
-}
-
-function TimetableTab({ courses, timetableEvents, setTimetableEvents }: TimetableTabProps) {
+function TimetableTab() {
+  const { courses } = useCourses();
+  const { timetableEvents, setTimetableEvents, deleteTimetableEvent } = useTimetable();
   const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<TimetableEvent | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -34,11 +31,7 @@ function TimetableTab({ courses, timetableEvents, setTimetableEvents }: Timetabl
 
   // Helper function to get course name
   const getCourseTitle = (courseIndex: number): string => {
-    const course = courses[courseIndex];
-    if (typeof course === 'string') {
-      return course;
-    }
-    return course?.title || 'Unknown Course';
+    return courses[courseIndex] || 'Unknown Course';
   };
 
   // Add useEffect to handle clicks outside the options menu
@@ -105,8 +98,8 @@ function TimetableTab({ courses, timetableEvents, setTimetableEvents }: Timetabl
   const addEvent = (): void => {
     if (isEditing && selectedEvent) {
       // Update existing event
-      setTimetableEvents(prevEvents =>
-        prevEvents.map(event => (event.id === selectedEvent.id ? { ...eventInput, id: selectedEvent.id } : event))
+      setTimetableEvents(
+        timetableEvents.map(event => (event.id === selectedEvent.id ? { ...eventInput, id: selectedEvent.id } : event))
       );
       setIsEditing(false);
       setSelectedEvent(null);
@@ -117,7 +110,7 @@ function TimetableTab({ courses, timetableEvents, setTimetableEvents }: Timetabl
         id: uid(),
       };
 
-      setTimetableEvents(prevEvents => [...prevEvents, eventWithId]);
+      setTimetableEvents([...timetableEvents, eventWithId]);
     }
 
     // Reset form
@@ -148,7 +141,7 @@ function TimetableTab({ courses, timetableEvents, setTimetableEvents }: Timetabl
 
   // Delete an event
   const deleteEvent = (id: string): void => {
-    setTimetableEvents(prevEvents => prevEvents.filter(event => event.id !== id));
+    deleteTimetableEvent(id);
   };
 
   // Filter events for a specific day and block

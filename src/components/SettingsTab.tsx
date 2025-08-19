@@ -2,36 +2,35 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { DataTransfer, Theme, WeatherLocation } from '@/types';
 import { Download } from 'lucide-react';
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useMemo } from 'react';
+import { useCourses, useExternalServices, useAppState, useSoundtrack } from '@/hooks/useStore';
+import { patchStoreState } from '@/store';
+import { DataTransfer } from '@/lib/data-transfer';
+import useTheme from '@/hooks/useTheme';
 
-interface SettingsTabProps {
-  courses: string[];
-  renameCourse: (index: number, name: string) => void;
-  soundtrackEmbed: string;
-  setSoundtrackEmbed: (value: string) => void;
-  theme: Theme;
-  weatherApiKey: string;
-  setWeatherApiKey: (value: string) => void;
-  weatherLocation: WeatherLocation;
-  setWeatherLocation: (value: WeatherLocation) => void;
-  dataTransfer: DataTransfer;
-}
+export default function SettingsTab() {
+  const { courses, renameCourse } = useCourses();
+  const { weatherApiKey, setWeatherApiKey, weatherLocation, setWeatherLocation } = useExternalServices();
+  const { soundtrack, setSoundtrackEmbed, setSoundtrackPosition } = useSoundtrack();
+  const theme = useTheme();
+  const state = useAppState();
 
-export default function SettingsTab({
-  courses,
-  renameCourse,
-  soundtrackEmbed,
-  setSoundtrackEmbed,
-  theme,
-  weatherApiKey,
-  setWeatherApiKey,
-  weatherLocation,
-  setWeatherLocation,
-  dataTransfer,
-}: SettingsTabProps) {
+  // Data transfer instance for import/export
+  const dataTransfer = useMemo(
+    () =>
+      new DataTransfer(
+        // Get state callback - return the current state snapshot
+        () => state as any,
+        // Set state callback - update the entire store state
+        (newState) => {
+          patchStoreState(newState);
+        }
+      ),
+    [state]
+  );
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
@@ -41,7 +40,7 @@ export default function SettingsTab({
         </CardHeader>
         <CardContent className="grid gap-3">
           {courses.map((c, i) => (
-            <div key={i} className="grid grid-cols-[100px_1fr] items-center gap-3">
+            <div key={c + i} className="grid grid-cols-[100px_1fr] items-center gap-3">
               <Label>Course {i + 1}</Label>
               <Input defaultValue={c} onBlur={e => renameCourse(i, e.target.value)} className="rounded-xl" />
             </div>
@@ -109,17 +108,30 @@ export default function SettingsTab({
           <CardDescription>Paste an embed URL (Spotify/YouTube)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div>
+            <Label htmlFor="soundtrack-position">Position</Label>
+            <Select value={soundtrack.position} onValueChange={setSoundtrackPosition}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="Select position" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dashboard">Dashboard</SelectItem>
+                <SelectItem value="floating">Floating</SelectItem>
+                <SelectItem value="hidden">Hidden</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Input
-            value={soundtrackEmbed}
+            value={soundtrack.embed}
             onChange={e => setSoundtrackEmbed(e.target.value)}
             placeholder="https://open.spotify.com/embed/playlist/..."
             className="rounded-xl"
           />
-          {soundtrackEmbed && (
+          {soundtrack.embed && (
             <div className="rounded-2xl overflow-hidden">
               <div className="aspect-video">
                 <iframe
-                  src={soundtrackEmbed}
+                  src={soundtrack.embed}
                   className="w-full h-full"
                   allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                   loading="lazy"
@@ -191,7 +203,9 @@ export default function SettingsTab({
               />
               <div
                 className="absolute inset-1 rounded-full border-4 border-white dark:border-zinc-800"
-                style={{ backgroundColor: theme.get.darkMode ? theme.get.accentColor.dark : theme.get.accentColor.light }}
+                style={{
+                  backgroundColor: theme.get.darkMode ? theme.get.accentColor.dark : theme.get.accentColor.light,
+                }}
               />
               <label className="block absolute inset-0 rounded-full cursor-pointer">
                 <input
@@ -293,13 +307,18 @@ export default function SettingsTab({
               <div className="flex items-center gap-2 mt-1.5">
                 <div
                   className="w-10 h-10 rounded-lg shadow-inner"
-                  style={{ backgroundColor: theme.get.darkMode ? theme.get.gradientStart.dark : theme.get.gradientStart.light }}
+                  style={{
+                    backgroundColor: theme.get.darkMode ? theme.get.gradientStart.dark : theme.get.gradientStart.light,
+                  }}
                 ></div>
                 <Input
                   type="color"
                   value={theme.get.darkMode ? theme.get.gradientStart.dark : theme.get.gradientStart.light}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    theme.set.gradientStart(prev => ({ ...prev, [theme.get.darkMode ? 'dark' : 'light']: e.target.value }))
+                    theme.set.gradientStart(prev => ({
+                      ...prev,
+                      [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
+                    }))
                   }
                   className="h-10 rounded-xl w-full"
                 />
@@ -310,13 +329,20 @@ export default function SettingsTab({
               <div className="flex items-center gap-2 mt-1.5">
                 <div
                   className="w-10 h-10 rounded-lg shadow-inner"
-                  style={{ backgroundColor: theme.get.darkMode ? theme.get.gradientMiddle.dark : theme.get.gradientMiddle.light }}
+                  style={{
+                    backgroundColor: theme.get.darkMode
+                      ? theme.get.gradientMiddle.dark
+                      : theme.get.gradientMiddle.light,
+                  }}
                 ></div>
                 <Input
                   type="color"
                   value={theme.get.darkMode ? theme.get.gradientMiddle.dark : theme.get.gradientMiddle.light}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    theme.set.gradientMiddle(prev => ({ ...prev, [theme.get.darkMode ? 'dark' : 'light']: e.target.value }))
+                    theme.set.gradientMiddle(prev => ({
+                      ...prev,
+                      [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
+                    }))
                   }
                   className="h-10 rounded-xl w-full"
                 />
@@ -327,13 +353,18 @@ export default function SettingsTab({
               <div className="flex items-center gap-2 mt-1.5">
                 <div
                   className="w-10 h-10 rounded-lg shadow-inner"
-                  style={{ backgroundColor: theme.get.darkMode ? theme.get.gradientEnd.dark : theme.get.gradientEnd.light }}
+                  style={{
+                    backgroundColor: theme.get.darkMode ? theme.get.gradientEnd.dark : theme.get.gradientEnd.light,
+                  }}
                 ></div>
                 <Input
                   type="color"
                   value={theme.get.darkMode ? theme.get.gradientEnd.dark : theme.get.gradientEnd.light}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    theme.set.gradientEnd(prev => ({ ...prev, [theme.get.darkMode ? 'dark' : 'light']: e.target.value }))
+                    theme.set.gradientEnd(prev => ({
+                      ...prev,
+                      [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
+                    }))
                   }
                   className="h-10 rounded-xl w-full"
                 />

@@ -14,30 +14,25 @@ export default function useCardOpacityStyles(cardOpacity: OpacityTheme, darkMode
     const cssContent = `
 /* Card opacity adjustments - Light Mode */
 :where(:not(.dark)) .bg-white\\/80 {
-  background-color: rgba(255, 255, 255, ${cardOpacity.light / 100}) !important;
+  background-color: rgba(255, 255, 255, ${cardOpacity.light}) !important;
 }
 
 /* Card opacity adjustments - Dark Mode */
 :where(.dark) .bg-white\\/80,
 :where(.dark) .dark\\:bg-white\\/10 {
-  background-color: rgba(39, 39, 42, ${cardOpacity.dark / 100}) !important;
+  background-color: rgba(39, 39, 42, ${cardOpacity.dark}) !important;
 }
 
 /* Ensure dark mode overrides */
 .dark .bg-white\\/80 {
-  background-color: rgba(39, 39, 42, ${cardOpacity.dark / 100}) !important;
+  background-color: rgba(39, 39, 42, ${cardOpacity.dark}) !important;
 }
 
 .dark .dark\\:bg-white\\/10 {
-  background-color: rgba(39, 39, 42, ${cardOpacity.dark / 100}) !important;
+  background-color: rgba(39, 39, 42, ${cardOpacity.dark}) !important;
 }
 `;
 
     style.textContent = cssContent;
-    console.log('Updated card opacity CSS:', {
-      lightOpacity: cardOpacity.light + '%',
-      darkOpacity: cardOpacity.dark + '%',
-      isDarkMode: darkMode,
-    });
   }, [cardOpacity, darkMode]);
 }

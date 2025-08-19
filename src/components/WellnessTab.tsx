@@ -9,40 +9,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { CalendarView, MonthlyMood, MonthlyMoods, MoodEmoji, MoodEmojis, MoodPercentages } from '@/types';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useWellness } from '@/hooks/useStore';
 
-interface WellnessTabProps {
-  water: number;
-  setWater: (value: number | ((prev: number) => number)) => void;
-  gratitude: string;
-  setGratitude: (value: string) => void;
-  moodPercentages: MoodPercentages;
-  setMoodPercentages: (value: MoodPercentages | ((prev: MoodPercentages) => MoodPercentages)) => void;
-  hasInteracted: boolean;
-  setHasInteracted: (value: boolean) => void;
-  monthlyMoods: MonthlyMoods;
-  setMonthlyMoods: (value: MonthlyMoods | ((prev: MonthlyMoods) => MonthlyMoods)) => void;
-  showWords: boolean;
-  setShowWords: (value: boolean) => void;
-  moodEmojis: MoodEmojis;
-  setMoodEmojis: (value: MoodEmojis | ((prev: MoodEmojis) => MoodEmojis)) => void;
-}
+export default function WellnessTab() {
+  const {
+    wellness,
+    setWater,
+    setGratitude,
+    setMoodPercentages,
+    setHasInteracted,
+    setMonthlyMoods,
+    setShowWords,
+    setMoodEmojis,
+  } = useWellness();
 
-export default function WellnessTab({
-  water,
-  setWater,
-  gratitude,
-  setGratitude,
-  moodPercentages,
-  setMoodPercentages,
-  hasInteracted,
-  setHasInteracted,
-  monthlyMoods,
-  setMonthlyMoods,
-  showWords,
-  setShowWords,
-  moodEmojis,
-  setMoodEmojis,
-}: WellnessTabProps) {
+  const {
+    water,
+    gratitude,
+    moodPercentages,
+    hasInteracted,
+    monthlyMoods,
+    showWords,
+    moodEmojis,
+  } = wellness;
   const [breathing, setBreathing] = useState<boolean>(false);
 
   // Local state for UI only (not persisted)
@@ -263,27 +252,27 @@ export default function WellnessTab({
   // Handle mood selection (add 20% each click)
   const handleMoodSelect = (moodKey: string): void => {
     setHasInteracted(true);
-    setMoodPercentages(prev => {
-      const currentPercentage = prev[moodKey] || 0;
-      const newPercentage = Math.min(100, currentPercentage + 20);
+    const currentPercentage = moodPercentages[moodKey] || 0;
+    const newPercentage = Math.min(100, currentPercentage + 20);
 
-      // Calculate if total would exceed 100%
-      const otherMoodsTotal = Object.entries(prev)
-        .filter(([key]) => key !== moodKey)
-        .reduce((sum, [_, percentage]) => sum + percentage, 0);
+    // Calculate if total would exceed 100%
+    const otherMoodsTotal = Object.entries(moodPercentages)
+      .filter(([key]) => key !== moodKey)
+      .reduce((sum, [_, percentage]) => sum + percentage, 0);
 
-      if (otherMoodsTotal + newPercentage > 100) {
-        // Cap at remaining percentage
-        return {
-          ...prev,
-          [moodKey]: Math.max(0, 100 - otherMoodsTotal),
-        };
-      }
-
+    if (otherMoodsTotal + newPercentage > 100) {
+      // Cap at remaining percentage
       const updatedMoods = {
-        ...prev,
+        ...moodPercentages,
+        [moodKey]: Math.max(0, 100 - otherMoodsTotal),
+      };
+      setMoodPercentages(updatedMoods);
+    } else {
+      const updatedMoods = {
+        ...moodPercentages,
         [moodKey]: newPercentage,
       };
+      setMoodPercentages(updatedMoods);
 
       // Save to monthly moods immediately
       const today = getTodayDateString();
@@ -304,19 +293,18 @@ export default function WellnessTab({
           gradient = `linear-gradient(180deg, ${gradientStops})`;
         }
 
-        setMonthlyMoods(prevMonthly => ({
-          ...prevMonthly,
+        const newMonthlyMoods = {
+          ...monthlyMoods,
           [today]: {
             percentages: { ...updatedMoods },
             gradient: gradient,
             totalPercentage: totalPerc,
             savedAt: Date.now(),
           },
-        }));
+        };
+        setMonthlyMoods(newMonthlyMoods);
       }
-
-      return updatedMoods;
-    });
+    }
   };
 
   // Reset mood
@@ -327,13 +315,14 @@ export default function WellnessTab({
 
   // Handle emoji/color customization
   const updateMoodCustomization = (moodKey: string, field: keyof MoodEmoji, value: string): void => {
-    setMoodEmojis(prev => ({
-      ...prev,
+    const updatedMoodEmojis = {
+      ...moodEmojis,
       [moodKey]: {
-        ...prev[moodKey],
+        ...moodEmojis[moodKey],
         [field]: value,
       },
-    }));
+    };
+    setMoodEmojis(updatedMoodEmojis);
   };
 
   // Handle emoji selection from library
@@ -353,11 +342,11 @@ export default function WellnessTab({
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <Button className="rounded-xl" onClick={() => setWater(w => Math.max(0, w - 1))}>
+              <Button className="rounded-xl" onClick={() => setWater(Math.max(0, water - 1))}>
                 -1
               </Button>
               <div className="text-4xl font-extrabold tabular-nums">{water}</div>
-              <Button className="rounded-xl" onClick={() => setWater(w => Math.min(12, w + 1))}>
+              <Button className="rounded-xl" onClick={() => setWater(Math.min(12, water + 1))}>
                 +1
               </Button>
             </div>
