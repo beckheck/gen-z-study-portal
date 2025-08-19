@@ -1,6 +1,7 @@
+import { OpacityTheme } from '@/types';
 import { useLayoutEffect } from 'react';
 
-export default function useCardOpacityStyles(cardOpacity, darkMode) {
+export default function useCardOpacityStyles(cardOpacity: OpacityTheme, darkMode: boolean): void {
   // Update card opacity CSS variables
   useLayoutEffect(() => {
     let style = document.getElementById('sp-card-opacity');

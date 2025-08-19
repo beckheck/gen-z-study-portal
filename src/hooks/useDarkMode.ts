@@ -1,6 +1,6 @@
 import { useLayoutEffect } from 'react';
 
-export default function useDarkMode(darkMode) {
+export default function useDarkMode(darkMode: boolean): void {
   // Apply theme and accent color before paint + minimal reset for consistency
   useLayoutEffect(() => {
     const root = document.documentElement;

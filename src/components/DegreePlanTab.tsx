@@ -6,24 +6,33 @@ import { Label } from '@/components/ui/label';
 import useLocalState from '@/hooks/useLocalState';
 import { uid } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Check, Edit, GraduationCap, Plus, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { DegreeCourse, DegreePlan, Semester } from '../types';
+
+interface SemesterForm {
+  acronym: string;
+  name: string;
+  credits: string;
+  prerequisites: string;
+  corequisites: string;
+}
 
 export default function DegreePlanTab() {
   // State management
-  const [degreePlan, setDegreePlan] = useLocalState('sp:degreePlan', {
+  const [degreePlan, setDegreePlan] = useLocalState<DegreePlan>('sp:degreePlan', {
     semesters: [],
     totalSemesters: 0,
     completedCourses: [], // Array of course acronyms that are completed
   });
-  const [degreePlanDialog, setDegreePlanDialog] = useState(false);
-  const [degreePlanStep, setDegreePlanStep] = useState('setup'); // 'setup', 'courses', 'view'
-  const [currentSemester, setCurrentSemester] = useState(1);
-  const [editingCourse, setEditingCourse] = useState(null); // Track course being edited
-  const [resetConfirmDialog, setResetConfirmDialog] = useState(false); // Confirm reset dialog
-  const [clearConfirmDialog, setClearConfirmDialog] = useState(false); // Confirm clear dialog
-  const [draggedCourse, setDraggedCourse] = useState(null); // Track dragged course
-  const [draggedFromSemester, setDraggedFromSemester] = useState(null); // Track source semester
-  const [semesterForm, setSemesterForm] = useState({
+  const [degreePlanDialog, setDegreePlanDialog] = useState<boolean>(false);
+  const [degreePlanStep, setDegreePlanStep] = useState<'setup' | 'courses' | 'view'>('setup');
+  const [currentSemester, setCurrentSemester] = useState<number>(1);
+  const [editingCourse, setEditingCourse] = useState<DegreeCourse | null>(null);
+  const [resetConfirmDialog, setResetConfirmDialog] = useState<boolean>(false);
+  const [clearConfirmDialog, setClearConfirmDialog] = useState<boolean>(false);
+  const [draggedCourse, setDraggedCourse] = useState<DegreeCourse | null>(null);
+  const [draggedFromSemester, setDraggedFromSemester] = useState<number | null>(null);
+  const [semesterForm, setSemesterForm] = useState<SemesterForm>({
     acronym: '',
     name: '',
     credits: '',
@@ -32,7 +41,7 @@ export default function DegreePlanTab() {
   });
 
   // Degree Plan Management Functions
-  function setupDegreePlan(totalSemesters) {
+  function setupDegreePlan(totalSemesters: number): void {
     const semesters = Array.from({ length: totalSemesters }, (_, i) => ({
       id: i + 1,
       number: i + 1,
@@ -49,7 +58,7 @@ export default function DegreePlanTab() {
     setCurrentSemester(1);
   }
 
-  function addCourseToSemester(semesterNumber, courseData) {
+  function addCourseToSemester(semesterNumber: number, courseData: Omit<DegreeCourse, 'id' | 'completed'>): void {
     setDegreePlan(prev => ({
       ...prev,
       semesters: prev.semesters.map(sem =>
@@ -70,7 +79,7 @@ export default function DegreePlanTab() {
     }));
   }
 
-  function toggleCourseCompletion(courseAcronym) {
+  function toggleCourseCompletion(courseAcronym: string): void {
     setDegreePlan(prev => {
       const isCompleted = prev.completedCourses.includes(courseAcronym);
       return {
@@ -82,7 +91,7 @@ export default function DegreePlanTab() {
     });
   }
 
-  function checkPrerequisites(course, semester) {
+  function checkPrerequisites(course: DegreeCourse, semester: Semester): boolean {
     if (!course.prerequisites) return true;
 
     const prereqAcronyms = course.prerequisites.split(',').map(p => p.trim());
@@ -92,7 +101,7 @@ export default function DegreePlanTab() {
     return prereqAcronyms.every(prereq => completedCourses.includes(prereq));
   }
 
-  function getCourseColor(course, semester) {
+  function getCourseColor(course: DegreeCourse, semester: Semester): string {
     const isCompleted = degreePlan.completedCourses.includes(course.acronym);
     const prerequisitesMet = checkPrerequisites(course, semester);
 
@@ -105,7 +114,7 @@ export default function DegreePlanTab() {
     }
   }
 
-  function resetDegreePlan() {
+  function resetDegreePlan(): void {
     setDegreePlan({
       semesters: [],
       totalSemesters: 0,
@@ -125,16 +134,16 @@ export default function DegreePlanTab() {
   }
 
   // Drag and Drop Functions for Course Management
-  function handleDragStart(course, sourceSemester) {
+  function handleDragStart(course: DegreeCourse, sourceSemester: number): void {
     setDraggedCourse(course);
     setDraggedFromSemester(sourceSemester);
   }
 
-  function handleDragOver(e) {
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>): void {
     e.preventDefault();
   }
 
-  function handleDrop(e, targetSemester) {
+  function handleDrop(e: React.DragEvent<HTMLDivElement>, targetSemester: number): void {
     e.preventDefault();
 
     if (!draggedCourse || !draggedFromSemester) return;
@@ -185,31 +194,31 @@ export default function DegreePlanTab() {
   }
 
   // Credit calculation functions
-  const getTotalCredits = () => {
+  const getTotalCredits = (): number => {
     return degreePlan.semesters.reduce((total, semester) => {
       return (
         total +
         semester.courses.reduce((semesterTotal, course) => {
-          return semesterTotal + parseInt(course.credits || 0);
+          return semesterTotal + parseInt(course.credits || '0');
         }, 0)
       );
     }, 0);
   };
 
-  const getCompletedCredits = () => {
+  const getCompletedCredits = (): number => {
     return degreePlan.semesters.reduce((total, semester) => {
       return (
         total +
         semester.courses.reduce((semesterTotal, course) => {
           const isCompleted = degreePlan.completedCourses.includes(course.acronym);
-          return semesterTotal + (isCompleted ? parseInt(course.credits || 0) : 0);
+          return semesterTotal + (isCompleted ? parseInt(course.credits || '0') : 0);
         }, 0)
       );
     }, 0);
   };
 
   // Add new semester function
-  const addNewSemester = () => {
+  const addNewSemester = (): void => {
     const newSemesterNumber = degreePlan.semesters.length + 1;
     setDegreePlan(prev => ({
       ...prev,
@@ -436,7 +445,7 @@ export default function DegreePlanTab() {
       {/* Degree Plan Dialog */}
       <Dialog open={degreePlanDialog} onOpenChange={setDegreePlanDialog}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
-          <DialogHeader>
+          <DialogHeader className="">
             <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
               <GraduationCap className="w-5 h-5" />
               {degreePlanStep === 'setup' && 'Setup Degree Plan'}
@@ -911,7 +920,7 @@ export default function DegreePlanTab() {
       {/* Reset Confirmation Dialog */}
       <Dialog open={resetConfirmDialog} onOpenChange={setResetConfirmDialog}>
         <DialogContent className="max-w-md bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
-          <DialogHeader>
+          <DialogHeader className="">
             <DialogTitle className="text-zinc-900 dark:text-zinc-100">Reset Degree Plan</DialogTitle>
             <DialogDescription className="text-zinc-600 dark:text-zinc-400">
               Are you sure you want to reset your entire degree plan? This will delete all semesters, courses, and
@@ -943,7 +952,7 @@ export default function DegreePlanTab() {
       {/* Clear Confirmation Dialog */}
       <Dialog open={clearConfirmDialog} onOpenChange={setClearConfirmDialog}>
         <DialogContent className="max-w-md bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
-          <DialogHeader>
+          <DialogHeader className="">
             <DialogTitle className="text-zinc-900 dark:text-zinc-100">Clear Degree Plan</DialogTitle>
             <DialogDescription className="text-zinc-600 dark:text-zinc-400">
               Are you sure you want to clear your entire degree plan? This will delete all semesters, courses, and

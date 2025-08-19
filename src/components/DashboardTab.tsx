@@ -1,3 +1,6 @@
+import { Exam, SoundtrackPosition, Task, WeatherLocation } from '@/types';
+import { CalendarDays, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import CurrentDateTime from './CurrentDateTime';
 import SoundtrackCard from './SoundtrackCard';
 import TipsRow from './TipsRow';
@@ -5,9 +8,24 @@ import Upcoming from './Upcoming';
 import WeatherWidget from './WeatherWidget';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { CalendarDays, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
 
+interface DashboardTabProps {
+  weatherApiKey: string;
+  weatherLocation: WeatherLocation;
+  exams: Exam[];
+  tasks: Task[];
+  courses: string[];
+  setTasks: (tasks: Task[] | ((prev: Task[]) => Task[])) => void;
+  setSelectedCourse: (courseIndex: number) => void;
+  onTabChange: (tab: string) => void;
+  soundtrackEmbed: string;
+  soundtrackPosition: SoundtrackPosition;
+  setSoundtrackPosition: (position: SoundtrackPosition) => void;
+}
+
+/**
+ * Dashboard Tab Component
+ */
 export default function DashboardTab({
   weatherApiKey,
   weatherLocation,
@@ -16,11 +34,12 @@ export default function DashboardTab({
   courses,
   setTasks,
   setSelectedCourse,
+  onTabChange,
   soundtrackEmbed,
   soundtrackPosition,
   setSoundtrackPosition,
-}) {
-  const [nextUpExpanded, setNextUpExpanded] = useState(0); // Number of additional "pages" shown (0 = collapsed)
+}: DashboardTabProps) {
+  const [nextUpExpanded, setNextUpExpanded] = useState<number>(0); // Number of additional "pages" shown (0 = collapsed)
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start mb-4">
@@ -41,13 +60,11 @@ export default function DashboardTab({
             tasks={tasks}
             courses={courses}
             expanded={nextUpExpanded}
-            onExpandChange={setNextUpExpanded}
             onTaskComplete={taskId => setTasks(s => s.map(t => (t.id === taskId ? { ...t, done: true } : t)))}
+            onTabChange={onTabChange}
+            onCourseSelect={setSelectedCourse}
             onTaskClick={task => {
               setSelectedCourse(task.courseIndex);
-            }}
-            onExamClick={exam => {
-              setSelectedCourse(exam.courseIndex);
             }}
           />
         </CardContent>
@@ -98,11 +115,7 @@ export default function DashboardTab({
         })()}
       </Card>
 
-      <SoundtrackCard
-        embed={soundtrackEmbed}
-        position={soundtrackPosition}
-        onPositionChange={setSoundtrackPosition}
-      />
+      <SoundtrackCard embed={soundtrackEmbed} position={soundtrackPosition} onPositionChange={setSoundtrackPosition} />
       <TipsRow />
     </div>
   );

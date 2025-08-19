@@ -1,95 +1,113 @@
+import { AppState, Wellness } from '@/types';
+import { uid } from './utils';
+
+type StateUpdater = (updates: Partial<AppState>) => void;
+
+interface GenericEvent {
+  id: string;
+  [key: string]: any;
+}
+
 export class DataTransfer {
-  constructor(getState, setState) {
+  private getState: () => AppState;
+  private setState: StateUpdater;
+
+  constructor(getState: () => AppState, setState: StateUpdater) {
     this.getState = getState;
     this.setState = setState;
   }
 
   // Helper function to merge events preserving user customizations
-  mergeEvents(existingEvents, importedEvents, keyFields = ['title', 'day'], preserveFields = ['color', 'hexColor']) {
+  mergeEvents<T extends GenericEvent>(
+    existingEvents: T[],
+    importedEvents: T[],
+    keyFields: string[] = ['title', 'day'],
+    preserveFields: string[] = ['color', 'hexColor']
+  ): T[] {
     const merged = [...existingEvents];
-    
+
     importedEvents.forEach(importedEvent => {
       // Find existing event that matches the key fields
       const existingIndex = merged.findIndex(existing => {
         return keyFields.every(field => existing[field] === importedEvent[field]);
       });
-      
+
       if (existingIndex >= 0) {
         // Event exists, merge while preserving user customizations
         const existing = merged[existingIndex];
         const mergedEvent = { ...importedEvent };
-        
+
         // Preserve user customizations
         preserveFields.forEach(field => {
           if (existing[field] !== undefined && existing[field] !== null) {
-            mergedEvent[field] = existing[field];
+            (mergedEvent as any)[field] = existing[field];
           }
         });
-        
+
         // Keep the existing ID to maintain references
         mergedEvent.id = existing.id;
-        
-        merged[existingIndex] = mergedEvent;
+
+        merged[existingIndex] = mergedEvent as T;
       } else {
         // New event, add it
         merged.push(importedEvent);
       }
     });
-    
+
     return merged;
   }
 
-  exportData() {
+  exportData(): void {
     const state = this.getState();
-    console.log("State for export:", {
+    console.log('State for export:', {
       hasTimetableEvents: !!state.timetableEvents,
       timetableEventsCount: state.timetableEvents ? state.timetableEvents.length : 0,
       hasRegularEvents: !!state.regularEvents,
-      regularEventsCount: state.regularEvents ? state.regularEvents.length : 0
+      regularEventsCount: state.regularEvents ? state.regularEvents.length : 0,
     });
-    
+
     const data = {
       // Core data
       sessions: state.sessions.map(s => ({
-        type: "session",
+        type: 'session',
         course: state.courses[s.courseIndex],
         startTs: new Date(s.startTs).toISOString(),
         endTs: new Date(s.endTs).toISOString(),
         durationMin: s.durationMin,
         technique: s.technique,
-        moodStart: s.moodStart,
-        moodEnd: s.moodEnd,
-        note: (s.note || "").replace(/[\r\n]+/g, " ")
+        moodStart: (s as any).moodStart,
+        moodEnd: (s as any).moodEnd,
+        note: (s.note || '').replace(/[\r\n]+/g, ' '),
       })),
       exams: state.exams.map(e => ({
-        type: "exam",
+        type: 'exam',
         course: state.courses[e.courseIndex],
         title: e.title,
         date: e.date,
         weight: e.weight,
-        notes: (e.notes || "").replace(/[\r\n]+/g, " ")
+        notes: (e.notes || '').replace(/[\r\n]+/g, ' '),
       })),
       examGrades: state.examGrades || [],
       tasks: state.tasks.map(t => ({
-        type: "task",
+        type: 'task',
         course: state.courses[t.courseIndex],
         title: t.title,
         due: t.due,
         priority: t.priority,
-        done: t.done
+        done: t.done,
       })),
       schedule: state.schedule.map(e => ({
-        type: "schedule",
+        type: 'schedule',
         course: state.courses[e.courseIndex],
         title: e.title,
         day: e.day,
         start: e.start,
         end: e.end,
         location: e.location,
-        color: e.color
+        color: e.color,
       })),
       timetableEvents: state.timetableEvents.map(e => ({
-        type: "timetableEvent",
+        type: 'timetableEvent',
         course: state.courses[e.courseIndex],
         eventType: e.eventType,
         classroom: e.classroom,
@@ -98,10 +116,10 @@ export class DataTransfer {
         startTime: e.startTime,
         endTime: e.endTime,
         block: e.block,
-        color: e.color // Export as 'color' not 'hexColor'
+        color: e.color, // Export as 'color' not 'hexColor'
       })),
       regularEvents: state.regularEvents.map(e => ({
-        type: "regularEvent",
+        type: 'regularEvent',
         course: state.courses[e.courseIndex],
         title: e.title,
         startDate: e.startDate,
@@ -109,13 +127,13 @@ export class DataTransfer {
         isMultiDay: e.isMultiDay,
         location: e.location,
         notes: e.notes,
-        color: e.color
+        color: e.color,
       })),
       sessionTasks: state.sessionTasks,
-      
+
       // Degree Plan data
       degreePlan: state.degreePlan,
-      
+
       // Wellness data
       wellness: {
         water: state.water,
@@ -124,9 +142,9 @@ export class DataTransfer {
         hasInteracted: state.hasInteracted,
         monthlyMoods: state.monthlyMoods,
         showWords: state.showWords,
-        moodEmojis: state.moodEmojis
-      },
-      
+        moodEmojis: state.moodEmojis,
+      } satisfies Wellness,
+
       // Settings
       settings: {
         courses: state.courses,
@@ -136,7 +154,7 @@ export class DataTransfer {
           enabled: state.gradientEnabled,
           start: state.gradientStart,
           middle: state.gradientMiddle,
-          end: state.gradientEnd
+          end: state.gradientEnd,
         },
         bgImage: state.bgImage,
         soundtrackEmbed: state.soundtrackEmbed,
@@ -144,13 +162,13 @@ export class DataTransfer {
         cardOpacity: state.cardOpacity,
         weatherApiKey: state.weatherApiKey,
         weatherLocation: state.weatherLocation,
-        degreePlan: state.degreePlan
-      }
+        degreePlan: state.degreePlan,
+      },
     };
 
     try {
       const jsonString = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json;charset=utf-8;" });
+      const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -162,12 +180,12 @@ export class DataTransfer {
     }
   }
 
-  async importData(file) {
+  async importData(file: File): Promise<boolean> {
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      
-      console.log("Import data structure:", {
+
+      console.log('Import data structure:', {
         hasSettings: !!data.settings,
         hasSessions: !!data.sessions,
         hasExams: !!data.exams,
@@ -176,17 +194,17 @@ export class DataTransfer {
         hasSchedule: !!data.schedule,
         hasTimetableEvents: !!data.timetableEvents,
         hasRegularEvents: !!data.regularEvents,
-        hasSessionTasks: !!data.sessionTasks
+        hasSessionTasks: !!data.sessionTasks,
       });
-      
+
       // Check for missing props in the timetable events
       if (data.timetableEvents && data.timetableEvents.length > 0) {
         const sampleEvent = data.timetableEvents[0];
-        console.log("Sample timetable event:", sampleEvent);
+        console.log('Sample timetable event:', sampleEvent);
       }
-      
+
       // Helper to find course index
-      const findCourseIndex = (courseName, courses) => {
+      const findCourseIndex = (courseName: string, courses: string[]): number => {
         const index = courses.indexOf(courseName);
         return index === -1 ? 0 : index; // fallback to first course if not found
       };
@@ -207,7 +225,7 @@ export class DataTransfer {
           cardOpacity: data.settings.cardOpacity,
           weatherApiKey: data.settings.weatherApiKey,
           weatherLocation: data.settings.weatherLocation,
-          degreePlan: data.settings.degreePlan || { semesters: [], totalSemesters: 0, completedCourses: [] }
+          degreePlan: data.settings.degreePlan || { semesters: [], totalSemesters: 0, completedCourses: [] },
         });
       }
 
@@ -221,8 +239,8 @@ export class DataTransfer {
 
       // Then import data with proper course indices, preserving user customizations
       if (data.sessions) {
-        const sessions = data.sessions.map(s => ({
-          id: crypto.randomUUID(),
+        const sessions = data.sessions.map((s: any) => ({
+          id: uid(),
           courseIndex: findCourseIndex(s.course, data.settings.courses),
           startTs: new Date(s.startTs).getTime(),
           endTs: new Date(s.endTs).getTime(),
@@ -230,19 +248,19 @@ export class DataTransfer {
           technique: s.technique,
           moodStart: s.moodStart,
           moodEnd: s.moodEnd,
-          note: s.note
+          note: s.note,
         }));
         this.setState({ sessions });
       }
 
       if (data.exams) {
-        const exams = data.exams.map(e => ({
-          id: crypto.randomUUID(),
+        const exams = data.exams.map((e: any) => ({
+          id: uid(),
           courseIndex: findCourseIndex(e.course, data.settings.courses),
           title: e.title,
           date: e.date,
           weight: e.weight,
-          notes: e.notes
+          notes: e.notes,
         }));
         this.setState({ exams });
       }
@@ -253,33 +271,33 @@ export class DataTransfer {
       }
 
       if (data.tasks) {
-        const tasks = data.tasks.map(t => ({
-          id: crypto.randomUUID(),
+        const tasks = data.tasks.map((t: any) => ({
+          id: uid(),
           courseIndex: findCourseIndex(t.course, data.settings.courses),
           title: t.title,
           due: t.due,
           priority: t.priority,
-          done: t.done
+          done: t.done,
         }));
         this.setState({ tasks });
       }
 
       if (data.schedule) {
-        const importedSchedule = data.schedule.map(e => ({
-          id: crypto.randomUUID(),
+        const importedSchedule = data.schedule.map((e: any) => ({
+          id: uid(),
           courseIndex: findCourseIndex(e.course, data.settings.courses),
           title: e.title,
           day: e.day,
           start: e.start,
           end: e.end,
           location: e.location,
-          color: e.color
+          color: e.color,
         }));
-        
+
         // Merge with existing schedule, preserving user-assigned colors
         const mergedSchedule = this.mergeEvents(
-          currentState.schedule || [], 
-          importedSchedule, 
+          currentState.schedule || [],
+          importedSchedule,
           ['title', 'day', 'start', 'end'], // Key fields to match events
           ['color'] // Fields to preserve from existing events
         );
@@ -287,8 +305,8 @@ export class DataTransfer {
       }
 
       if (data.timetableEvents) {
-        const importedTimetableEvents = data.timetableEvents.map(e => ({
-          id: crypto.randomUUID(),
+        const importedTimetableEvents = data.timetableEvents.map((e: any) => ({
+          id: uid(),
           courseIndex: findCourseIndex(e.course, data.settings.courses),
           eventType: e.eventType,
           classroom: e.classroom,
@@ -297,25 +315,25 @@ export class DataTransfer {
           startTime: e.startTime,
           endTime: e.endTime,
           block: e.block,
-          color: e.color || e.hexColor // Support both color formats for backward compatibility
+          color: e.color || e.hexColor, // Support both color formats for backward compatibility
         }));
-        
+
         // Merge with existing timetable events, preserving user-assigned colors
         const mergedTimetableEvents = this.mergeEvents(
-          currentState.timetableEvents || [], 
-          importedTimetableEvents, 
+          currentState.timetableEvents || [],
+          importedTimetableEvents,
           ['day', 'startTime', 'endTime', 'eventType'], // Key fields to match events
           ['color'] // Fields to preserve from existing events (changed from 'hexColor' to 'color')
         );
-        console.log("Importing timetable events with preserved colors:", mergedTimetableEvents);
+        console.log('Importing timetable events with preserved colors:', mergedTimetableEvents);
         this.setState({ timetableEvents: mergedTimetableEvents });
       } else {
-        console.log("No timetable events found in import data");
+        console.log('No timetable events found in import data');
       }
 
       if (data.regularEvents) {
-        const importedRegularEvents = data.regularEvents.map(e => ({
-          id: crypto.randomUUID(),
+        const importedRegularEvents = data.regularEvents.map((e: any) => ({
+          id: uid(),
           courseIndex: findCourseIndex(e.course, data.settings.courses),
           title: e.title,
           startDate: e.startDate,
@@ -323,26 +341,26 @@ export class DataTransfer {
           isMultiDay: e.isMultiDay,
           location: e.location,
           notes: e.notes,
-          color: e.color || e.hexColor // Support both color formats for backward compatibility
+          color: e.color || e.hexColor, // Support both color formats for backward compatibility
         }));
-        
+
         // Merge with existing regular events, preserving user-assigned colors
         const mergedRegularEvents = this.mergeEvents(
-          currentState.regularEvents || [], 
-          importedRegularEvents, 
+          currentState.regularEvents || [],
+          importedRegularEvents,
           ['title', 'startDate'], // Key fields to match events
           ['color'] // Fields to preserve from existing events
         );
-        console.log("Importing regular events with preserved colors:", mergedRegularEvents);
+        console.log('Importing regular events with preserved colors:', mergedRegularEvents);
         this.setState({ regularEvents: mergedRegularEvents });
       } else {
-        console.log("No regular events found in import data");
+        console.log('No regular events found in import data');
       }
 
       if (data.sessionTasks) {
-        const sessionTasks = data.sessionTasks.map(t => ({
+        const sessionTasks = data.sessionTasks.map((t: any) => ({
           ...t,
-          id: crypto.randomUUID()
+          id: uid(),
         }));
         this.setState({ sessionTasks });
       }
@@ -351,18 +369,18 @@ export class DataTransfer {
       if (data.wellness) {
         this.setState({
           water: data.wellness.water || 0,
-          gratitude: data.wellness.gratitude || "",
+          gratitude: data.wellness.gratitude || '',
           moodPercentages: data.wellness.moodPercentages || {},
           hasInteracted: data.wellness.hasInteracted || false,
           monthlyMoods: data.wellness.monthlyMoods || {},
           showWords: data.wellness.showWords !== undefined ? data.wellness.showWords : true,
           moodEmojis: data.wellness.moodEmojis || {
-            angry: { emoji: "😠", color: "#ff6b6b", word: "Angry" },
-            sad: { emoji: "😔", color: "#ff9f43", word: "Sad" },
-            neutral: { emoji: "😐", color: "#f7dc6f", word: "Neutral" },
-            happy: { emoji: "🙂", color: "#45b7d1", word: "Happy" },
-            excited: { emoji: "😁", color: "#10ac84", word: "Excited" }
-          }
+            angry: { emoji: '😠', color: '#ff6b6b', word: 'Angry' },
+            sad: { emoji: '😔', color: '#ff9f43', word: 'Sad' },
+            neutral: { emoji: '😐', color: '#f7dc6f', word: 'Neutral' },
+            happy: { emoji: '🙂', color: '#45b7d1', word: 'Happy' },
+            excited: { emoji: '😁', color: '#10ac84', word: 'Excited' },
+          },
         });
       }
 

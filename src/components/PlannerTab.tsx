@@ -17,11 +17,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { CalendarDays, Plus, Target, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
+import { CalendarView, Exam, ExamInput, RegularEvent, RegularEventInput, Task, TaskInput } from '../types';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+type DayName = (typeof DAYS)[number];
 
 // Color chips for different event types
-const typeColors = {
+const typeColors: Record<string, string> = {
   class: 'bg-violet-500',
   lab: 'bg-emerald-500',
   workshop: 'bg-amber-500',
@@ -31,10 +33,57 @@ const typeColors = {
   regular: 'bg-indigo-500',
 };
 
+interface WeeklyGoal {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: number;
+  color?: string;
+}
+
+interface ConfirmDialog {
+  open: boolean;
+  event: any | null;
+}
+
+interface PlannerForm {
+  eventCategory: 'regular' | 'exam' | 'task';
+  courseIndex: number;
+  type: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  day: DayName;
+  start: string;
+  end: string;
+  location: string;
+  weight: number;
+  priority: string;
+  notes: string;
+  color: string;
+}
+
+interface PlannerTabProps {
+  courses: string[];
+  onAdd: (event: any) => void;
+  onRemove: (id: string) => void;
+  eventsByDay: (day: string) => any[];
+  exams: Exam[];
+  tasks: Task[];
+  regularEvents: RegularEvent[];
+  addExam: (exam: ExamInput) => void;
+  addTask: (task: TaskInput) => void;
+  addRegularEvent: (event: RegularEventInput) => void;
+  deleteExam: (id: string) => void;
+  deleteTask: (id: string) => void;
+  deleteRegularEvent: (id: string) => void;
+}
+
 // -----------------------------
 // Planner (Week + Month views)
 // -----------------------------
-export default function Planner({
+
+export default function PlannerTab({
   courses,
   onAdd,
   onRemove,
@@ -48,17 +97,17 @@ export default function Planner({
   deleteExam,
   deleteTask,
   deleteRegularEvent,
-}) {
-  const [open, setOpen] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState({ open: false, event: null });
-  const [showMultiDayEvents, setShowMultiDayEvents] = useState(false); // Toggle for showing multi-day events on day cards
-  const [editingEvent, setEditingEvent] = useState(null); // Track the event being edited
-  const [weeklyGoals, setWeeklyGoals] = useState([]); // Weekly goals state
-  const [goalForm, setGoalForm] = useState({ title: '' }); // Form for adding goals
-  const [showConfetti, setShowConfetti] = useState(false); // Confetti state
-  const [form, setForm] = useState({
-    eventCategory: 'regular', // regular, exam, task
-    courseIndex: -1, // -1 means no course selected
+}: PlannerTabProps) {
+  const [open, setOpen] = useState<boolean>(false);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>({ open: false, event: null });
+  const [showMultiDayEvents, setShowMultiDayEvents] = useState<boolean>(false);
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
+  const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
+  const [goalForm, setGoalForm] = useState<{ title: string }>({ title: '' });
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [form, setForm] = useState<PlannerForm>({
+    eventCategory: 'regular',
+    courseIndex: -1,
     type: 'class',
     title: '',
     startDate: '',
@@ -70,15 +119,15 @@ export default function Planner({
     weight: 20,
     priority: 'normal',
     notes: '',
-    color: '#6366f1', // Default color
+    color: '#6366f1',
   });
-  const [filterCourse, setFilterCourse] = useState('all');
-  const [view, setView] = useState('month');
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [filterCourse, setFilterCourse] = useState<string>('all');
+  const [view, setView] = useState<'week' | 'month'>('month');
+  const [weekOffset, setWeekOffset] = useState<number>(0);
 
   // Month data
   const now = new Date();
-  const [monthView, setMonthView] = useState({ year: now.getFullYear(), month: now.getMonth() });
+  const [monthView, setMonthView] = useState<CalendarView>({ year: now.getFullYear(), month: now.getMonth() });
   const MONTHS = [
     'January',
     'February',
@@ -93,14 +142,14 @@ export default function Planner({
     'November',
     'December',
   ];
-  function monthMatrix(y, m) {
+  function monthMatrix(y: number, m: number): Date[] {
     const first = new Date(y, m, 1);
     const offset = (first.getDay() + 6) % 7; // Mon=0
     const start = new Date(y, m, 1 - offset);
     return Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
   }
   const matrix = useMemo(() => monthMatrix(monthView.year, monthView.month), [monthView]);
-  function shiftMonth(delta) {
+  function shiftMonth(delta: number): void {
     const d = new Date(monthView.year, monthView.month + delta, 1);
     setMonthView({ year: d.getFullYear(), month: d.getMonth() });
   }
@@ -120,7 +169,7 @@ export default function Planner({
   const fillPercentage = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
 
   // Generate random color for each completed task
-  const generateRandomColor = () => {
+  const generateRandomColor = (): string => {
     const colors = [
       '#ff6b6b',
       '#4ecdc4',
@@ -152,7 +201,7 @@ export default function Planner({
   };
 
   // Build gradient from completed tasks colors
-  const buildGradientFromCompletedTasks = () => {
+  const buildGradientFromCompletedTasks = (): string => {
     const completedTasks = weeklyGoals.filter(goal => goal.completed);
 
     if (completedTasks.length === 0) {
@@ -175,7 +224,7 @@ export default function Planner({
   const currentGradient = buildGradientFromCompletedTasks();
 
   // Get border color from first completed task
-  const getBorderColor = () => {
+  const getBorderColor = (): string => {
     const firstCompletedTask = weeklyGoals.find(goal => goal.completed);
     if (firstCompletedTask && firstCompletedTask.color) {
       return firstCompletedTask.color + '40'; // Add transparency
@@ -183,20 +232,20 @@ export default function Planner({
     return '#e5e7eb'; // Default gray border
   };
 
-  function dayNumOfWeek(i) {
+  function dayNumOfWeek(i: number): number {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
     return d.getDate();
   }
 
   // Format date for display
-  function formatDate(date) {
+  function formatDate(date: Date): string {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${months[date.getMonth()]} ${date.getDate()}`;
   }
 
   // Weekly Goals Management
-  function addGoal() {
+  function addGoal(): void {
     if (!goalForm.title.trim()) return;
     const newGoal = {
       id: Math.random().toString(36).slice(2, 10),
@@ -208,7 +257,7 @@ export default function Planner({
     setGoalForm({ title: '' });
   }
 
-  function toggleGoal(id) {
+  function toggleGoal(id: string): void {
     setWeeklyGoals(prev => {
       const updated = prev.map(goal => {
         if (goal.id === id) {
@@ -239,12 +288,12 @@ export default function Planner({
     });
   }
 
-  function deleteGoal(id) {
+  function deleteGoal(id: string): void {
     setWeeklyGoals(prev => prev.filter(goal => goal.id !== id));
   }
 
   // Handler for adding new events
-  const handleAddEvent = () => {
+  const handleAddEvent = (): void => {
     if (!form.title) return;
 
     // If we're editing an existing event, delete the original first
@@ -259,7 +308,7 @@ export default function Planner({
     }
 
     if (form.eventCategory === 'regular') {
-      const eventData = {
+      const eventData: any = {
         courseIndex: form.courseIndex,
         title: form.title,
         startDate: form.startDate,
@@ -317,7 +366,7 @@ export default function Planner({
   };
 
   // Handle event edit action
-  const handleEditEvent = event => {
+  const handleEditEvent = (event: any): void => {
     setEditingEvent(event); // Store the original event for potential restoration
 
     if (event.eventType === 'regular') {
@@ -377,7 +426,7 @@ export default function Planner({
   };
 
   // Handle event delete action
-  const handleDeleteEvent = event => {
+  const handleDeleteEvent = (event: any): void => {
     if (event.eventType === 'regular') {
       deleteRegularEvent(event.id);
     } else if (event.eventType === 'exam') {
@@ -389,7 +438,7 @@ export default function Planner({
   };
 
   // Handle day click to create new event with pre-filled date
-  const handleDayClick = date => {
+  const handleDayClick = (date: Date): void => {
     const dateString = date.toISOString().split('T')[0];
     setForm({
       eventCategory: 'regular',
@@ -412,7 +461,7 @@ export default function Planner({
   };
 
   // Handle dialog close (including cancel)
-  const handleDialogClose = open => {
+  const handleDialogClose = (open: boolean): void => {
     if (!open) {
       // Dialog is being closed - reset editing state and form
       setEditingEvent(null);
@@ -437,7 +486,7 @@ export default function Planner({
   };
 
   // Helper: get all events for a specific date
-  function getAllEventsForDate(date) {
+  function getAllEventsForDate(date: Date): any[] {
     const events = [];
     const dateStr = date.toISOString().split('T')[0];
     const dayName = DAYS[(date.getDay() + 6) % 7];
@@ -508,7 +557,7 @@ export default function Planner({
   }
 
   // Helper: get all events for tooltip (including hidden multi-day events)
-  function getAllEventsForTooltip(date) {
+  function getAllEventsForTooltip(date: Date): any[] {
     const events = [];
     const dateStr = date.toISOString().split('T')[0];
     const dayName = DAYS[(date.getDay() + 6) % 7];
@@ -573,7 +622,7 @@ export default function Planner({
   }
 
   // Helper: events for weekday name (Mon..Sun), filtered & sorted
-  function eventsForWeekdayName(dayName) {
+  function eventsForWeekdayName(dayName: DayName): any[] {
     const date = new Date(startOfWeek);
     const dayIndex = DAYS.indexOf(dayName);
     date.setDate(date.getDate() + dayIndex);
@@ -581,7 +630,7 @@ export default function Planner({
   }
 
   // Helper: get regular events that span multiple days for the calendar view
-  const getRegularEventsForCalendar = () => {
+  const getRegularEventsForCalendar = (): any[] => {
     return regularEvents
       .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
       .map(e => {
@@ -591,7 +640,7 @@ export default function Planner({
           ...e,
           startDate,
           endDate,
-          durationDays: Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1,
+          durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1,
         };
       });
   };
@@ -681,7 +730,7 @@ export default function Planner({
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
-              <DialogHeader>
+              <DialogHeader className="">
                 <DialogTitle>{editingEvent ? 'Edit Event' : 'Add Event'}</DialogTitle>
                 <DialogDescription>
                   {editingEvent ? 'Modify the event details below' : 'Create a regular event, exam, or task'}
@@ -876,7 +925,7 @@ export default function Planner({
           {/* Event Action Confirmation Dialog */}
           <Dialog open={confirmDialog.open} onOpenChange={open => setConfirmDialog({ open, event: null })}>
             <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
-              <DialogHeader>
+              <DialogHeader className="">
                 <DialogTitle>Event Actions</DialogTitle>
                 <DialogDescription>
                   What would you like to do with "{confirmDialog.event?.title || confirmDialog.event?.type}"?
@@ -1329,7 +1378,7 @@ export default function Planner({
                         e.endDate &&
                         e.endDate !== e.startDate
                     )
-                    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+                    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                     .map(event => (
                       <div
                         key={event.id}

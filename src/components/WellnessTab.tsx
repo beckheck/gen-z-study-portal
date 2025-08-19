@@ -6,8 +6,26 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { CalendarView, MonthlyMood, MonthlyMoods, MoodEmoji, MoodEmojis, MoodPercentages } from '@/types';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+
+interface WellnessTabProps {
+  water: number;
+  setWater: (value: number | ((prev: number) => number)) => void;
+  gratitude: string;
+  setGratitude: (value: string) => void;
+  moodPercentages: MoodPercentages;
+  setMoodPercentages: (value: MoodPercentages | ((prev: MoodPercentages) => MoodPercentages)) => void;
+  hasInteracted: boolean;
+  setHasInteracted: (value: boolean) => void;
+  monthlyMoods: MonthlyMoods;
+  setMonthlyMoods: (value: MonthlyMoods | ((prev: MonthlyMoods) => MonthlyMoods)) => void;
+  showWords: boolean;
+  setShowWords: (value: boolean) => void;
+  moodEmojis: MoodEmojis;
+  setMoodEmojis: (value: MoodEmojis | ((prev: MoodEmojis) => MoodEmojis)) => void;
+}
 
 export default function WellnessTab({
   water,
@@ -24,15 +42,15 @@ export default function WellnessTab({
   setShowWords,
   moodEmojis,
   setMoodEmojis,
-}) {
-  const [breathing, setBreathing] = useState(false);
+}: WellnessTabProps) {
+  const [breathing, setBreathing] = useState<boolean>(false);
 
   // Local state for UI only (not persisted)
-  const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(null); // Track which mood is showing emoji picker
+  const [customizeDialogOpen, setCustomizeDialogOpen] = useState<boolean>(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null); // Track which mood is showing emoji picker
 
   // Emoji library for picker
-  const emojiLibrary = [
+  const emojiLibrary: string[] = [
     '😠',
     '😡',
     '🤬',
@@ -86,7 +104,7 @@ export default function WellnessTab({
   ];
 
   // Color palette for picker
-  const colorPalette = [
+  const colorPalette: string[] = [
     '#ff6b6b',
     '#ff9f43',
     '#f7dc6f',
@@ -120,30 +138,30 @@ export default function WellnessTab({
   ];
 
   // Get today's date string
-  const getTodayDateString = () => {
+  const getTodayDateString = (): string => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
 
   // Calendar state for mood tracking
-  const [calendarView, setCalendarView] = useState(() => {
+  const [calendarView, setCalendarView] = useState<CalendarView>(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
 
   // Generate calendar matrix for mood calendar
-  const generateCalendarMatrix = (year, month) => {
+  const generateCalendarMatrix = (year: number, month: number): (number | null)[][] => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Monday = 0
 
-    const matrix = [];
+    const matrix: (number | null)[][] = [];
     let currentDate = 1;
 
     // Generate 6 weeks (42 days)
     for (let week = 0; week < 6; week++) {
-      const weekDays = [];
+      const weekDays: (number | null)[] = [];
       for (let day = 0; day < 7; day++) {
         const dayIndex = week * 7 + day;
         if (dayIndex < startingDayOfWeek || currentDate > daysInMonth) {
@@ -160,7 +178,7 @@ export default function WellnessTab({
   };
 
   // Navigate calendar months
-  const navigateMonth = delta => {
+  const navigateMonth = (delta: number): void => {
     setCalendarView(prev => {
       const newDate = new Date(prev.year, prev.month + delta, 1);
       return { year: newDate.getFullYear(), month: newDate.getMonth() };
@@ -168,7 +186,7 @@ export default function WellnessTab({
   };
 
   // Get mood for specific date
-  const getMoodForDate = dateString => {
+  const getMoodForDate = (dateString: string): MonthlyMood | null => {
     return monthlyMoods[dateString] || null;
   };
 
@@ -176,7 +194,7 @@ export default function WellnessTab({
   const totalMoodPercentage = Object.values(moodPercentages).reduce((sum, percentage) => sum + percentage, 0);
 
   // Generate random color for mood bubble (reusing from Present Goals)
-  const generateRandomColor = () => {
+  const generateRandomColor = (): string => {
     const colors = [
       '#ff6b6b',
       '#4ecdc4',
@@ -208,7 +226,7 @@ export default function WellnessTab({
   };
 
   // Build progressive gradient from mood percentages (like Present Goals)
-  const buildMoodGradient = () => {
+  const buildMoodGradient = (): string => {
     const activeMoods = Object.entries(moodPercentages)
       .filter(([_, percentage]) => percentage > 0)
       .sort(([a], [b]) => a.localeCompare(b)); // Sort for consistency
@@ -231,7 +249,7 @@ export default function WellnessTab({
   };
 
   // Get border color from first active mood
-  const getBorderColor = () => {
+  const getBorderColor = (): string => {
     const firstActiveMood = Object.entries(moodPercentages)
       .filter(([_, percentage]) => percentage > 0)
       .sort(([a], [b]) => a.localeCompare(b))[0];
@@ -243,7 +261,7 @@ export default function WellnessTab({
   };
 
   // Handle mood selection (add 20% each click)
-  const handleMoodSelect = moodKey => {
+  const handleMoodSelect = (moodKey: string): void => {
     setHasInteracted(true);
     setMoodPercentages(prev => {
       const currentPercentage = prev[moodKey] || 0;
@@ -302,13 +320,13 @@ export default function WellnessTab({
   };
 
   // Reset mood
-  const resetMood = () => {
+  const resetMood = (): void => {
     setMoodPercentages({});
     setHasInteracted(false);
   };
 
   // Handle emoji/color customization
-  const updateMoodCustomization = (moodKey, field, value) => {
+  const updateMoodCustomization = (moodKey: string, field: keyof MoodEmoji, value: string): void => {
     setMoodEmojis(prev => ({
       ...prev,
       [moodKey]: {
@@ -319,7 +337,7 @@ export default function WellnessTab({
   };
 
   // Handle emoji selection from library
-  const selectEmoji = (moodKey, emoji) => {
+  const selectEmoji = (moodKey: string, emoji: string): void => {
     updateMoodCustomization(moodKey, 'emoji', emoji);
     setShowEmojiPicker(null);
   };
@@ -697,7 +715,7 @@ export default function WellnessTab({
       {/* Customize Dialog */}
       <Dialog open={customizeDialogOpen} onOpenChange={setCustomizeDialogOpen}>
         <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
-          <DialogHeader>
+          <DialogHeader className="">
             <DialogTitle>Customize Mood Emojis</DialogTitle>
             <DialogDescription>Personalize your mood emojis and colors</DialogDescription>
           </DialogHeader>
@@ -769,7 +787,6 @@ export default function WellnessTab({
               onClick={() => {
                 setCustomizeDialogOpen(false);
                 setShowEmojiPicker(null);
-                setShowColorPicker(null);
               }}
               className="w-full rounded-xl mt-4"
             >

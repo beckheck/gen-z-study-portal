@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-export default function CurrentDateTime() {
-  const [currentTime, setCurrentTime] = useState(new Date());
+/**
+ * Current Date and Time Component
+ * Displays the current date and time, updating every second
+ */
+export default function CurrentDateTime(): React.ReactElement {
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -11,7 +15,7 @@ export default function CurrentDateTime() {
     return () => clearInterval(timer);
   }, []);
 
-  const formatDate = date => {
+  const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -20,7 +24,7 @@ export default function CurrentDateTime() {
     });
   };
 
-  const formatTime = date => {
+  const formatTime = (date: Date): string => {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',

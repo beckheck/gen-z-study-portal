@@ -1,10 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SoundtrackPosition } from '@/types';
 import { Music2 } from 'lucide-react';
 import { useState } from 'react';
 
-export default function SoundtrackCard({ embed, position = 'dashboard', onPositionChange }) {
-  const [isMinimized, setIsMinimized] = useState(false);
+interface SoundtrackCardProps {
+  embed: string;
+  position?: SoundtrackPosition;
+  onPositionChange?: (position: SoundtrackPosition) => void;
+}
+
+export default function SoundtrackCard({ embed, position = 'dashboard', onPositionChange }: SoundtrackCardProps) {
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
 
   if (position === 'hidden' || !embed) {
     return position === 'dashboard' ? (

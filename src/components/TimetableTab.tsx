@@ -4,18 +4,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { uid } from '@/lib/utils';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import type { Course, Position, TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
 
-// Timetable component
-function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
-  const [showAddEvent, setShowAddEvent] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showEventOptions, setShowEventOptions] = useState(false);
-  const [optionsPosition, setOptionsPosition] = useState({ x: 0, y: 0 });
-  const eventOptionsRef = useRef(null);
-  const [newEvent, setNewEvent] = useState({
-    id: '',
+interface TimetableTabProps {
+  courses: Course[];
+  timetableEvents: TimetableEvent[];
+  setTimetableEvents: (events: TimetableEvent[] | ((prev: TimetableEvent[]) => TimetableEvent[])) => void;
+}
+
+function TimetableTab({ courses, timetableEvents, setTimetableEvents }: TimetableTabProps) {
+  const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
+  const [selectedEvent, setSelectedEvent] = useState<TimetableEvent | null>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [showEventOptions, setShowEventOptions] = useState<boolean>(false);
+  const [optionsPosition, setOptionsPosition] = useState<Position>({ x: 0, y: 0 });
+  const eventOptionsRef = useRef<HTMLDivElement>(null);
+  const [eventInput, setEventInput] = useState<TimetableEventInput>({
     courseIndex: 0,
     eventType: 'Cátedra', // Default event type
     classroom: '',
@@ -27,10 +32,19 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
     color: '#7c3aed', // Default purple color
   });
 
+  // Helper function to get course name
+  const getCourseTitle = (courseIndex: number): string => {
+    const course = courses[courseIndex];
+    if (typeof course === 'string') {
+      return course;
+    }
+    return course?.title || 'Unknown Course';
+  };
+
   // Add useEffect to handle clicks outside the options menu
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (eventOptionsRef.current && !eventOptionsRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (eventOptionsRef.current && !eventOptionsRef.current.contains(event.target as Node)) {
         setShowEventOptions(false);
       }
     }
@@ -42,7 +56,7 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
   }, []);
 
   // Handle event click
-  const handleEventClick = (event, e) => {
+  const handleEventClick = (event: TimetableEvent, e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     setSelectedEvent(event);
 
@@ -56,7 +70,7 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
   };
 
   // Time blocks with their start and end times
-  const timeBlocks = [
+  const timeBlocks: TimeBlock[] = [
     { block: '1', time: '8:20 - 9:30' },
     { block: '2', time: '9:40 - 10:50' },
     { block: '3', time: '11:00 - 12:10' },
@@ -66,20 +80,20 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
   ];
 
   // Days of the week
-  const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const weekDays: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   // Event types
-  const eventTypes = ['Cátedra', 'Ayudantía', 'Taller', 'Laboratorio'];
+  const eventTypes: string[] = ['Cátedra', 'Ayudantía', 'Taller', 'Laboratorio'];
 
   // Handle block selection and set corresponding times
-  const handleBlockChange = value => {
+  const handleBlockChange = (value: string): void => {
     const selectedBlock = value;
     const blockInfo = timeBlocks.find(block => block.block === selectedBlock);
 
     if (blockInfo) {
       const [startTime, endTime] = blockInfo.time.split(' - ');
-      setNewEvent({
-        ...newEvent,
+      setEventInput({
+        ...eventInput,
         block: selectedBlock,
         startTime: startTime,
         endTime: endTime,
@@ -88,18 +102,18 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
   };
 
   // Add a new event or update existing one
-  const addEvent = () => {
+  const addEvent = (): void => {
     if (isEditing && selectedEvent) {
       // Update existing event
       setTimetableEvents(prevEvents =>
-        prevEvents.map(event => (event.id === selectedEvent.id ? { ...newEvent, id: event.id } : event))
+        prevEvents.map(event => (event.id === selectedEvent.id ? { ...eventInput, id: selectedEvent.id } : event))
       );
       setIsEditing(false);
       setSelectedEvent(null);
     } else {
       // Add new event
-      const eventWithId = {
-        ...newEvent,
+      const eventWithId: TimetableEvent = {
+        ...eventInput,
         id: uid(),
       };
 
@@ -107,8 +121,7 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
     }
 
     // Reset form
-    setNewEvent({
-      id: '',
+    setEventInput({
       courseIndex: 0,
       eventType: 'Cátedra',
       classroom: '',
@@ -124,22 +137,22 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
   };
 
   // Start editing an event
-  const editEvent = event => {
+  const editEvent = (event: TimetableEvent): void => {
+    // Remove the id field when setting eventInput since TimetableEventInput doesn't have id
+    const { id, ...eventWithoutId } = event;
+    setEventInput(eventWithoutId);
     setSelectedEvent(event);
-    setNewEvent({
-      ...event,
-    });
     setIsEditing(true);
     setShowAddEvent(true);
   };
 
   // Delete an event
-  const deleteEvent = id => {
+  const deleteEvent = (id: string): void => {
     setTimetableEvents(prevEvents => prevEvents.filter(event => event.id !== id));
   };
 
   // Filter events for a specific day and block
-  const getEventForDayAndBlock = (day, block) => {
+  const getEventForDayAndBlock = (day: string, block: string): TimetableEvent[] => {
     return timetableEvents.filter(event => event.day === day && event.block === block);
   };
 
@@ -213,9 +226,7 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
                       onClick={e => handleEventClick(event, e)}
                     >
                       <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                        {typeof courses[event.courseIndex] === 'string'
-                          ? courses[event.courseIndex]
-                          : courses[event.courseIndex]?.title || 'Unknown Course'}
+                        {getCourseTitle(event.courseIndex)}
                       </div>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400">{event.eventType}</div>
 
@@ -227,9 +238,7 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
                             style={{ backgroundColor: event.color || '#7c3aed' }}
                           ></div>
                           <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
-                            {typeof courses[event.courseIndex] === 'string'
-                              ? courses[event.courseIndex]
-                              : courses[event.courseIndex]?.title || 'Unknown Course'}
+                            {getCourseTitle(event.courseIndex)}
                           </div>
                         </div>
                         <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
@@ -265,8 +274,7 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
                 if (!showAddEvent) {
                   setIsEditing(false);
                   setSelectedEvent(null);
-                  setNewEvent({
-                    id: '',
+                  setEventInput({
                     courseIndex: 0,
                     eventType: 'Cátedra',
                     classroom: '',
@@ -294,16 +302,16 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
               <div>
                 <Label htmlFor="course">Course</Label>
                 <Select
-                  value={newEvent.courseIndex.toString()}
-                  onValueChange={value => setNewEvent({ ...newEvent, courseIndex: parseInt(value) })}
+                  value={eventInput.courseIndex.toString()}
+                  onValueChange={(value: string) => setEventInput({ ...eventInput, courseIndex: parseInt(value) })}
                 >
                   <SelectTrigger id="course" className="mt-1">
                     <SelectValue placeholder="Select a course" />
                   </SelectTrigger>
                   <SelectContent>
-                    {courses.map((course, idx) => (
+                    {courses.map((_, idx) => (
                       <SelectItem key={idx} value={idx.toString()}>
-                        {typeof course === 'string' ? course : course.title}
+                        {getCourseTitle(idx)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -313,8 +321,8 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
               <div>
                 <Label htmlFor="eventType">Event Type</Label>
                 <Select
-                  value={newEvent.eventType}
-                  onValueChange={value => setNewEvent({ ...newEvent, eventType: value })}
+                  value={eventInput.eventType}
+                  onValueChange={(value: string) => setEventInput({ ...eventInput, eventType: value })}
                 >
                   <SelectTrigger id="eventType" className="mt-1">
                     <SelectValue placeholder="Select event type" />
@@ -331,7 +339,10 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
 
               <div>
                 <Label htmlFor="day">Day</Label>
-                <Select value={newEvent.day} onValueChange={value => setNewEvent({ ...newEvent, day: value })}>
+                <Select
+                  value={eventInput.day}
+                  onValueChange={(value: string) => setEventInput({ ...eventInput, day: value })}
+                >
                   <SelectTrigger id="day" className="mt-1">
                     <SelectValue placeholder="Select day" />
                   </SelectTrigger>
@@ -347,7 +358,7 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
 
               <div>
                 <Label htmlFor="block">Time Block</Label>
-                <Select value={newEvent.block} onValueChange={handleBlockChange}>
+                <Select value={eventInput.block} onValueChange={handleBlockChange}>
                   <SelectTrigger id="block" className="mt-1">
                     <SelectValue placeholder="Select time block" />
                   </SelectTrigger>
@@ -365,20 +376,24 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
                 <Label htmlFor="classroom">Classroom</Label>
                 <Input
                   id="classroom"
-                  value={newEvent.classroom}
-                  onChange={e => setNewEvent({ ...newEvent, classroom: e.target.value })}
+                  value={eventInput.classroom}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEventInput({ ...eventInput, classroom: e.target.value })
+                  }
                   placeholder="e.g., A-101"
                   className="mt-1"
                 />
               </div>
 
               <div>
-                <Label htmlFor="teacher">{newEvent.eventType === 'Cátedra' ? 'Teacher Name' : 'TA Name'}</Label>
+                <Label htmlFor="teacher">{eventInput.eventType === 'Cátedra' ? 'Teacher Name' : 'TA Name'}</Label>
                 <Input
                   id="teacher"
-                  value={newEvent.teacher}
-                  onChange={e => setNewEvent({ ...newEvent, teacher: e.target.value })}
-                  placeholder={newEvent.eventType === 'Cátedra' ? "Teacher's name" : "TA's name"}
+                  value={eventInput.teacher}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEventInput({ ...eventInput, teacher: e.target.value })
+                  }
+                  placeholder={eventInput.eventType === 'Cátedra' ? "Teacher's name" : "TA's name"}
                   className="mt-1"
                 />
               </div>
@@ -386,25 +401,27 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
               <div>
                 <Label htmlFor="event-color">Event Color</Label>
                 <div className="flex items-center gap-3 mt-1">
-                  <div className="w-8 h-8 rounded-lg shadow-sm" style={{ backgroundColor: newEvent.color }}></div>
+                  <div className="w-8 h-8 rounded-lg shadow-sm" style={{ backgroundColor: eventInput.color }}></div>
                   <Input
                     id="event-color"
                     type="color"
-                    value={newEvent.color}
-                    onChange={e => setNewEvent({ ...newEvent, color: e.target.value })}
+                    value={eventInput.color}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setEventInput({ ...eventInput, color: e.target.value })
+                    }
                     className="h-10 w-full"
                   />
                 </div>
                 <div className="flex gap-2 mt-2">
                   <Input
                     id="hex-color"
-                    value={newEvent.color}
-                    onChange={e => {
+                    value={eventInput.color}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       // Validate hex color format
                       const hexValue = e.target.value;
                       // Only update if it's a valid hex color or empty
                       if (hexValue === '' || /^#([A-Fa-f0-9]{3}){1,2}$/.test(hexValue)) {
-                        setNewEvent({ ...newEvent, color: hexValue });
+                        setEventInput({ ...eventInput, color: hexValue });
                       }
                     }}
                     placeholder="#7c3aed"
@@ -421,7 +438,7 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
                         Math.floor(Math.random() * 16777215)
                           .toString(16)
                           .padStart(6, '0');
-                      setNewEvent({ ...newEvent, color: randomColor });
+                      setEventInput({ ...eventInput, color: randomColor });
                     }}
                     className="whitespace-nowrap"
                   >
@@ -444,4 +461,4 @@ function TimetableView({ courses, timetableEvents, setTimetableEvents }) {
   );
 }
 
-export default TimetableView;
+export default TimetableTab;

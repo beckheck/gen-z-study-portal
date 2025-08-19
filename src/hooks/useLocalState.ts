@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 
-export default function useLocalState(key, initial) {
-  const [state, setState] = useState(() => {
+/**
+ * Custom hook for managing state that persists to localStorage
+ * @template T
+ * @param key - The localStorage key
+ * @param initial - The initial value
+ * @returns A tuple of [state, setState]
+ */
+export default function useLocalState<T>(key: string, initial: T): [T, Dispatch<SetStateAction<T>>] {
+  const [state, setState] = useState<T>(() => {
     try {
       const raw = localStorage.getItem(key);
       return raw ? JSON.parse(raw) : initial;
@@ -9,6 +16,7 @@ export default function useLocalState(key, initial) {
       return initial;
     }
   });
+
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(state));
@@ -23,7 +31,7 @@ export default function useLocalState(key, initial) {
   }, [key, state]);
 
   useEffect(() => {
-    const handleStorageChange = (e) => {
+    const handleStorageChange = (e: StorageEvent) => {
       if (e.key === key && e.newValue) {
         try {
           const newState = JSON.parse(e.newValue);
@@ -35,8 +43,7 @@ export default function useLocalState(key, initial) {
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [setState]);
-
+  }, [key, setState]);
 
   return [state, setState];
 }

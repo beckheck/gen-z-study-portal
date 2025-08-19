@@ -1,19 +1,25 @@
+import { OpenWeatherMapResponse, Weather, WeatherCondition, WeatherLocation } from '@/types';
 import { useEffect, useState } from 'react';
 
-export default function WeatherWidget({ apiKey, location }) {
-  const [weather, setWeather] = useState({
+interface WeatherWidgetProps {
+  apiKey?: string;
+  location?: WeatherLocation;
+}
+
+export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) {
+  const [weather, setWeather] = useState<Weather>({
     condition: 'loading',
     temperature: '--',
     location: 'Getting location...',
     description: 'Loading...',
   });
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // OpenWeatherMap API integration
   useEffect(() => {
     const API_KEY = apiKey || 'demo_key'; // Use provided API key or demo
 
-    const fetchWeatherByCity = async city => {
+    const fetchWeatherByCity = async (city: string): Promise<void> => {
       try {
         if (!apiKey || apiKey.trim() === '') {
           throw new Error('No API key provided');
@@ -33,11 +39,11 @@ export default function WeatherWidget({ apiKey, location }) {
           }
         }
 
-        const data = await response.json();
+        const data: OpenWeatherMapResponse = await response.json();
 
         // Map OpenWeatherMap icons to our emoji system
-        const getWeatherIcon = (weatherMain, icon) => {
-          const iconMap = {
+        const getWeatherIcon = (weatherMain: string, icon: string): string => {
+          const iconMap: { [key: string]: string } = {
             Clear: '☀️',
             Clouds: icon.includes('01') ? '☀️' : icon.includes('02') ? '⛅' : '☁️',
             Rain: '🌧️',
@@ -60,13 +66,14 @@ export default function WeatherWidget({ apiKey, location }) {
         });
         setError(null);
       } catch (err) {
-        console.log('Weather API failed:', err.message);
-        setError(err.message);
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        console.log('Weather API failed:', errorMessage);
+        setError(errorMessage);
         fallbackToSimulation();
       }
     };
 
-    const fetchWeatherData = async (lat, lon) => {
+    const fetchWeatherData = async (lat: number, lon: number): Promise<void> => {
       try {
         if (!apiKey || apiKey.trim() === '') {
           throw new Error('No API key provided');
@@ -84,11 +91,11 @@ export default function WeatherWidget({ apiKey, location }) {
           }
         }
 
-        const data = await response.json();
+        const data: OpenWeatherMapResponse = await response.json();
 
         // Map OpenWeatherMap icons to our emoji system
-        const getWeatherIcon = (weatherMain, icon) => {
-          const iconMap = {
+        const getWeatherIcon = (weatherMain: string, icon: string): string => {
+          const iconMap: { [key: string]: string } = {
             Clear: '☀️',
             Clouds: icon.includes('01') ? '☀️' : icon.includes('02') ? '⛅' : '☁️',
             Rain: '🌧️',
@@ -111,14 +118,15 @@ export default function WeatherWidget({ apiKey, location }) {
         });
         setError(null);
       } catch (err) {
-        console.log('Weather API failed, falling back to simulation:', err.message);
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        console.log('Weather API failed, falling back to simulation:', errorMessage);
         // Fallback to simulated weather if API fails
         fallbackToSimulation();
       }
     };
 
-    const fallbackToSimulation = () => {
-      const conditions = [
+    const fallbackToSimulation = (): void => {
+      const conditions: WeatherCondition[] = [
         { condition: 'sunny', temp: 28, icon: '☀️', desc: 'Clear sky' },
         { condition: 'cloudy', temp: 24, icon: '☁️', desc: 'Overcast clouds' },
         { condition: 'rainy', temp: 18, icon: '🌧️', desc: 'Light rain' },
@@ -143,18 +151,18 @@ export default function WeatherWidget({ apiKey, location }) {
       });
     };
 
-    const getLocationAndWeather = () => {
+    const getLocationAndWeather = (): void => {
       if (location && !location.useGeolocation && location.city) {
         // Use city name from settings
         fetchWeatherByCity(location.city);
       } else if (navigator.geolocation) {
         // Use geolocation
         navigator.geolocation.getCurrentPosition(
-          position => {
+          (position: GeolocationPosition) => {
             const { latitude, longitude } = position.coords;
             fetchWeatherData(latitude, longitude);
           },
-          err => {
+          (err: GeolocationPositionError) => {
             console.log('Geolocation failed:', err.message);
             setError('Location access denied');
             if (location && location.city) {
@@ -185,12 +193,12 @@ export default function WeatherWidget({ apiKey, location }) {
     return () => clearInterval(interval);
   }, [apiKey, location]);
 
-  const getWeatherDescription = condition => {
+  const getWeatherDescription = (condition: string): string => {
     if (weather.description) {
       return weather.description.charAt(0).toUpperCase() + weather.description.slice(1);
     }
 
-    const descriptions = {
+    const descriptions: { [key: string]: string } = {
       clear: 'Clear Sky',
       sunny: 'Sunny',
       clouds: 'Cloudy',

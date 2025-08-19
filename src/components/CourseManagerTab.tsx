@@ -11,8 +11,25 @@ import { motion } from 'framer-motion';
 import { CalendarDays, GraduationCap, ListTodo, NotebookPen, Plus, Trash2, Undo } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
+import { Exam, ExamGrade, ExamInput, Task, TaskInput } from '../types';
 
-export default function CourseManager({
+interface CourseManagerTabProps {
+  tasks: Task[];
+  exams: Exam[];
+  examGrades: ExamGrade[];
+  courses: string[];
+  selected: number;
+  setSelected: (index: number) => void;
+  addTask: (task: TaskInput) => void;
+  toggleTask: (id: string) => void;
+  deleteTask: (id: string) => void;
+  addExam: (exam: ExamInput) => void;
+  updateExam: (id: string, exam: ExamInput) => void;
+  deleteExam: (id: string) => void;
+  setExamGrades: (grades: ExamGrade[] | ((prev: ExamGrade[]) => ExamGrade[])) => void;
+  clearCourseData: (courseIndex: number) => void;
+}
+export default function CourseManagerTab({
   courses,
   selected,
   setSelected,
@@ -22,16 +39,26 @@ export default function CourseManager({
   deleteTask,
   exams,
   addExam,
+  updateExam,
   deleteExam,
   examGrades,
   setExamGrades,
   clearCourseData,
-}) {
-  const [taskForm, setTaskForm] = useState({ title: '', due: '', priority: 'normal' });
-  const [examForm, setExamForm] = useState({ title: '', date: '', weight: 20, notes: '' });
-  const [editingExam, setEditingExam] = useState(null);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+}: CourseManagerTabProps) {
+  const [taskForm, setTaskForm] = useState<{
+    title: string;
+    due: string;
+    priority: string;
+  }>({ title: '', due: '', priority: 'normal' });
+  const [examForm, setExamForm] = useState<{
+    title: string;
+    date: string;
+    weight: number;
+    notes: string;
+  }>({ title: '', date: '', weight: 20, notes: '' });
+  const [editingExam, setEditingExam] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const courseTasks = tasks.filter(t => t.courseIndex === selected);
   const courseExams = exams.filter(e => e.courseIndex === selected);
 
@@ -41,7 +68,7 @@ export default function CourseManager({
     return exam && exam.courseIndex === selected;
   });
 
-  const calculateCourseAverage = () => {
+  const calculateCourseAverage = (): string | null => {
     const examsWithGrades = courseExams.filter(exam => courseGrades.some(grade => grade.examId === exam.id));
 
     if (examsWithGrades.length === 0) return null;
@@ -60,7 +87,7 @@ export default function CourseManager({
     return totalWeight > 0 ? (totalWeightedScore / totalWeight).toFixed(1) : null;
   };
 
-  const updateExamGrade = (examId, grade) => {
+  const updateExamGrade = (examId: string, grade: string): void => {
     const gradeValue = parseFloat(grade);
     if (gradeValue < 1 || gradeValue > 7) return;
 
@@ -303,7 +330,7 @@ export default function CourseManager({
                       {(() => {
                         const examDate = new Date(e.date);
                         const today = new Date();
-                        const diffTime = examDate - today;
+                        const diffTime = examDate.getTime() - today.getTime();
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                         return diffDays <= 0 ? 'Today' : diffDays === 1 ? 'Tomorrow' : `${diffDays} days`;
                       })()}
@@ -363,9 +390,7 @@ export default function CourseManager({
                 onClick={() => {
                   if (!examForm.title || !examForm.date) return;
                   if (editingExam) {
-                    setExams(s =>
-                      s.map(e => (e.id === editingExam ? { ...examForm, id: e.id, courseIndex: selected } : e))
-                    );
+                    updateExam(editingExam, { ...examForm, courseIndex: selected });
                     setEditingExam(null);
                   } else {
                     addExam({ ...examForm, courseIndex: selected });
@@ -486,7 +511,7 @@ export default function CourseManager({
       {/* Confirmation Dialog for clearing course data */}
       <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
         <DialogContent className="rounded-xl bg-white dark:bg-zinc-950 border-none shadow-xl backdrop-blur">
-          <DialogHeader>
+          <DialogHeader className="">
             <DialogTitle>Clear {courses[selected]} Data</DialogTitle>
             <DialogDescription>
               This will permanently delete all tasks, exams, and timetable events associated with the{' '}

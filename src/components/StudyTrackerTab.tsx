@@ -6,54 +6,74 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { uid } from '@/lib/utils';
+import { Session, SessionTask, StudyTimer } from '@/types';
 import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+
+interface StudyTrackerTabProps {
+  courses: string[];
+  selectedCourse: number;
+  setSelectedCourse: (courseIndex: number) => void;
+  studyTimer: StudyTimer;
+  sessions: Session[];
+  setSessions: (sessions: Session[] | ((prev: Session[]) => Session[])) => void;
+  sessionTasks: SessionTask[];
+  setSessionTasks: (tasks: SessionTask[] | ((prev: SessionTask[]) => SessionTask[])) => void;
+}
 
 export default function StudyTrackerTab({
   courses,
   selectedCourse,
   setSelectedCourse,
-  running,
-  elapsed,
-  start,
-  stop,
-  reset,
-  technique,
-  setTechnique,
-  moodStart,
-  setMoodStart,
-  moodEnd,
-  setMoodEnd,
-  note,
-  setNote,
+  studyTimer,
   sessions,
   setSessions,
   sessionTasks,
   setSessionTasks,
-}) {
-  function deleteSession(id) {
+}: StudyTrackerTabProps) {
+  /**
+   * Delete a session by ID
+   */
+  function deleteSession(id: string): void {
     setSessions(s => s.filter(x => x.id !== id));
   }
-  const elapsedMin = Math.floor(elapsed / 60)
+
+  const elapsedMin = Math.floor(studyTimer.elapsed / 60)
     .toString()
     .padStart(2, '0');
-  const elapsedSec = (elapsed % 60).toString().padStart(2, '0');
+  const elapsedSec = (studyTimer.elapsed % 60).toString().padStart(2, '0');
 
   // Session-only tasks
-  const [stTitle, setStTitle] = useState('');
-  function addST() {
+  const [stTitle, setStTitle] = useState<string>('');
+
+  /**
+   * Add a new session task
+   */
+  function addST(): void {
     const title = stTitle.trim();
     if (!title) return;
     setSessionTasks(s => [{ id: uid(), title, done: false, createdAt: Date.now() }, ...s]);
     setStTitle('');
   }
-  function toggleST(id) {
+
+  /**
+   * Toggle the completion status of a session task
+   */
+  function toggleST(id: string): void {
     setSessionTasks(s => s.map(t => (t.id === id ? { ...t, done: !t.done } : t)));
   }
-  function delST(id) {
+
+  /**
+   * Delete a session task by ID
+   */
+  function delST(id: string): void {
     setSessionTasks(s => s.filter(t => t.id !== id));
   }
-  function clearDone() {
+
+  /**
+   * Clear all completed session tasks
+   */
+  function clearDone(): void {
     setSessionTasks(s => s.filter(t => !t.done));
   }
 
@@ -87,7 +107,7 @@ export default function StudyTrackerTab({
             </div>
             <div>
               <Label>Technique</Label>
-              <Select value={technique} onValueChange={setTechnique}>
+              <Select value={studyTimer.technique} onValueChange={studyTimer.setTechnique}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
@@ -101,28 +121,32 @@ export default function StudyTrackerTab({
           </div>
 
           <div className="grid md:grid-cols-2 gap-3">
-            <MoodSlider label="Mood start" value={moodStart} onChange={setMoodStart} />
-            <MoodSlider label="Mood end" value={moodEnd} onChange={setMoodEnd} />
+            <MoodSlider label="Mood start" value={studyTimer.moodStart} onChange={studyTimer.setMoodStart} />
+            <MoodSlider label="Mood end" value={studyTimer.moodEnd} onChange={studyTimer.setMoodEnd} />
           </div>
 
           <div className="text-center p-6 bg-white/70 dark:bg-white/5 rounded-2xl">
             <div className="text-5xl font-extrabold tracking-wider tabular-nums">
               {elapsedMin}:{elapsedSec}
             </div>
-            <div className="text-xs text-zinc-500 mt-1">{running ? 'Studying…' : 'Ready'}</div>
+            <div className="text-xs text-zinc-500 mt-1">{studyTimer.running ? 'Studying…' : 'Ready'}</div>
             <div className="flex items-center justify-center gap-2 mt-4">
-              {!running ? (
-                <Button onClick={start} className="rounded-xl">
+              {!studyTimer.running ? (
+                <Button onClick={studyTimer.startTimer} className="rounded-xl">
                   <Flame className="w-4 h-4 mr-2" />
                   Start
                 </Button>
               ) : (
                 <>
-                  <Button onClick={stop} variant="secondary" className="rounded-xl">
+                  <Button
+                    onClick={() => studyTimer.stopTimer(selectedCourse)}
+                    variant="secondary"
+                    className="rounded-xl"
+                  >
                     <HeartHandshake className="w-4 h-4 mr-2" />
                     Stop
                   </Button>
-                  <Button onClick={reset} variant="ghost" className="rounded-xl">
+                  <Button onClick={studyTimer.resetTimer} variant="ghost" className="rounded-xl">
                     <TimerReset className="w-4 h-4 mr-2" />
                     Reset
                   </Button>
@@ -134,8 +158,8 @@ export default function StudyTrackerTab({
           <div>
             <Label>Session notes</Label>
             <Textarea
-              value={note}
-              onChange={e => setNote(e.target.value)}
+              value={studyTimer.note}
+              onChange={e => studyTimer.setNote(e.target.value)}
               className="rounded-xl"
               placeholder="What did you cover? Any blockers?"
             />

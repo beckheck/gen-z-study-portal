@@ -1,16 +1,16 @@
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-export function uid() {
-  return Math.random().toString(36).slice(2, 10);
+export function uid(): string {
+  return crypto.randomUUID();
 }
 
-export function cn(...inputs) {
+export function cn(...inputs: Parameters<typeof clsx>): string {
   return twMerge(clsx(inputs));
 }
 
 // Convert hex to HSL components
-export function getHSLComponents(hex) {
+export function getHSLComponents(hex: string) {
   // Remove the hash if present
   hex = hex.replace('#', '');
 
@@ -21,8 +21,8 @@ export function getHSLComponents(hex) {
 
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
-  let h,
-    s,
+  let h: number,
+    s: number,
     l = (max + min) / 2;
 
   if (max === min) {
@@ -41,6 +41,8 @@ export function getHSLComponents(hex) {
       case b:
         h = (r - g) / d + 4;
         break;
+      default:
+        h = 0;
     }
     h /= 6;
   }

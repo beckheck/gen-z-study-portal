@@ -1,6 +1,6 @@
 import { useLayoutEffect } from 'react';
 
-export default function useBaseStyles() {
+export default function useBaseStyles(): void {
   useLayoutEffect(() => {
     if (document.getElementById('sp-reset')) return;
     const style = document.createElement('style');
