@@ -1,5 +1,5 @@
 import CourseManager from '@/components/CourseManager';
-import CurrentDateTime from '@/components/CurrentDateTime';
+import DashboardTab from '@/components/DashboardTab';
 import DegreePlanTab from '@/components/DegreePlanTab';
 import MoonSunToggle from '@/components/MoonSunToggle';
 import Planner from '@/components/Planner';
@@ -7,12 +7,7 @@ import SettingsTab from '@/components/SettingsTab';
 import SoundtrackCard from '@/components/SoundtrackCard';
 import StudyTrackerTab from '@/components/StudyTrackerTab';
 import TimetableView from '@/components/TimetableView';
-import TipsRow from '@/components/TipsRow';
-import Upcoming from '@/components/Upcoming';
-import WeatherWidget from '@/components/WeatherWidget';
 import WellnessTab from '@/components/WellnessTab';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useAccentColor from '@/hooks/useAccentColor';
 import useBaseStyles from '@/hooks/useBaseStyles';
@@ -26,7 +21,6 @@ import {
   Brain,
   CalendarDays,
   CalendarRange,
-  ChevronDown,
   GraduationCap,
   HeartPulse,
   NotebookPen,
@@ -114,7 +108,6 @@ export default function StudyPortal() {
   const [regularEvents, setRegularEvents] = useLocalState('sp:regularEvents', []); // multi-day events
   const [sessions, setSessions] = useLocalState('sp:sessions', []);
   const [selectedCourse, setSelectedCourse] = useLocalState('sp:selectedCourse', 0);
-  const [nextUpExpanded, setNextUpExpanded] = useState(0); // Number of additional "pages" shown (0 = collapsed)
 
   // Ensure courses array always has 7 courses (migration for existing users)
   useEffect(() => {
@@ -505,87 +498,18 @@ export default function StudyPortal() {
 
           {/* Dashboard */}
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="flex justify-between items-start mb-4">
-              <WeatherWidget apiKey={weatherApiKey} location={weatherLocation} />
-              <CurrentDateTime />
-            </div>
-            <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="w-5 h-5" />
-                  Next Up
-                </CardTitle>
-                <CardDescription>Upcoming exams & tasks</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Upcoming
-                  exams={exams}
-                  tasks={tasks}
-                  courses={courses}
-                  expanded={nextUpExpanded}
-                  onExpandChange={setNextUpExpanded}
-                  onTaskComplete={taskId => setTasks(s => s.map(t => (t.id === taskId ? { ...t, done: true } : t)))}
-                  onTaskClick={task => {
-                    setSelectedCourse(task.courseIndex);
-                  }}
-                  onExamClick={exam => {
-                    setSelectedCourse(exam.courseIndex);
-                  }}
-                />
-              </CardContent>
-              {(() => {
-                // Calculate if there are more items to show
-                const allExams = exams.slice().sort((a, b) => a.date.localeCompare(b.date));
-                const allTasks = tasks
-                  .slice()
-                  .filter(t => !t.done)
-                  .sort((a, b) => a.due.localeCompare(b.due));
-
-                const currentExamCount = 3 + nextUpExpanded * 3;
-                const currentTaskCount = 5 + nextUpExpanded * 3;
-
-                const hasMoreExams = allExams.length > currentExamCount;
-                const hasMoreTasks = allTasks.length > currentTaskCount;
-                const hasMore = hasMoreExams || hasMoreTasks;
-
-                // Show button if there are more items OR if currently expanded (to allow collapse)
-                const showButton = hasMore || nextUpExpanded > 0;
-
-                if (!showButton) return null;
-
-                return (
-                  <div className="flex justify-center pb-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        if (hasMore) {
-                          // Show 3 more items
-                          setNextUpExpanded(nextUpExpanded + 1);
-                        } else {
-                          // Collapse to original state
-                          setNextUpExpanded(0);
-                        }
-                      }}
-                      className="h-8 w-8 p-0 hover:bg-white/20 rounded-full transition-all duration-300 ease-in-out"
-                    >
-                      <ChevronDown
-                        className={`w-4 h-4 transition-all duration-500 ease-in-out transform ${
-                          !hasMore && nextUpExpanded > 0 ? 'rotate-180' : 'rotate-0'
-                        }`}
-                      />
-                    </Button>
-                  </div>
-                );
-              })()}
-            </Card>
-
-            <SoundtrackCard
-              embed={soundtrackEmbed}
-              position={soundtrackPosition}
-              onPositionChange={setSoundtrackPosition}
+            <DashboardTab
+              weatherApiKey={weatherApiKey}
+              weatherLocation={weatherLocation}
+              exams={exams}
+              tasks={tasks}
+              courses={courses}
+              setTasks={setTasks}
+              setSelectedCourse={setSelectedCourse}
+              soundtrackEmbed={soundtrackEmbed}
+              soundtrackPosition={soundtrackPosition}
+              setSoundtrackPosition={setSoundtrackPosition}
             />
-            <TipsRow />
           </TabsContent>
 
           {/* Planner */}
