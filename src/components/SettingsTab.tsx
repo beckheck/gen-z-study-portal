@@ -4,12 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useAppState, useCourses, useExternalServices, useSoundtrack } from '@/hooks/useStore';
+import useTheme from '@/hooks/useTheme';
+import { DataTransfer } from '@/lib/data-transfer';
+import { patchStoreState } from '@/store';
 import { Download } from 'lucide-react';
 import { ChangeEvent, useMemo } from 'react';
-import { useCourses, useExternalServices, useAppState, useSoundtrack } from '@/hooks/useStore';
-import { patchStoreState } from '@/store';
-import { DataTransfer } from '@/lib/data-transfer';
-import useTheme from '@/hooks/useTheme';
 
 export default function SettingsTab() {
   const { courses, renameCourse } = useCourses();
@@ -25,7 +25,7 @@ export default function SettingsTab() {
         // Get state callback - return the current state snapshot
         () => state as any,
         // Set state callback - update the entire store state
-        (newState) => {
+        newState => {
           patchStoreState(newState);
         }
       ),
@@ -211,12 +211,13 @@ export default function SettingsTab() {
                 <input
                   type="color"
                   value={theme.get.darkMode ? theme.get.accentColor.dark : theme.get.accentColor.light}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    theme.set.accentColor(prev => ({
-                      ...prev,
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    const newAccentColor = {
+                      ...theme.get.accentColor,
                       [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
-                    }))
-                  }
+                    };
+                    theme.set.accentColor(newAccentColor);
+                  }}
                   className="sr-only"
                 />
               </label>
@@ -226,10 +227,11 @@ export default function SettingsTab() {
             variant="outline"
             className="rounded-xl w-full"
             onClick={() => {
-              theme.set.accentColor({
+              const defaultAccentColor = {
                 light: '#7c3aed',
                 dark: '#8b5cf6',
-              });
+              };
+              theme.set.accentColor(defaultAccentColor);
             }}
           >
             Reset to Default
@@ -250,12 +252,13 @@ export default function SettingsTab() {
               min="10"
               max="100"
               value={theme.get.cardOpacity.light}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                theme.set.cardOpacity(prev => ({
-                  ...prev,
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                const newCardOpacity = {
+                  ...theme.get.cardOpacity,
                   light: parseInt(e.target.value),
-                }))
-              }
+                };
+                theme.set.cardOpacity(newCardOpacity);
+              }}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
             />
           </div>
@@ -266,12 +269,13 @@ export default function SettingsTab() {
               min="5"
               max="100"
               value={theme.get.cardOpacity.dark}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                theme.set.cardOpacity(prev => ({
-                  ...prev,
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                const newCardOpacity = {
+                  ...theme.get.cardOpacity,
                   dark: parseInt(e.target.value),
-                }))
-              }
+                };
+                theme.set.cardOpacity(newCardOpacity);
+              }}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
             />
           </div>
@@ -314,12 +318,13 @@ export default function SettingsTab() {
                 <Input
                   type="color"
                   value={theme.get.darkMode ? theme.get.gradientStart.dark : theme.get.gradientStart.light}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    theme.set.gradientStart(prev => ({
-                      ...prev,
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    const newGradientStart = {
+                      ...theme.get.gradientStart,
                       [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
-                    }))
-                  }
+                    };
+                    theme.set.gradientStart(newGradientStart);
+                  }}
                   className="h-10 rounded-xl w-full"
                 />
               </div>
@@ -338,12 +343,13 @@ export default function SettingsTab() {
                 <Input
                   type="color"
                   value={theme.get.darkMode ? theme.get.gradientMiddle.dark : theme.get.gradientMiddle.light}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    theme.set.gradientMiddle(prev => ({
-                      ...prev,
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    const newGradientMiddle = {
+                      ...theme.get.gradientMiddle,
                       [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
-                    }))
-                  }
+                    };
+                    theme.set.gradientMiddle(newGradientMiddle);
+                  }}
                   className="h-10 rounded-xl w-full"
                 />
               </div>
@@ -360,12 +366,13 @@ export default function SettingsTab() {
                 <Input
                   type="color"
                   value={theme.get.darkMode ? theme.get.gradientEnd.dark : theme.get.gradientEnd.light}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    theme.set.gradientEnd(prev => ({
-                      ...prev,
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    const newGradientEnd = {
+                      ...theme.get.gradientEnd,
                       [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
-                    }))
-                  }
+                    };
+                    theme.set.gradientEnd(newGradientEnd);
+                  }}
                   className="h-10 rounded-xl w-full"
                 />
               </div>
@@ -375,13 +382,13 @@ export default function SettingsTab() {
               className="rounded-xl w-full mt-4"
               onClick={() => {
                 if (theme.get.darkMode) {
-                  theme.set.gradientStart(prev => ({ ...prev, dark: '#18181b' }));
-                  theme.set.gradientMiddle(prev => ({ ...prev, dark: '#0f172a' }));
-                  theme.set.gradientEnd(prev => ({ ...prev, dark: '#1e293b' }));
+                  theme.set.gradientStart({ ...theme.get.gradientStart, dark: '#18181b' });
+                  theme.set.gradientMiddle({ ...theme.get.gradientMiddle, dark: '#0f172a' });
+                  theme.set.gradientEnd({ ...theme.get.gradientEnd, dark: '#1e293b' });
                 } else {
-                  theme.set.gradientStart(prev => ({ ...prev, light: '#ffd2e9' }));
-                  theme.set.gradientMiddle(prev => ({ ...prev, light: '#bae6fd' }));
-                  theme.set.gradientEnd(prev => ({ ...prev, light: '#a7f3d0' }));
+                  theme.set.gradientStart({ ...theme.get.gradientStart, light: '#ffd2e9' });
+                  theme.set.gradientMiddle({ ...theme.get.gradientMiddle, light: '#bae6fd' });
+                  theme.set.gradientEnd({ ...theme.get.gradientEnd, light: '#a7f3d0' });
                 }
               }}
             >

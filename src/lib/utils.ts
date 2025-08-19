@@ -11,6 +11,9 @@ export function cn(...inputs: Parameters<typeof clsx>): string {
 
 // Convert hex to HSL components
 export function getHSLComponents(hex: string) {
+  if (typeof hex !== 'string') {
+    return { h: 0, s: 0, l: 0 }; // Return default HSL if input is invalid
+  }
   // Remove the hash if present
   hex = hex.replace('#', '');
 
