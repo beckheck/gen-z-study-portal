@@ -138,14 +138,21 @@ export default function StudyPortal(): React.JSX.Element {
                     <button
                       key={value}
                       onClick={() => handleTabChange(value)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                         activeTab === value
-                          ? 'bg-white/80 dark:bg-white/20 text-zinc-900 dark:text-zinc-100'
+                          ? 'bg-white/90 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-md scale-105 font-semibold border border-white/40'
                           : 'hover:bg-white/50 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
                       }`}
+                      style={{
+                        transform: activeTab === value ? 'scale(1.02)' : 'scale(1)',
+                        boxShadow:
+                          activeTab === value
+                            ? '0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.3)'
+                            : undefined,
+                      }}
                     >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      <span className="font-medium">{label}</span>
+                      <Icon className={`w-5 h-5 flex-shrink-0 ${activeTab === value ? 'text-current' : ''}`} />
+                      <span className={`font-medium ${activeTab === value ? 'font-semibold' : ''}`}>{label}</span>
                     </button>
                   ))}
                 </div>

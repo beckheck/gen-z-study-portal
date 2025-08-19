@@ -143,14 +143,22 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
               <TabsTrigger
                 key={value}
                 value={value}
-                className="rounded-xl px-4"
+                className={`rounded-xl px-4 transition-all duration-200 ${
+                  activeTab === value
+                    ? 'bg-white/90 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-md scale-105 font-semibold border border-white/40'
+                    : 'hover:bg-white/60 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
+                }`}
                 style={{
                   '--tab-accent': 'hsl(var(--accent-h) var(--accent-s) var(--accent-l))',
-                  transform: 'translateY(-2px)',
+                  transform: activeTab === value ? 'translateY(-3px) scale(1.05)' : 'translateY(-2px)',
+                  boxShadow:
+                    activeTab === value
+                      ? '0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.3)'
+                      : undefined,
                 }}
                 onClick={() => onTabChange(value)}
               >
-                <Icon className="w-4 h-4 mr-2" />
+                <Icon className={`w-4 h-4 mr-2 ${activeTab === value ? 'text-current' : ''}`} />
                 {label}
               </TabsTrigger>
             ))}
@@ -176,14 +184,21 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
                     <DropdownMenuItem
                       key={value}
                       onClick={() => onTabChange(value)}
-                      className={`flex items-center gap-2 ${
+                      className={`flex items-center gap-2 transition-all duration-200 ${
                         activeTab === value
-                          ? 'bg-white/80 dark:bg-white/20 text-zinc-900 dark:text-zinc-100'
-                          : 'hover:bg-white/50 dark:hover:bg-white/10'
+                          ? 'bg-white/90 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-md scale-105 font-semibold border border-white/40'
+                          : 'hover:bg-white/50 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
                       }`}
+                      style={{
+                        transform: activeTab === value ? 'scale(1.02)' : 'scale(1)',
+                        boxShadow:
+                          activeTab === value
+                            ? '0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.3)'
+                            : undefined,
+                      }}
                     >
-                      <Icon className="w-4 h-4" />
-                      {label}
+                      <Icon className={`w-4 h-4 ${activeTab === value ? 'text-current' : ''}`} />
+                      <span className={activeTab === value ? 'font-semibold' : 'font-medium'}>{label}</span>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
