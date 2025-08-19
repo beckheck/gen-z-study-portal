@@ -137,13 +137,15 @@ export default function StudyPortal(): React.JSX.Element {
           weatherLocation,
           degreePlan,
           // Wellness data
-          water,
-          gratitude,
-          moodPercentages,
-          hasInteracted,
-          monthlyMoods,
-          showWords,
-          moodEmojis,
+          wellness: {
+            water,
+            gratitude,
+            moodPercentages,
+            hasInteracted,
+            monthlyMoods,
+            showWords,
+            moodEmojis,
+          },
         }),
         // Set state callback
         (newState: Partial<AppState>): void => {
@@ -173,13 +175,16 @@ export default function StudyPortal(): React.JSX.Element {
           if (newState.weatherLocation !== undefined) setWeatherLocation(newState.weatherLocation);
           if (newState.degreePlan !== undefined) setDegreePlan(newState.degreePlan);
           // Wellness state setters
-          if (newState.water !== undefined) setWater(newState.water);
-          if (newState.gratitude !== undefined) setGratitude(newState.gratitude);
-          if (newState.moodPercentages !== undefined) setMoodPercentages(newState.moodPercentages);
-          if (newState.hasInteracted !== undefined) setHasInteracted(newState.hasInteracted);
-          if (newState.monthlyMoods !== undefined) setMonthlyMoods(newState.monthlyMoods);
-          if (newState.showWords !== undefined) setShowWords(newState.showWords);
-          if (newState.moodEmojis !== undefined) setMoodEmojis(newState.moodEmojis);
+          if (newState.wellness) {
+            const wellness = newState.wellness;
+            if (wellness.water !== undefined) setWater(wellness.water);
+            if (wellness.gratitude !== undefined) setGratitude(wellness.gratitude);
+            if (wellness.moodPercentages !== undefined) setMoodPercentages(wellness.moodPercentages);
+            if (wellness.hasInteracted !== undefined) setHasInteracted(wellness.hasInteracted);
+            if (wellness.monthlyMoods !== undefined) setMonthlyMoods(wellness.monthlyMoods);
+            if (wellness.showWords !== undefined) setShowWords(wellness.showWords);
+            if (wellness.moodEmojis !== undefined) setMoodEmojis(wellness.moodEmojis);
+          }
         }
       ),
     []

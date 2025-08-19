@@ -388,14 +388,6 @@ export interface MoodEmojis {
 }
 
 /**
- * Calendar view state for mood tracking
- */
-export interface CalendarView {
-  year: number;
-  month: number;
-}
-
-/**
  * Wellness data object for tracking user wellness metrics
  */
 export interface Wellness {
@@ -403,9 +395,17 @@ export interface Wellness {
   gratitude: string;
   moodPercentages: Record<string, number>;
   hasInteracted: boolean;
-  monthlyMoods: Record<string, any>;
+  monthlyMoods: MonthlyMoods;
   showWords: boolean;
-  moodEmojis: Record<string, MoodEmoji>;
+  moodEmojis: MoodEmojis;
+}
+
+/**
+ * Calendar view state for mood tracking
+ */
+export interface CalendarView {
+  year: number;
+  month: number;
 }
 
 /**
@@ -446,11 +446,5 @@ export interface AppState {
   weatherApiKey: string;
   weatherLocation: WeatherLocation;
   degreePlan: DegreePlan;
-  water: number;
-  gratitude: string;
-  moodPercentages: Record<string, number>;
-  hasInteracted: boolean;
-  monthlyMoods: Record<string, any>;
-  showWords: boolean;
-  moodEmojis: Record<string, MoodEmoji>;
+  wellness: Wellness;
 }

@@ -1,4 +1,4 @@
-import { AppState, Wellness } from '@/types';
+import { AppState } from '@/types';
 import { uid } from './utils';
 
 type StateUpdater = (updates: Partial<AppState>) => void;
@@ -17,126 +17,79 @@ export class DataTransfer {
     this.setState = setState;
   }
 
-  // Helper function to merge events preserving user customizations
-  mergeEvents<T extends GenericEvent>(
-    existingEvents: T[],
-    importedEvents: T[],
-    keyFields: string[] = ['title', 'day'],
-    preserveFields: string[] = ['color', 'hexColor']
-  ): T[] {
-    const merged = [...existingEvents];
-
-    importedEvents.forEach(importedEvent => {
-      // Find existing event that matches the key fields
-      const existingIndex = merged.findIndex(existing => {
-        return keyFields.every(field => existing[field] === importedEvent[field]);
-      });
-
-      if (existingIndex >= 0) {
-        // Event exists, merge while preserving user customizations
-        const existing = merged[existingIndex];
-        const mergedEvent = { ...importedEvent };
-
-        // Preserve user customizations
-        preserveFields.forEach(field => {
-          if (existing[field] !== undefined && existing[field] !== null) {
-            (mergedEvent as any)[field] = existing[field];
-          }
-        });
-
-        // Keep the existing ID to maintain references
-        mergedEvent.id = existing.id;
-
-        merged[existingIndex] = mergedEvent as T;
-      } else {
-        // New event, add it
-        merged.push(importedEvent);
-      }
-    });
-
-    return merged;
-  }
-
   exportData(): void {
     const state = this.getState();
-    const data = {
+    const data: DataFormatV1 = {
       // Core data
-      sessions: state.sessions.map(s => ({
-        type: 'session',
-        course: state.courses[s.courseIndex],
-        startTs: new Date(s.startTs).toISOString(),
-        endTs: new Date(s.endTs).toISOString(),
-        durationMin: s.durationMin,
-        technique: s.technique,
-        moodStart: (s as any).moodStart,
-        moodEnd: (s as any).moodEnd,
-        note: (s.note || '').replace(/[\r\n]+/g, ' '),
+      sessions: state.sessions.map(o => ({
+        id: o.id,
+        course: state.courses[o.courseIndex],
+        startTs: new Date(o.startTs).toISOString(),
+        endTs: new Date(o.endTs).toISOString(),
+        durationMin: o.durationMin,
+        technique: o.technique,
+        moodStart: (o as any).moodStart,
+        moodEnd: (o as any).moodEnd,
+        note: (o.note || '').replace(/[\r\n]+/g, ' '),
       })),
-      exams: state.exams.map(e => ({
-        type: 'exam',
-        course: state.courses[e.courseIndex],
-        title: e.title,
-        date: e.date,
-        weight: e.weight,
-        notes: (e.notes || '').replace(/[\r\n]+/g, ' '),
+      exams: state.exams.map(o => ({
+        id: o.id,
+        course: state.courses[o.courseIndex],
+        title: o.title,
+        date: o.date,
+        weight: o.weight,
+        notes: (o.notes || '').replace(/[\r\n]+/g, ' '),
       })),
       examGrades: state.examGrades || [],
-      tasks: state.tasks.map(t => ({
-        type: 'task',
-        course: state.courses[t.courseIndex],
-        title: t.title,
-        due: t.due,
-        priority: t.priority,
-        done: t.done,
+      tasks: state.tasks.map(o => ({
+        id: o.id,
+        course: state.courses[o.courseIndex],
+        title: o.title,
+        due: o.due,
+        priority: o.priority,
+        done: o.done,
       })),
-      schedule: state.schedule.map(e => ({
-        type: 'schedule',
-        course: state.courses[e.courseIndex],
-        title: e.title,
-        day: e.day,
-        start: e.start,
-        end: e.end,
-        location: e.location,
-        color: e.color,
+      schedule: state.schedule.map(o => ({
+        id: o.id,
+        course: state.courses[o.courseIndex],
+        title: o.title,
+        day: o.day,
+        start: o.start,
+        end: o.end,
+        location: o.location,
+        color: o.color,
       })),
-      timetableEvents: state.timetableEvents.map(e => ({
-        type: 'timetableEvent',
-        course: state.courses[e.courseIndex],
-        eventType: e.eventType,
-        classroom: e.classroom,
-        teacher: e.teacher,
-        day: e.day,
-        startTime: e.startTime,
-        endTime: e.endTime,
-        block: e.block,
-        color: e.color, // Export as 'color' not 'hexColor'
+      timetableEvents: state.timetableEvents.map(o => ({
+        id: o.id,
+        course: state.courses[o.courseIndex],
+        eventType: o.eventType,
+        classroom: o.classroom,
+        teacher: o.teacher,
+        day: o.day,
+        startTime: o.startTime,
+        endTime: o.endTime,
+        block: o.block,
+        color: o.color, // Export as 'color' not 'hexColor'
       })),
-      regularEvents: state.regularEvents.map(e => ({
-        type: 'regularEvent',
-        course: state.courses[e.courseIndex],
-        title: e.title,
-        startDate: e.startDate,
-        endDate: e.endDate,
-        isMultiDay: e.isMultiDay,
-        location: e.location,
-        notes: e.notes,
-        color: e.color,
+      regularEvents: state.regularEvents.map(o => ({
+        id: o.id,
+        course: state.courses[o.courseIndex],
+        title: o.title,
+        startDate: o.startDate,
+        endDate: o.endDate,
+        isMultiDay: o.isMultiDay,
+        location: o.location,
+        notes: o.notes,
+        color: o.color,
       })),
+
       sessionTasks: state.sessionTasks,
 
       // Degree Plan data
       degreePlan: state.degreePlan,
 
       // Wellness data
-      wellness: {
-        water: state.water,
-        gratitude: state.gratitude,
-        moodPercentages: state.moodPercentages,
-        hasInteracted: state.hasInteracted,
-        monthlyMoods: state.monthlyMoods,
-        showWords: state.showWords,
-        moodEmojis: state.moodEmojis,
-      } satisfies Wellness,
+      wellness: state.wellness,
 
       // Settings
       settings: {
@@ -176,169 +129,173 @@ export class DataTransfer {
   async importData(file: File): Promise<boolean> {
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
+      const data: DataFormatV1 = JSON.parse(text);
 
-      // Helper to find course index
-      const findCourseIndex = (courseName: string, courses: string[]): number => {
-        const index = courses.indexOf(courseName);
-        return index === -1 ? 0 : index; // fallback to first course if not found
-      };
-
-      // Extract settings first
-      if (data.settings) {
-        this.setState({
-          courses: data.settings.courses,
-          selectedCourse: data.settings.selectedCourse,
-          theme: {
-            darkMode: data.settings.darkMode,
-            gradientEnabled: data.settings.gradient.enabled,
-            gradientStart: data.settings.gradient.start,
-            gradientMiddle: data.settings.gradient.middle,
-            gradientEnd: data.settings.gradient.end,
-            bgImage: data.settings.bgImage,
-            accentColor: data.settings.accentColor,
-            cardOpacity: data.settings.cardOpacity,
-          },
-          soundtrackEmbed: data.settings.soundtrackEmbed,
-          weatherApiKey: data.settings.weatherApiKey,
-          weatherLocation: data.settings.weatherLocation,
-          degreePlan: data.settings.degreePlan || { semesters: [], totalSemesters: 0, completedCourses: [] },
-        });
+      if (data.version == null) {
+        this.importDataV1(data);
       }
 
-      // Import degree plan data (for backward compatibility)
-      if (data.degreePlan) {
-        this.setState({ degreePlan: data.degreePlan });
-      }
+      return true;
+    } catch (error) {
+      console.error('Error importing data:', error);
+      return false;
+    }
+  }
 
-      // Get current state to preserve user customizations
-      const currentState = this.getState();
+  private importDataV1(data: DataFormatV1) {
+    // Extract settings first
+    if (data.settings) {
+      this.setState({
+        courses: data.settings.courses,
+        selectedCourse: data.settings.selectedCourse,
+        theme: {
+          darkMode: data.settings.darkMode,
+          gradientEnabled: data.settings.gradient.enabled,
+          gradientStart: data.settings.gradient.start,
+          gradientMiddle: data.settings.gradient.middle,
+          gradientEnd: data.settings.gradient.end,
+          bgImage: data.settings.bgImage,
+          accentColor: data.settings.accentColor,
+          cardOpacity: data.settings.cardOpacity,
+        },
+        soundtrackEmbed: data.settings.soundtrackEmbed,
+        weatherApiKey: data.settings.weatherApiKey,
+        weatherLocation: data.settings.weatherLocation,
+        degreePlan: data.settings.degreePlan || { semesters: [], totalSemesters: 0, completedCourses: [] },
+      });
+    }
 
-      // Then import data with proper course indices, preserving user customizations
-      if (data.sessions) {
-        const sessions = data.sessions.map((s: any) => ({
-          id: uid(),
-          courseIndex: findCourseIndex(s.course, data.settings.courses),
-          startTs: new Date(s.startTs).getTime(),
-          endTs: new Date(s.endTs).getTime(),
-          durationMin: s.durationMin,
-          technique: s.technique,
-          moodStart: s.moodStart,
-          moodEnd: s.moodEnd,
-          note: s.note,
-        }));
-        this.setState({ sessions });
-      }
+    // Import degree plan data (for backward compatibility)
+    if (data.degreePlan) {
+      this.setState({ degreePlan: data.degreePlan });
+    }
 
-      if (data.exams) {
-        const exams = data.exams.map((e: any) => ({
-          id: uid(),
-          courseIndex: findCourseIndex(e.course, data.settings.courses),
-          title: e.title,
-          date: e.date,
-          weight: e.weight,
-          notes: e.notes,
-        }));
-        this.setState({ exams });
-      }
+    // Then import data with proper course indices, preserving user customizations
+    if (data.sessions) {
+      const sessions = data.sessions.map((o: any) => ({
+        id: o.id ?? uid(),
+        courseIndex: findCourseIndex(o.course, data.settings.courses),
+        startTs: new Date(o.startTs).getTime(),
+        endTs: new Date(o.endTs).getTime(),
+        durationMin: o.durationMin,
+        technique: o.technique,
+        moodStart: o.moodStart,
+        moodEnd: o.moodEnd,
+        note: o.note,
+      }));
+      this.setState({ sessions });
+    }
 
-      // Import exam grades
-      if (data.examGrades) {
-        this.setState({ examGrades: data.examGrades });
-      }
+    if (data.exams) {
+      const exams = data.exams.map((o: any) => ({
+        id: o.id ?? uid(),
+        courseIndex: findCourseIndex(o.course, data.settings.courses),
+        title: o.title,
+        date: o.date,
+        weight: o.weight,
+        notes: o.notes,
+      }));
+      this.setState({ exams });
+    }
 
-      if (data.tasks) {
-        const tasks = data.tasks.map((t: any) => ({
-          id: uid(),
-          courseIndex: findCourseIndex(t.course, data.settings.courses),
-          title: t.title,
-          due: t.due,
-          priority: t.priority,
-          done: t.done,
-        }));
-        this.setState({ tasks });
-      }
+    // Import exam grades
+    if (data.examGrades) {
+      this.setState({ examGrades: data.examGrades });
+    }
 
-      if (data.schedule) {
-        const importedSchedule = data.schedule.map((e: any) => ({
-          id: uid(),
-          courseIndex: findCourseIndex(e.course, data.settings.courses),
-          title: e.title,
-          day: e.day,
-          start: e.start,
-          end: e.end,
-          location: e.location,
-          color: e.color,
-        }));
+    if (data.tasks) {
+      const tasks = data.tasks.map((o: any) => ({
+        id: o.id ?? uid(),
+        courseIndex: findCourseIndex(o.course, data.settings.courses),
+        title: o.title,
+        due: o.due,
+        priority: o.priority,
+        done: o.done,
+      }));
+      this.setState({ tasks });
+    }
 
-        // Merge with existing schedule, preserving user-assigned colors
-        const mergedSchedule = this.mergeEvents(
-          currentState.schedule || [],
-          importedSchedule,
-          ['title', 'day', 'start', 'end'], // Key fields to match events
-          ['color'] // Fields to preserve from existing events
-        );
-        this.setState({ schedule: mergedSchedule });
-      }
+    if (data.schedule) {
+      const importedSchedule = data.schedule.map((o: any) => ({
+        id: o.id ?? uid(),
+        courseIndex: findCourseIndex(o.course, data.settings.courses),
+        title: o.title,
+        day: o.day,
+        start: o.start,
+        end: o.end,
+        location: o.location,
+        color: o.color,
+      }));
 
-      if (data.timetableEvents) {
-        const importedTimetableEvents = data.timetableEvents.map((e: any) => ({
-          id: uid(),
-          courseIndex: findCourseIndex(e.course, data.settings.courses),
-          eventType: e.eventType,
-          classroom: e.classroom,
-          teacher: e.teacher,
-          day: e.day,
-          startTime: e.startTime,
-          endTime: e.endTime,
-          block: e.block,
-          color: e.color || e.hexColor, // Support both color formats for backward compatibility
-        }));
+      // Merge with existing schedule, preserving user-assigned colors
+      const mergedSchedule = mergeEventsV1(
+        this.getState().schedule || [],
+        importedSchedule,
+        ['title', 'day', 'start', 'end'], // Key fields to match events
+        ['color'] // Fields to preserve from existing events
+      );
+      this.setState({ schedule: mergedSchedule });
+    }
 
-        // Merge with existing timetable events, preserving user-assigned colors
-        const mergedTimetableEvents = this.mergeEvents(
-          currentState.timetableEvents || [],
-          importedTimetableEvents,
-          ['day', 'startTime', 'endTime', 'eventType'], // Key fields to match events
-          ['color'] // Fields to preserve from existing events (changed from 'hexColor' to 'color')
-        );
-        this.setState({ timetableEvents: mergedTimetableEvents });
-      }
+    if (data.timetableEvents) {
+      const importedTimetableEvents = data.timetableEvents.map((o: any) => ({
+        id: o.id ?? uid(),
+        courseIndex: findCourseIndex(o.course, data.settings.courses),
+        eventType: o.eventType,
+        classroom: o.classroom,
+        teacher: o.teacher,
+        day: o.day,
+        startTime: o.startTime,
+        endTime: o.endTime,
+        block: o.block,
+        color: o.color || o.hexColor, // Support both color formats for backward compatibility
+      }));
 
-      if (data.regularEvents) {
-        const importedRegularEvents = data.regularEvents.map((e: any) => ({
-          id: uid(),
-          courseIndex: findCourseIndex(e.course, data.settings.courses),
-          title: e.title,
-          startDate: e.startDate,
-          endDate: e.endDate,
-          isMultiDay: e.isMultiDay,
-          location: e.location,
-          notes: e.notes,
-          color: e.color || e.hexColor, // Support both color formats for backward compatibility
-        }));
+      // Merge with existing timetable events, preserving user-assigned colors
+      const mergedTimetableEvents = mergeEventsV1(
+        this.getState().timetableEvents || [],
+        importedTimetableEvents,
+        ['day', 'startTime', 'endTime', 'eventType'], // Key fields to match events
+        ['color'] // Fields to preserve from existing events (changed from 'hexColor' to 'color')
+      );
+      this.setState({ timetableEvents: mergedTimetableEvents });
+    }
 
-        // Merge with existing regular events, preserving user-assigned colors
-        const mergedRegularEvents = this.mergeEvents(
-          currentState.regularEvents || [],
-          importedRegularEvents,
-          ['title', 'startDate'], // Key fields to match events
-          ['color'] // Fields to preserve from existing events
-        );
-        this.setState({ regularEvents: mergedRegularEvents });
-      }
+    if (data.regularEvents) {
+      const importedRegularEvents = data.regularEvents.map((o: any) => ({
+        id: o.id ?? uid(),
+        courseIndex: findCourseIndex(o.course, data.settings.courses),
+        title: o.title,
+        startDate: o.startDate,
+        endDate: o.endDate,
+        isMultiDay: o.isMultiDay,
+        location: o.location,
+        notes: o.notes,
+        color: o.color || o.hexColor, // Support both color formats for backward compatibility
+      }));
 
-      if (data.sessionTasks) {
-        const sessionTasks = data.sessionTasks.map((t: any) => ({
-          ...t,
-          id: uid(),
-        }));
-        this.setState({ sessionTasks });
-      }
+      // Merge with existing regular events, preserving user-assigned colors
+      const mergedRegularEvents = mergeEventsV1(
+        this.getState().regularEvents || [],
+        importedRegularEvents,
+        ['title', 'startDate'], // Key fields to match events
+        ['color'] // Fields to preserve from existing events
+      );
+      this.setState({ regularEvents: mergedRegularEvents });
+    }
 
-      // Import wellness data
-      if (data.wellness) {
-        this.setState({
+    if (data.sessionTasks) {
+      const sessionTasks = data.sessionTasks.map((o: any) => ({
+        ...o,
+        id: o.id ?? uid(),
+      }));
+      this.setState({ sessionTasks });
+    }
+
+    // Import wellness data
+    if (data.wellness) {
+      this.setState({
+        wellness: {
           water: data.wellness.water || 0,
           gratitude: data.wellness.gratitude || '',
           moodPercentages: data.wellness.moodPercentages || {},
@@ -352,13 +309,216 @@ export class DataTransfer {
             happy: { emoji: '🙂', color: '#45b7d1', word: 'Happy' },
             excited: { emoji: '😁', color: '#10ac84', word: 'Excited' },
           },
-        });
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error importing data:', error);
-      return false;
+        },
+      });
     }
   }
+}
+
+// Helper function to merge events preserving user customizations
+function mergeEventsV1<T extends GenericEvent>(
+  existingEvents: T[],
+  importedEvents: T[],
+  keyFields: string[] = ['title', 'day'],
+  preserveFields: string[] = ['color', 'hexColor']
+): T[] {
+  const merged = [...existingEvents];
+
+  importedEvents.forEach(importedEvent => {
+    // Find existing event that matches the key fields
+    const existingIndex = merged.findIndex(existing => {
+      return keyFields.every(field => existing[field] === importedEvent[field]);
+    });
+
+    if (existingIndex >= 0) {
+      // Event exists, merge while preserving user customizations
+      const existing = merged[existingIndex];
+      const mergedEvent = { ...importedEvent };
+
+      // Preserve user customizations
+      preserveFields.forEach(field => {
+        if (existing[field] !== undefined && existing[field] !== null) {
+          (mergedEvent as any)[field] = existing[field];
+        }
+      });
+
+      // Keep the existing ID to maintain references
+      mergedEvent.id = existing.id;
+
+      merged[existingIndex] = mergedEvent as T;
+    } else {
+      // New event, add it
+      merged.push(importedEvent);
+    }
+  });
+
+  return merged;
+}
+
+function findCourseIndex(courseName: string, courses: string[]): number {
+  const index = courses.indexOf(courseName);
+  return index === -1 ? 0 : index; // fallback to first course if not found
+}
+
+interface DataFormatV1 {
+  version?: undefined;
+  sessions?: Array<{
+    id: string;
+    course: string;
+    startTs: string;
+    endTs: string;
+    durationMin: number;
+    technique: string;
+    moodStart?: number;
+    moodEnd?: number;
+    note?: string;
+  }>;
+  exams?: Array<{
+    id: string;
+    course: string;
+    title: string;
+    date: string;
+    weight: number;
+    notes?: string;
+  }>;
+  examGrades?: Array<{
+    examId: string;
+    grade: number;
+  }>;
+  tasks?: Array<{
+    id: string;
+    course: string;
+    title: string;
+    due: string;
+    priority: string;
+    done: boolean;
+  }>;
+  schedule?: Array<{
+    id: string;
+    course: string;
+    title: string;
+    day: string;
+    start: string;
+    end: string;
+    location: string;
+    color?: string;
+  }>;
+  timetableEvents?: Array<{
+    id: string;
+    course: string;
+    eventType: string;
+    classroom: string;
+    teacher: string;
+    day: string;
+    startTime: string;
+    endTime: string;
+    block: string;
+    color?: string;
+    hexColor?: string; // for backward compatibility
+  }>;
+  regularEvents?: Array<{
+    id: string;
+    course: string;
+    title: string;
+    startDate: string;
+    endDate: string;
+    isMultiDay: boolean;
+    location: string;
+    notes: string;
+    color?: string;
+    hexColor?: string; // for backward compatibility
+  }>;
+  sessionTasks?: Array<{
+    id: string;
+    title: string;
+    done: boolean;
+    createdAt: number;
+  }>;
+  degreePlan?: {
+    semesters: Array<{
+      id: string | number;
+      name?: string;
+      number?: number;
+      courses: Array<{
+        id: string;
+        acronym: string;
+        name: string;
+        credits: string;
+        prerequisites?: string;
+        corequisites?: string;
+        completed: boolean;
+      }>;
+    }>;
+    totalSemesters: number;
+    completedCourses: string[];
+  };
+  wellness?: {
+    water?: number;
+    gratitude?: string;
+    moodPercentages?: Record<string, number>;
+    hasInteracted?: boolean;
+    monthlyMoods?: Record<string, any>;
+    showWords?: boolean;
+    moodEmojis?: Record<
+      string,
+      {
+        emoji: string;
+        color: string;
+        word: string;
+      }
+    >;
+  };
+  settings?: {
+    courses: string[];
+    selectedCourse: number;
+    darkMode: boolean;
+    gradient: {
+      enabled: boolean;
+      start: {
+        light: string;
+        dark: string;
+      };
+      middle: {
+        light: string;
+        dark: string;
+      };
+      end: {
+        light: string;
+        dark: string;
+      };
+    };
+    bgImage: string;
+    accentColor: {
+      light: string;
+      dark: string;
+    };
+    cardOpacity: {
+      light: number;
+      dark: number;
+    };
+    soundtrackEmbed: string;
+    weatherApiKey: string;
+    weatherLocation: {
+      useGeolocation: boolean;
+      city: string;
+    };
+    degreePlan: {
+      semesters: Array<{
+        id: string | number;
+        name?: string;
+        number?: number;
+        courses: Array<{
+          id: string;
+          acronym: string;
+          name: string;
+          credits: string;
+          prerequisites?: string;
+          corequisites?: string;
+          completed: boolean;
+        }>;
+      }>;
+      totalSemesters: number;
+      completedCourses: string[];
+    };
+  };
 }
