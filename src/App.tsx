@@ -9,8 +9,7 @@ import StudyTrackerTab from '@/components/StudyTrackerTab';
 import TimetableTab from '@/components/TimetableTab';
 import WellnessTab from '@/components/WellnessTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAppState } from '@/hooks/useStore';
-import { useSoundtrack } from '@/hooks/useStore';
+import { useAppState, useSoundtrack } from '@/hooks/useStore';
 import useTheme from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
 import {
@@ -24,7 +23,6 @@ import {
   Sparkles,
 } from 'lucide-react';
 import React, { useState } from 'react';
-import type { SoundtrackPosition } from './types';
 
 // -----------------------------
 // Main App Component
@@ -151,7 +149,11 @@ export default function StudyPortal(): React.JSX.Element {
 
         {/* Floating Soundtrack - Persists across all tabs */}
         {soundtrack.position !== 'dashboard' && soundtrack.embed && (
-          <SoundtrackCard embed={soundtrack.embed} position={soundtrack.position} onPositionChange={setSoundtrackPosition} />
+          <SoundtrackCard
+            embed={soundtrack.embed}
+            position={soundtrack.position}
+            onPositionChange={setSoundtrackPosition}
+          />
         )}
       </div>
     </div>
