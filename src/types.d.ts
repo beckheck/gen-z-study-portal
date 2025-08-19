@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Study timer object with state and methods for tracking study sessions
  */
@@ -456,4 +458,10 @@ export interface AppState {
   weatherLocation: WeatherLocation;
   degreePlan: DegreePlan;
   wellness: Wellness;
+}
+
+export interface AppTab {
+  value: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
 }

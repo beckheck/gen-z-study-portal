@@ -2,6 +2,7 @@ import CourseManagerTab from '@/components/CourseManagerTab';
 import DashboardTab from '@/components/DashboardTab';
 import DegreePlanTab from '@/components/DegreePlanTab';
 import MoonSunToggle from '@/components/MoonSunToggle';
+import OverflowTabs from '@/components/OverflowTabs';
 import PlannerTab from '@/components/PlannerTab';
 import SettingsTab from '@/components/SettingsTab';
 import SoundtrackCard from '@/components/SoundtrackCard';
@@ -9,7 +10,7 @@ import StudyTrackerTab from '@/components/StudyTrackerTab';
 import TimetableTab from '@/components/TimetableTab';
 import WellnessTab from '@/components/WellnessTab';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useAppState, useSoundtrack } from '@/hooks/useStore';
 import useTheme from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
@@ -26,6 +27,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import React, { useState } from 'react';
+import { AppTab } from './types';
 
 const APP_TITLE = 'StudyHub ✨';
 const APP_TAGLINE = 'Plan smarter. Study deeper. Protect your vibe.';
@@ -46,7 +48,7 @@ function AppSubtitle() {
   );
 }
 
-const tabs = [
+const tabs: AppTab[] = [
   { value: 'dashboard', label: 'Dashboard', icon: Home },
   { value: 'planner', label: 'Planner', icon: CalendarDays },
   { value: 'timetable', label: 'Timetable', icon: CalendarRange },
@@ -186,27 +188,15 @@ export default function StudyPortal(): React.JSX.Element {
         </motion.header>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          {/* Desktop tabs - hidden on mobile */}
+          {/* Desktop tabs with overflow handling - hidden on mobile */}
           <div className="hidden md:flex justify-center">
-            <TabsList
+            <OverflowTabs
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
               className="flex flex-wrap justify-center gap-2 bg-white/70 dark:bg-white/10 backdrop-blur p-3 rounded-2xl shadow-lg"
               style={{ paddingTop: '8px', paddingBottom: '16px' }}
-            >
-              {tabs.map(({ value, label, icon: Icon }) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  className="rounded-xl px-4"
-                  style={{
-                    '--tab-accent': 'hsl(var(--accent-h) var(--accent-s) var(--accent-l))',
-                    transform: 'translateY(-2px)',
-                  }}
-                >
-                  <Icon className="w-4 h-4 mr-2" />
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            />
           </div>
 
           <TabsContent value="dashboard" className="space-y-6">
