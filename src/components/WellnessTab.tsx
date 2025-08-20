@@ -23,15 +23,7 @@ export default function WellnessTab() {
     setMoodEmojis,
   } = useWellness();
 
-  const {
-    water,
-    gratitude,
-    moodPercentages,
-    hasInteracted,
-    monthlyMoods,
-    showWords,
-    moodEmojis,
-  } = wellness;
+  const { water, gratitude, moodPercentages, hasInteracted, monthlyMoods, showWords, moodEmojis } = wellness;
   const [breathing, setBreathing] = useState<boolean>(false);
 
   // Local state for UI only (not persisted)
@@ -181,38 +173,6 @@ export default function WellnessTab() {
 
   // Calculate total mood percentage
   const totalMoodPercentage = Object.values(moodPercentages).reduce((sum, percentage) => sum + percentage, 0);
-
-  // Generate random color for mood bubble (reusing from Present Goals)
-  const generateRandomColor = (): string => {
-    const colors = [
-      '#ff6b6b',
-      '#4ecdc4',
-      '#45b7d1',
-      '#96ceb4',
-      '#ffeaa7',
-      '#dda0dd',
-      '#98d8c8',
-      '#f7dc6f',
-      '#bb8fce',
-      '#85c1e9',
-      '#f8c471',
-      '#82e0aa',
-      '#f1948a',
-      '#85c1e9',
-      '#d7bde2',
-      '#ff9ff3',
-      '#54a0ff',
-      '#5f27cd',
-      '#00d2d3',
-      '#ff9f43',
-      '#10ac84',
-      '#ee5a24',
-      '#0984e3',
-      '#6c5ce7',
-      '#a29bfe',
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
 
   // Build progressive gradient from mood percentages (like Present Goals)
   const buildMoodGradient = (): string => {

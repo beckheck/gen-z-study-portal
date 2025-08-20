@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ColorPicker from '@/components/ui/color-picker';
+import { ContextMenu, ContextMenuItem } from '@/components/ui/context-menu';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useContextMenu } from '@/hooks/useContextMenu';
 import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
 import { CalendarDays, Plus, Target, Trash2 } from 'lucide-react';
@@ -44,11 +46,6 @@ interface WeeklyGoal {
   color?: string;
 }
 
-interface ConfirmDialog {
-  open: boolean;
-  event: any | null;
-}
-
 interface PlannerForm {
   eventCategory: 'regular' | 'exam' | 'task';
   courseIndex: number;
@@ -65,6 +62,24 @@ interface PlannerForm {
   notes: string;
   color: string;
 }
+
+// Default form values to avoid redundancy
+const DEFAULT_PLANNER_FORM: PlannerForm = {
+  eventCategory: 'regular',
+  courseIndex: -1,
+  type: 'class',
+  title: '',
+  startDate: '',
+  endDate: '',
+  day: 'Mon',
+  start: '10:00',
+  end: '11:30',
+  location: '',
+  weight: 20,
+  priority: 'normal',
+  notes: '',
+  color: '#6366f1',
+};
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTHS_LONG = [
@@ -94,28 +109,13 @@ export default function PlannerTab() {
   const { eventsForDay, removeSchedule } = useSchedule();
 
   const [open, setOpen] = useState<boolean>(false);
-  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>({ open: false, event: null });
+  const contextMenu = useContextMenu<any>();
   const [showMultiDayEvents, setShowMultiDayEvents] = useState<boolean>(false);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
   const [goalForm, setGoalForm] = useState<{ title: string }>({ title: '' });
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
-  const [form, setForm] = useState<PlannerForm>({
-    eventCategory: 'regular',
-    courseIndex: -1,
-    type: 'class',
-    title: '',
-    startDate: '',
-    endDate: '',
-    day: 'Mon',
-    start: '10:00',
-    end: '11:30',
-    location: '',
-    weight: 20,
-    priority: 'normal',
-    notes: '',
-    color: '#6366f1',
-  });
+  const [form, setForm] = useState<PlannerForm>(DEFAULT_PLANNER_FORM);
   const [filterCourse, setFilterCourse] = useState<string>('all');
   const [view, setView] = useState<'week' | 'month'>('month');
   const [weekOffset, setWeekOffset] = useState<number>(0);
@@ -144,6 +144,17 @@ export default function PlannerTab() {
     d.setHours(0, 0, 0, 0);
     return d;
   }, [weekOffset]);
+
+  // Event handlers that work with the new context menu
+  const editEvent = (event: any): void => {
+    handleEditEvent(event);
+    contextMenu.hideMenu();
+  };
+
+  const deleteEvent = (event: any): void => {
+    handleDeleteEvent(event);
+    contextMenu.hideMenu();
+  };
 
   // Calculate goal progress
   const completedGoals = weeklyGoals.filter(goal => goal.completed).length;
@@ -326,22 +337,7 @@ export default function PlannerTab() {
     }
 
     // Reset form and editing state
-    setForm({
-      eventCategory: 'regular',
-      courseIndex: -1, // -1 means no course selected
-      type: 'class',
-      title: '',
-      startDate: '',
-      endDate: '',
-      day: 'Mon',
-      start: '10:00',
-      end: '11:30',
-      location: '',
-      weight: 20,
-      priority: 'normal',
-      notes: '',
-      color: '#6366f1',
-    });
+    setForm(DEFAULT_PLANNER_FORM);
     setEditingEvent(null);
     setOpen(false);
   };
@@ -402,7 +398,6 @@ export default function PlannerTab() {
         weight: 20,
       });
     }
-    setConfirmDialog({ open: false, event: null });
     setOpen(true);
   };
 
@@ -415,27 +410,14 @@ export default function PlannerTab() {
     } else if (event.eventType === 'task') {
       deleteTask(event.id);
     }
-    setConfirmDialog({ open: false, event: null });
   };
 
   // Handle day click to create new event with pre-filled date
   const handleDayClick = (date: Date): void => {
     const dateString = date.toISOString().split('T')[0];
     setForm({
-      eventCategory: 'regular',
-      courseIndex: -1,
-      type: 'class',
-      title: '',
+      ...DEFAULT_PLANNER_FORM,
       startDate: dateString,
-      endDate: '',
-      day: 'Mon',
-      start: '10:00',
-      end: '11:30',
-      location: '',
-      weight: 20,
-      priority: 'normal',
-      notes: '',
-      color: '#6366f1',
     });
     setEditingEvent(null); // Make sure we're not in edit mode
     setOpen(true);
@@ -446,22 +428,7 @@ export default function PlannerTab() {
     if (!open) {
       // Dialog is being closed - reset editing state and form
       setEditingEvent(null);
-      setForm({
-        eventCategory: 'regular',
-        courseIndex: -1,
-        type: 'class',
-        title: '',
-        startDate: '',
-        endDate: '',
-        day: 'Mon',
-        start: '10:00',
-        end: '11:30',
-        location: '',
-        weight: 20,
-        priority: 'normal',
-        notes: '',
-        color: '#6366f1',
-      });
+      setForm(DEFAULT_PLANNER_FORM);
     }
     setOpen(open);
   };
@@ -860,39 +827,17 @@ export default function PlannerTab() {
             </DialogContent>
           </Dialog>
 
-          {/* Event Action Confirmation Dialog */}
-          <Dialog open={confirmDialog.open} onOpenChange={open => setConfirmDialog({ open, event: null })}>
-            <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
-              <DialogHeader className="">
-                <DialogTitle className="text-gray-900 dark:text-gray-100">Event Actions</DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-300">
-                  What would you like to do with "{confirmDialog.event?.title || confirmDialog.event?.type}"?
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col gap-3 mt-4">
-                <Button
-                  onClick={() => handleEditEvent(confirmDialog.event)}
-                  className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Edit Event
-                </Button>
-                <Button
-                  onClick={() => handleDeleteEvent(confirmDialog.event)}
-                  variant="destructive"
-                  className="rounded-xl"
-                >
+          {/* Event Options Context Menu */}
+          <ContextMenu show={contextMenu.showMenu} position={contextMenu.position} menuRef={contextMenu.menuRef}>
+            {contextMenu.selectedItem && (
+              <>
+                <ContextMenuItem onClick={() => editEvent(contextMenu.selectedItem)}>Edit Event</ContextMenuItem>
+                <ContextMenuItem variant="destructive" onClick={() => deleteEvent(contextMenu.selectedItem)}>
                   Delete Event
-                </Button>
-                <Button
-                  onClick={() => setConfirmDialog({ open: false, event: null })}
-                  variant="outline"
-                  className="rounded-xl"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+                </ContextMenuItem>
+              </>
+            )}
+          </ContextMenu>
         </div>
       </div>
 
@@ -986,15 +931,14 @@ export default function PlannerTab() {
                               <div
                                 className="flex-1 group relative bg-white/70 dark:bg-white/5 p-2.5 rounded-xl cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                                 onClick={event => {
-                                  event.stopPropagation();
                                   if (e.eventType === 'schedule') {
                                     // For schedule events, show delete confirmation directly
                                     if (confirm('Delete this schedule event?')) {
                                       removeSchedule(e.id);
                                     }
                                   } else {
-                                    // For other events, show the edit/delete dialog
-                                    setConfirmDialog({ open: true, event: e });
+                                    // For other events, show the options menu
+                                    contextMenu.showContextMenu(e, event);
                                   }
                                 }}
                               >
@@ -1028,15 +972,14 @@ export default function PlannerTab() {
                           key={e.id}
                           className="group relative flex flex-row items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl mb-2 cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                           onClick={event => {
-                            event.stopPropagation();
                             if (e.eventType === 'schedule') {
                               // For schedule events, show delete confirmation directly
                               if (confirm('Delete this schedule event?')) {
                                 removeSchedule(e.id);
                               }
                             } else {
-                              // For other events, show the edit/delete dialog
-                              setConfirmDialog({ open: true, event: e });
+                              // For other events, show the options menu
+                              contextMenu.showContextMenu(e, event);
                             }
                           }}
                         >
@@ -1287,8 +1230,7 @@ export default function PlannerTab() {
                         key={idx}
                         className="text-xs truncate flex items-center gap-1.5 p-1 rounded bg-white/50 dark:bg-white/10 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                         onClick={event => {
-                          event.stopPropagation();
-                          setConfirmDialog({ open: true, event: e });
+                          contextMenu.showContextMenu(e, event);
                         }}
                         title="Click to edit or delete event"
                       >
@@ -1369,8 +1311,7 @@ export default function PlannerTab() {
                         className="bg-white/90 dark:bg-white/10 rounded-xl p-4 border-t-4 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                         style={{ borderTopColor: event.color || '#6366f1' }}
                         onClick={e => {
-                          e.stopPropagation();
-                          setConfirmDialog({ open: true, event: { ...event, eventType: 'regular' } });
+                          contextMenu.showContextMenu({ ...event, eventType: 'regular' }, e);
                         }}
                         title="Click to edit or delete event"
                       >
