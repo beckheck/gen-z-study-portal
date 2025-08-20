@@ -136,8 +136,8 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
 
       {/* Outer container that maintains consistent width */}
       <div ref={outerContainerRef} className="w-full">
-        {/* Inner tabs container */}
-        <div className="flex items-center gap-2">
+        {/* Inner tabs container - centered */}
+        <div className="flex items-center justify-center gap-2">
           <TabsList ref={tabsListRef} className={className} style={style}>
             {visibleTabs.map(({ value, label, icon: Icon }) => (
               <TabsTrigger
@@ -145,7 +145,7 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
                 value={value}
                 className={`rounded-xl px-4 transition-all duration-200 ${
                   activeTab === value
-                    ? 'bg-white/90 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-md scale-105 font-semibold border border-white/40'
+                    ? 'bg-white/75 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-lg scale-105 font-semibold border border-white/40'
                     : 'hover:bg-white/60 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
                 }`}
                 style={{
@@ -186,7 +186,7 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
                       onClick={() => onTabChange(value)}
                       className={`flex items-center gap-2 transition-all duration-200 ${
                         activeTab === value
-                          ? 'bg-white/90 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-md scale-105 font-semibold border border-white/40'
+                          ? 'bg-white/75 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-lg scale-105 font-semibold border border-white/40'
                           : 'hover:bg-white/50 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
                       }`}
                       style={{

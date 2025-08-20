@@ -193,7 +193,7 @@ export default function StudyPortal(): React.JSX.Element {
             </div>
             {/* Mobile title - simplified and centered */}
             <div className="md:hidden text-center">
-              <h1 className="text-xl font-extrabold tracking-tight">{APP_TITLE}</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight">{APP_TITLE}</h1>
             </div>
           </div>
 

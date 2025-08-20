@@ -610,22 +610,6 @@ export default function PlannerTab() {
     return getAllEventsForDate(date);
   }
 
-  // Helper: get regular events that span multiple days for the calendar view
-  const getRegularEventsForCalendar = (): any[] => {
-    return regularEvents
-      .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
-      .map(e => {
-        const startDate = new Date(e.startDate);
-        const endDate = new Date(e.endDate || e.startDate);
-        return {
-          ...e,
-          startDate,
-          endDate,
-          durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1,
-        };
-      });
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -684,7 +668,12 @@ export default function PlannerTab() {
                 Prev
               </Button>
               <div className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-gray-100">
-                {MONTHS_LONG[monthView.month]} {monthView.year}
+                <span className="sm:hidden">
+                  {MONTHS_SHORT[monthView.month]} '{String(monthView.year).slice(-2)}
+                </span>
+                <span className="hidden sm:block">
+                  {MONTHS_LONG[monthView.month]} {monthView.year}
+                </span>
               </div>
               <Button variant="outline" onClick={() => shiftMonth(1)} className="rounded-xl">
                 Next
@@ -813,11 +802,7 @@ export default function PlannerTab() {
                 )}
 
                 {form.eventCategory === 'regular' && (
-                  <ColorPicker
-                    label="Color"
-                    value={form.color}
-                    onChange={(color) => setForm({ ...form, color })}
-                  />
+                  <ColorPicker label="Color" value={form.color} onChange={color => setForm({ ...form, color })} />
                 )}
 
                 {form.eventCategory === 'exam' && (
@@ -914,124 +899,173 @@ export default function PlannerTab() {
       {/* Views */}
       {view === 'week' ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-7 gap-4 relative">
-            {DAYS.map((d, idx) => (
-              <Card
-                key={d}
-                className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur relative"
-              >
-                <CardHeader className="relative z-[1]">
-                  <CardTitle className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <span>{d}</span>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-8 h-8 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur flex items-center justify-center font-medium">
-                          {dayNumOfWeek(idx)}
-                        </div>
-                        {eventsForWeekdayName(d).length > 0 && (
-                          <Badge variant="secondary" className="h-8 px-2.5 rounded-xl flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
-                            <span>{eventsForWeekdayName(d).length}</span>
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardTitle>
-                  <CardDescription>Upcoming</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {eventsForWeekdayName(d).map(e => (
-                    <div
-                      key={e.id}
-                      className="group relative flex items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          {e.eventType === 'schedule' && (
-                            <span
-                              className={`flex-shrink-0 inline-block w-2 h-2 rounded-full ${typeColors[e.type]}`}
-                            ></span>
-                          )}
-                          {e.eventType === 'exam' && (
-                            <span className="flex-shrink-0 inline-block w-2 h-2 rounded-full bg-rose-500"></span>
-                          )}
-                          {e.eventType === 'task' && (
-                            <span className="flex-shrink-0 inline-block w-2 h-2 rounded-full bg-amber-500"></span>
-                          )}
-                          <span className="font-medium truncate">{e.title || e.type}</span>
-                        </div>
-                        <div className="text-xs text-zinc-500 truncate">
-                          {e.displayTime && `${e.displayTime} · `}
-                          {courses[e.courseIndex]}
-                          {e.location && ` · ${e.location}`}
-                          {e.weight && ` · ${e.weight}%`}
-                          {e.priority && ` · ${e.priority} priority`}
-                        </div>
-                      </div>
-                      {e.eventType === 'schedule' && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => removeSchedule(e.id)}
-                          className="flex-shrink-0 rounded-xl"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-7 gap-4 relative">
+            {DAYS.map((d, idx) => {
+              // Calculate the date for this day
+              const dayDate = new Date(startOfWeek);
+              dayDate.setDate(startOfWeek.getDate() + idx);
 
-                      {/* Hover tooltip */}
-                      <div
-                        style={{
-                          backgroundColor: 'var(--background, white)',
-                          zIndex: 99999,
-                          position: 'fixed',
-                          transform: 'translateY(-100%)',
-                          marginBottom: '8px',
-                          left: '50%',
-                          marginLeft: '-8rem', // half of w-64 (16rem)
-                        }}
-                        className="opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-64 p-3 rounded-xl shadow-xl border border-white/20 dark:border-white/10"
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            {e.eventType === 'schedule' && (
-                              <span
-                                className={`flex-shrink-0 inline-block w-2 h-2 rounded-full ${typeColors[e.type]}`}
-                              ></span>
-                            )}
-                            {e.eventType === 'exam' && (
-                              <span className="flex-shrink-0 inline-block w-2 h-2 rounded-full bg-rose-500"></span>
-                            )}
-                            {e.eventType === 'task' && (
-                              <span className="flex-shrink-0 inline-block w-2 h-2 rounded-full bg-amber-500"></span>
-                            )}
-                            <span className="font-medium text-zinc-900 dark:text-zinc-100">{e.title || e.type}</span>
+              return (
+                <Card
+                  key={d}
+                  className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur relative cursor-pointer hover:shadow-2xl transition-shadow duration-200"
+                  onClick={() => handleDayClick(dayDate)}
+                  title="Click to create new event on this date"
+                >
+                  <CardHeader className="relative z-[1] lg:block hidden">
+                    <CardTitle className="flex items-center justify-start gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">{d}</span>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-8 h-8 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur flex items-center justify-center font-medium">
+                            {dayNumOfWeek(idx)}
                           </div>
-                          <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-                            <div>{courses[e.courseIndex]}</div>
-                            {e.displayTime && <div>{e.displayTime}</div>}
-                            {e.location && <div>{e.location}</div>}
-                            {e.weight && <div>Weight: {e.weight}%</div>}
-                            {e.priority && <div>Priority: {e.priority}</div>}
-                            {e.notes && <div className="italic mt-2">{e.notes}</div>}
-                          </div>
-                        </div>
-                        {/* Arrow */}
-                        <div className="absolute bottom-0 left-4 transform translate-y-full">
-                          <div
-                            style={{ backgroundColor: 'var(--background, white)' }}
-                            className="w-2 h-2 rotate-45 transform -translate-y-1 border-r border-b border-white/20 dark:border-white/10"
-                          ></div>
+                          {eventsForWeekdayName(d).length > 0 && (
+                            <Badge variant="secondary" className="h-8 px-2.5 rounded-xl flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
+                              <span>{eventsForWeekdayName(d).length}</span>
+                            </Badge>
+                          )}
                         </div>
                       </div>
+                    </CardTitle>
+                    <CardDescription>Upcoming</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {/* Mobile & Medium: Horizontal same-row layout for space efficiency */}
+                    <div className="block lg:hidden">
+                      {eventsForWeekdayName(d).length === 0 ? (
+                        <div className="flex items-start gap-3 h-12 pt-2">
+                          {/* Left: Consistent day name and date layout */}
+                          <div className="flex flex-col gap-1 flex-shrink-0 w-20 sm:w-24">
+                            {/* Top row: Day name and date */}
+                            <div className="flex items-center justify-start gap-2">
+                              <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 min-w-[2rem] text-left">
+                                {d}
+                              </span>
+                              <div className="w-8 h-8 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur flex items-center justify-center font-medium text-lg">
+                                {dayNumOfWeek(idx)}
+                              </div>
+                            </div>
+                            {/* Bottom row: Empty space to maintain consistent height */}
+                            <div className="h-6"></div>
+                          </div>
+                          {/* Right: No events message */}
+                          <div className="flex-1 text-sm text-zinc-500 dark:text-zinc-400 ml-3">No events</div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 pt-2">
+                          {eventsForWeekdayName(d).map((e, eventIdx) => (
+                            <div key={e.id} className="flex items-start gap-3 min-h-[3rem]">
+                              {/* Left: Day name, Date and Counter (only show on first event) */}
+                              {eventIdx === 0 && (
+                                <div className="flex flex-col gap-1 flex-shrink-0 w-20 sm:w-24">
+                                  {/* Top row: Day name and date */}
+                                  <div className="flex items-center justify-start gap-2">
+                                    <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 min-w-[2rem] text-left">
+                                      {d}
+                                    </span>
+                                    <div className="w-8 h-8 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur flex items-center justify-center font-medium text-lg">
+                                      {dayNumOfWeek(idx)}
+                                    </div>
+                                  </div>
+                                  {/* Bottom row: Events counter badge */}
+                                  <Badge
+                                    variant="secondary"
+                                    className="h-6 px-2 rounded-xl flex items-center gap-1 self-start"
+                                  >
+                                    <div className="w-1 h-1 rounded-full bg-violet-500"></div>
+                                    <span className="text-xs">{eventsForWeekdayName(d).length}</span>
+                                  </Badge>
+                                </div>
+                              )}
+                              {/* Spacer for subsequent events to align with first event's content */}
+                              {eventIdx > 0 && <div className="w-20 sm:w-24 flex-shrink-0"></div>}
+
+                              {/* Right: Event content */}
+                              <div
+                                className="flex-1 group relative bg-white/70 dark:bg-white/5 p-2.5 rounded-xl cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  if (e.eventType === 'schedule') {
+                                    // For schedule events, show delete confirmation directly
+                                    if (confirm('Delete this schedule event?')) {
+                                      removeSchedule(e.id);
+                                    }
+                                  } else {
+                                    // For other events, show the edit/delete dialog
+                                    setConfirmDialog({ open: true, event: e });
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 overflow-hidden mb-1">
+                                      <EventTypeIndicator event={e} />
+                                      <span className="font-medium truncate text-sm">{e.title || e.type}</span>
+                                    </div>
+                                    <div className="text-xs text-zinc-500 truncate">
+                                      {e.displayTime && `${e.displayTime} · `}
+                                      {courses[e.courseIndex]}
+                                      {e.location && ` · ${e.location}`}
+                                      {e.weight && ` · ${e.weight}%`}
+                                      {e.priority && ` · ${e.priority} priority`}
+                                    </div>
+                                  </div>
+                                </div>
+                                <EventTooltip event={e} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                  {eventsForWeekdayName(d).length === 0 && (
-                    <div className="text-sm text-zinc-500 dark:text-zinc-400">No events.</div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+
+                    {/* Large: Default vertical behavior */}
+                    <div className="hidden lg:block space-y-2">
+                      {eventsForWeekdayName(d).map(e => (
+                        <div
+                          key={e.id}
+                          className="group relative flex flex-row items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl mb-2 cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
+                          onClick={event => {
+                            event.stopPropagation();
+                            if (e.eventType === 'schedule') {
+                              // For schedule events, show delete confirmation directly
+                              if (confirm('Delete this schedule event?')) {
+                                removeSchedule(e.id);
+                              }
+                            } else {
+                              // For other events, show the edit/delete dialog
+                              setConfirmDialog({ open: true, event: e });
+                            }
+                          }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              <EventTypeIndicator event={e} />
+                              <span className="font-medium truncate text-sm">{e.title || e.type}</span>
+                            </div>
+                            <div className="text-xs text-zinc-500 truncate mt-0">
+                              {e.displayTime && `${e.displayTime} · `}
+                              {courses[e.courseIndex]}
+                              <span className="inline">
+                                {e.location && ` · ${e.location}`}
+                                {e.weight && ` · ${e.weight}%`}
+                                {e.priority && ` · ${e.priority} priority`}
+                              </span>
+                            </div>
+                          </div>
+                          <EventTooltip event={e} />
+                        </div>
+                      ))}
+                      {eventsForWeekdayName(d).length === 0 && (
+                        <div className="text-sm text-zinc-500 dark:text-zinc-400">No events.</div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Present Goals Card - Only visible in weekly view */}
@@ -1258,21 +1292,7 @@ export default function PlannerTab() {
                         }}
                         title="Click to edit or delete event"
                       >
-                        {e.eventType === 'schedule' && (
-                          <span className={`flex-shrink-0 w-2 h-2 rounded-full ${typeColors[e.type]}`}></span>
-                        )}
-                        {e.eventType === 'regular' && (
-                          <span
-                            className="flex-shrink-0 w-2 h-2 rounded-full"
-                            style={{ backgroundColor: e.color || '#6366f1' }}
-                          ></span>
-                        )}
-                        {e.eventType === 'exam' && (
-                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-rose-500"></span>
-                        )}
-                        {e.eventType === 'task' && (
-                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-amber-500"></span>
-                        )}
+                        <EventTypeIndicator event={e} />
                         <span className="font-medium truncate">{e.title || e.type}</span>
                       </div>
                     ))}
@@ -1299,21 +1319,7 @@ export default function PlannerTab() {
                         {tooltipEvents.map((e, idx) => (
                           <div key={idx} className="space-y-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/50">
                             <div className="flex items-center gap-2">
-                              {e.eventType === 'schedule' && (
-                                <span className={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${typeColors[e.type]}`}></span>
-                              )}
-                              {e.eventType === 'regular' && (
-                                <span
-                                  className="flex-shrink-0 w-2.5 h-2.5 rounded-full"
-                                  style={{ backgroundColor: e.color || '#6366f1' }}
-                                ></span>
-                              )}
-                              {e.eventType === 'exam' && (
-                                <span className="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                              )}
-                              {e.eventType === 'task' && (
-                                <span className="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                              )}
+                              <EventTypeIndicator event={e} size="md" />
                               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                                 {e.title || e.type}
                               </span>
@@ -1413,3 +1419,66 @@ export default function PlannerTab() {
     </div>
   );
 }
+
+// Shared event type indicator component
+const EventTypeIndicator = ({ event, size = 'sm' }: { event: any; size?: 'sm' | 'md' }) => {
+  const sizeClass = size === 'md' ? 'w-2.5 h-2.5' : 'w-2 h-2';
+
+  if (event.eventType === 'schedule') {
+    return <span className={`flex-shrink-0 inline-block rounded-full ${sizeClass} ${typeColors[event.type]}`}></span>;
+  }
+  if (event.eventType === 'exam') {
+    return <span className={`flex-shrink-0 inline-block rounded-full bg-rose-500 ${sizeClass}`}></span>;
+  }
+  if (event.eventType === 'task') {
+    return <span className={`flex-shrink-0 inline-block rounded-full bg-amber-500 ${sizeClass}`}></span>;
+  }
+  if (event.eventType === 'regular') {
+    return (
+      <span
+        className={`flex-shrink-0 rounded-full ${sizeClass}`}
+        style={{ backgroundColor: event.color || '#6366f1' }}
+      ></span>
+    );
+  }
+  return null;
+};
+
+// Shared event tooltip component
+const EventTooltip = ({ event }: { event: any }) => {
+  const { courses } = useCourses();
+  <div
+    style={{
+      backgroundColor: 'var(--background, white)',
+      zIndex: 99999,
+      position: 'fixed',
+      transform: 'translateY(-100%)',
+      marginBottom: '8px',
+      left: '50%',
+      marginLeft: '-8rem', // half of w-64 (16rem)
+    }}
+    className="opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-64 p-3 rounded-xl shadow-xl border border-white/20 dark:border-white/10"
+  >
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <EventTypeIndicator event={event} />
+        <span className="font-medium text-zinc-900 dark:text-zinc-100">{event.title || event.type}</span>
+      </div>
+      <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <div>{courses[event.courseIndex]}</div>
+        {event.displayTime && <div>{event.displayTime}</div>}
+        {event.location && <div>{event.location}</div>}
+        {event.weight && <div>Weight: {event.weight}%</div>}
+        {event.priority && <div>Priority: {event.priority}</div>}
+        {event.notes && <div className="italic mt-2">{event.notes}</div>}
+      </div>
+    </div>
+    {/* Arrow */}
+    <div className="absolute bottom-0 left-4 transform translate-y-full">
+      <div
+        style={{ backgroundColor: 'var(--background, white)' }}
+        className="w-2 h-2 rotate-45 transform -translate-y-1 border-r border-b border-white/20 dark:border-white/10"
+      ></div>
+    </div>
+  </div>;
+};
