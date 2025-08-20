@@ -125,6 +125,16 @@ export interface WeatherLocation {
 }
 
 /**
+ * Weather configuration object containing API settings and location
+ */
+export interface WeatherConfig {
+  /** API key for weather service */
+  apiKey: string;
+  /** Location configuration for weather */
+  location: WeatherLocation;
+}
+
+/**
  * Weather data object for displaying current weather information
  */
 export interface Weather {
@@ -454,8 +464,7 @@ export interface AppState {
   selectedCourse: number;
   theme: ThemeState;
   soundtrack: Soundtrack;
-  weatherApiKey: string;
-  weatherLocation: WeatherLocation;
+  weather: WeatherConfig;
   degreePlan: DegreePlan;
   wellness: Wellness;
 }

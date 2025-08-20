@@ -99,8 +99,8 @@ export class DataTransfer {
         soundtrackEmbed: state.soundtrack.embed,
         accentColor: state.theme.accentColor,
         cardOpacity: state.theme.cardOpacity,
-        weatherApiKey: state.weatherApiKey,
-        weatherLocation: state.weatherLocation,
+        weatherApiKey: state.weather.apiKey,
+        weatherLocation: state.weather.location,
       },
     };
 
@@ -159,8 +159,10 @@ export class DataTransfer {
           embed: data.settings.soundtrackEmbed,
           position: 'dashboard' as SoundtrackPosition,
         },
-        weatherApiKey: data.settings.weatherApiKey,
-        weatherLocation: data.settings.weatherLocation,
+        weather: {
+          apiKey: data.settings.weatherApiKey,
+          location: data.settings.weatherLocation,
+        },
         degreePlan: data.settings.degreePlan || { semesters: [], completedCourses: [] },
       };
       

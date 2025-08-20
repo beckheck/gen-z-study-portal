@@ -13,7 +13,7 @@ import { ChangeEvent, useMemo } from 'react';
 
 export default function SettingsTab() {
   const { courses, renameCourse } = useCourses();
-  const { weatherApiKey, setWeatherApiKey, weatherLocation, setWeatherLocation } = useExternalServices();
+  const { weather, setWeatherApiKey, setWeatherLocation } = useExternalServices();
   const { soundtrack, setSoundtrackEmbed, setSoundtrackPosition } = useSoundtrack();
   const theme = useTheme();
   const state = useAppState();
@@ -410,7 +410,7 @@ export default function SettingsTab() {
               id="weather-api-key"
               type="password"
               placeholder="Enter your API key here..."
-              value={weatherApiKey}
+              value={weather.apiKey}
               onChange={e => setWeatherApiKey(e.target.value)}
               className="mt-2"
             />
@@ -440,7 +440,7 @@ export default function SettingsTab() {
               </li>
             </ol>
           </div>
-          {weatherApiKey && (
+          {weather.apiKey && (
             <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
               <p className="text-green-800 dark:text-green-200 text-sm">
                 ✅ API key configured! Real weather data will be used.
@@ -454,34 +454,34 @@ export default function SettingsTab() {
               <Label htmlFor="use-geolocation">Use device location</Label>
               <Switch
                 id="use-geolocation"
-                checked={weatherLocation.useGeolocation}
+                checked={weather.location.useGeolocation}
                 onCheckedChange={checked =>
                   setWeatherLocation({
-                    ...weatherLocation,
+                    ...weather.location,
                     useGeolocation: checked,
                   })
                 }
               />
             </div>
 
-            <div className={weatherLocation.useGeolocation ? 'opacity-50' : ''}>
+            <div className={weather.location.useGeolocation ? 'opacity-50' : ''}>
               <Label htmlFor="city-name">City name</Label>
               <Input
                 id="city-name"
                 type="text"
                 placeholder="Enter city name (e.g., London, Tokyo, New York)"
-                value={weatherLocation.city}
+                value={weather.location.city}
                 onChange={e =>
                   setWeatherLocation({
-                    ...weatherLocation,
+                    ...weather.location,
                     city: e.target.value,
                   })
                 }
-                disabled={weatherLocation.useGeolocation}
+                disabled={weather.location.useGeolocation}
                 className="mt-2"
               />
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                {weatherLocation.useGeolocation
+                {weather.location.useGeolocation
                   ? 'Turn off device location to enter a city manually'
                   : 'Enter a city name to get weather for that location'}
               </p>

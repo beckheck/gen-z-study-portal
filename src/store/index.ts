@@ -66,8 +66,10 @@ function createInitialState(): AppState {
       embed: '',
       position: 'dashboard',
     },
-    weatherApiKey: '',
-    weatherLocation: { ...DEFAULT_WEATHER_LOCATION },
+    weather: {
+      apiKey: '',
+      location: { ...DEFAULT_WEATHER_LOCATION },
+    },
 
     // Academic planning
     degreePlan: { ...DEFAULT_DEGREE_PLAN },
@@ -163,6 +165,10 @@ function loadState(): AppState {
     const centralizedRaw = localStorage.getItem('sp:appState');
     if (centralizedRaw) {
       const parsed = JSON.parse(centralizedRaw);
+      const oldWeather = {
+        apiKey: parsed.weatherApiKey || '',
+        location: parsed.weatherLocation || { ...DEFAULT_WEATHER_LOCATION },
+      };
 
       // Ensure all required fields exist by merging with defaults
       const initialState = createInitialState();
@@ -172,7 +178,8 @@ function loadState(): AppState {
         // Deep merge theme and wellness objects to preserve default values
         theme: { ...initialState.theme, ...parsed.theme },
         soundtrack: { ...initialState.soundtrack, ...parsed.soundtrack },
-        wellness: { ...initialState.wellness, ...parsed.wellness },
+        weather: { ...initialState.weather, ...parsed.weather },
+        wellness: { ...initialState.wellness, ...oldWeather, ...parsed.wellness },
       };
 
       if (mergedState.soundtrack?.position === 'hidden') {
@@ -192,6 +199,7 @@ function loadState(): AppState {
       // Deep merge theme, soundtrack, and wellness objects to preserve default values
       theme: { ...initialState.theme, ...migratedState.theme },
       soundtrack: { ...initialState.soundtrack, ...migratedState.soundtrack },
+      weather: { ...initialState.weather, ...migratedState.weather },
       wellness: { ...initialState.wellness, ...migratedState.wellness },
     };
 
@@ -290,7 +298,6 @@ window.addEventListener('storage', e => {
       // Properly update the proxy by mutating individual properties
       // This is how Valtio expects updates to work
       updateProxyFromState(store, newState);
-
     } catch (error) {
       console.error('Failed to sync state from storage event:', error);
     } finally {

@@ -284,17 +284,15 @@ export function useThemeStore() {
  * Hook to access and modify external service settings
  */
 export function useExternalServices() {
-  const weatherLocation = useSnapshot(store.weatherLocation);
-  const state = useSnapshot(store);
+  const weather = useSnapshot(store.weather);
 
   return {
-    weatherApiKey: state.weatherApiKey,
-    weatherLocation,
+    weather,
     setWeatherApiKey: useCallback((key: string) => {
-      store.weatherApiKey = key;
+      store.weather.apiKey = key;
     }, []),
     setWeatherLocation: useCallback((location: WeatherLocation) => {
-      store.weatherLocation = location;
+      store.weather.location = location;
     }, []),
   };
 }

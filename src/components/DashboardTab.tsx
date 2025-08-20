@@ -21,14 +21,14 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
   const { setSelectedCourse } = useCourses();
   const { tasks, setTasks } = useTasks();
   const { exams } = useExams();
-  const { weatherApiKey, weatherLocation } = useExternalServices();
+  const { weather } = useExternalServices();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
 
   const [nextUpExpanded, setNextUpExpanded] = useState<number>(0); // Number of additional "pages" shown (0 = collapsed)
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start mb-4">
-        <WeatherWidget apiKey={weatherApiKey} location={weatherLocation} />
+        <WeatherWidget apiKey={weather.apiKey} location={weather.location} />
         <CurrentDateTime />
       </div>
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
