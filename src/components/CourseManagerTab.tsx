@@ -7,17 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useCourseData, useCourses, useExams, useTasks } from '@/hooks/useStore';
+import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import { CalendarDays, GraduationCap, ListTodo, NotebookPen, Plus, Trash2, Undo } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
 
 export default function CourseManagerTab() {
-  const { courses, selectedCourse, setSelectedCourse } = useCourses();
+  const { courses, selectedCourse, setSelectedCourse, clearCourseData } = useCourses();
   const { tasks, addTask, toggleTask, deleteTask } = useTasks();
   const { exams, examGrades, addExam, updateExam, setExamGrades } = useExams();
-  const { clearCourseData } = useCourseData();
   const [taskForm, setTaskForm] = useState<{
     title: string;
     due: string;

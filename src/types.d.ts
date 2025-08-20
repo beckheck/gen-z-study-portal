@@ -314,30 +314,6 @@ export interface ThemeState {
 }
 
 /**
- * Theme setter functions interface
- */
-export interface ThemeSetters {
-  darkMode: (value: boolean) => void;
-  bgImage: (value: string | ((prev: string) => string)) => void;
-  accentColor: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
-  cardOpacity: (value: OpacityTheme | ((prev: OpacityTheme) => OpacityTheme)) => void;
-  gradientEnabled: (value: boolean) => void;
-  gradientStart: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
-  gradientMiddle: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
-  gradientEnd: (value: ColorTheme | ((prev: ColorTheme) => ColorTheme)) => void;
-}
-
-/**
- * Complete theme configuration object with grouped state and setters
- */
-export interface Theme {
-  /** Grouped theme state properties */
-  get: Readonly<ThemeState>;
-  /** Grouped theme setter functions */
-  set: ThemeSetters;
-}
-
-/**
  * Data transfer functionality for settings export/import
  */
 export interface DataTransfer {

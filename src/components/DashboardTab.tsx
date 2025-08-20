@@ -1,5 +1,4 @@
-import { SoundtrackPosition } from '@/types';
-import { useCourses, useTasks, useExams, useExternalServices, useSoundtrack } from '@/hooks/useStore';
+import { useCourses, useExams, useSoundtrack, useTasks, useWeather } from '@/hooks/useStore';
 import { CalendarDays, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import CurrentDateTime from './CurrentDateTime';
@@ -21,7 +20,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
   const { setSelectedCourse } = useCourses();
   const { tasks, setTasks } = useTasks();
   const { exams } = useExams();
-  const { weather } = useExternalServices();
+  const { weather } = useWeather();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
 
   const [nextUpExpanded, setNextUpExpanded] = useState<number>(0); // Number of additional "pages" shown (0 = collapsed)

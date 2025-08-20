@@ -4,8 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useAppState, useCourses, useExternalServices, useSoundtrack } from '@/hooks/useStore';
-import useTheme from '@/hooks/useTheme';
+import { useAppState, useCourses, useSoundtrack, useTheme, useWeather } from '@/hooks/useStore';
 import { DataTransfer } from '@/lib/data-transfer';
 import { patchStoreState } from '@/store';
 import { Download } from 'lucide-react';
@@ -13,9 +12,18 @@ import { ChangeEvent, useMemo } from 'react';
 
 export default function SettingsTab() {
   const { courses, renameCourse } = useCourses();
-  const { weather, setWeatherApiKey, setWeatherLocation } = useExternalServices();
+  const { weather, setWeatherApiKey, setWeatherLocation } = useWeather();
   const { soundtrack, setSoundtrackEmbed, setSoundtrackPosition } = useSoundtrack();
-  const theme = useTheme();
+  const {
+    theme,
+    setAccentColor,
+    setBgImage,
+    setCardOpacity,
+    setGradientEnabled,
+    setGradientEnd,
+    setGradientMiddle,
+    setGradientStart,
+  } = useTheme();
   const state = useAppState();
 
   // Data transfer instance for import/export
@@ -161,18 +169,18 @@ export default function SettingsTab() {
                 r.onload = () => {
                   const result = r.result;
                   if (typeof result === 'string') {
-                    theme.set.bgImage(result);
+                    setBgImage(result);
                   }
                 };
                 r.readAsDataURL(f);
               }}
             />
-            <Button variant="outline" className="rounded-xl" onClick={() => theme.set.bgImage('')}>
+            <Button variant="outline" className="rounded-xl" onClick={() => setBgImage('')}>
               Clear
             </Button>
           </div>
-          {theme.get.bgImage && (
-            <img src={theme.get.bgImage} alt="Background preview" className="rounded-xl max-h-40 w-full object-cover" />
+          {theme.bgImage && (
+            <img src={theme.bgImage} alt="Background preview" className="rounded-xl max-h-40 w-full object-cover" />
           )}
         </CardContent>
       </Card>
@@ -184,7 +192,7 @@ export default function SettingsTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Accent Color {theme.get.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+            <Label>Accent Color {theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
             <div className="w-24 h-24 relative mt-2">
               <div
                 className="absolute inset-0 rounded-full"
@@ -204,19 +212,19 @@ export default function SettingsTab() {
               <div
                 className="absolute inset-1 rounded-full border-4 border-white dark:border-zinc-800"
                 style={{
-                  backgroundColor: theme.get.darkMode ? theme.get.accentColor.dark : theme.get.accentColor.light,
+                  backgroundColor: theme.darkMode ? theme.accentColor.dark : theme.accentColor.light,
                 }}
               />
               <label className="block absolute inset-0 rounded-full cursor-pointer">
                 <input
                   type="color"
-                  value={theme.get.darkMode ? theme.get.accentColor.dark : theme.get.accentColor.light}
+                  value={theme.darkMode ? theme.accentColor.dark : theme.accentColor.light}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const newAccentColor = {
-                      ...theme.get.accentColor,
-                      [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
+                      ...theme.accentColor,
+                      [theme.darkMode ? 'dark' : 'light']: e.target.value,
                     };
-                    theme.set.accentColor(newAccentColor);
+                    setAccentColor(newAccentColor);
                   }}
                   className="sr-only"
                 />
@@ -231,7 +239,7 @@ export default function SettingsTab() {
                 light: '#7c3aed',
                 dark: '#8b5cf6',
               };
-              theme.set.accentColor(defaultAccentColor);
+              setAccentColor(defaultAccentColor);
             }}
           >
             Reset to Default
@@ -246,35 +254,35 @@ export default function SettingsTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Light Mode Opacity: {theme.get.cardOpacity.light}%</Label>
+            <Label>Light Mode Opacity: {theme.cardOpacity.light}%</Label>
             <input
               type="range"
               min="10"
               max="100"
-              value={theme.get.cardOpacity.light}
+              value={theme.cardOpacity.light}
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 const newCardOpacity = {
-                  ...theme.get.cardOpacity,
+                  ...theme.cardOpacity,
                   light: parseInt(e.target.value),
                 };
-                theme.set.cardOpacity(newCardOpacity);
+                setCardOpacity(newCardOpacity);
               }}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
             />
           </div>
           <div>
-            <Label>Dark Mode Opacity: {theme.get.cardOpacity.dark}%</Label>
+            <Label>Dark Mode Opacity: {theme.cardOpacity.dark}%</Label>
             <input
               type="range"
               min="5"
               max="100"
-              value={theme.get.cardOpacity.dark}
+              value={theme.cardOpacity.dark}
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 const newCardOpacity = {
-                  ...theme.get.cardOpacity,
+                  ...theme.cardOpacity,
                   dark: parseInt(e.target.value),
                 };
-                theme.set.cardOpacity(newCardOpacity);
+                setCardOpacity(newCardOpacity);
               }}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
             />
@@ -283,7 +291,7 @@ export default function SettingsTab() {
             variant="outline"
             className="rounded-xl w-full"
             onClick={() => {
-              theme.set.cardOpacity({
+              setCardOpacity({
                 light: 80,
                 dark: 25,
               });
@@ -301,77 +309,75 @@ export default function SettingsTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2 pb-2">
-            <Switch checked={theme.get.gradientEnabled} onCheckedChange={theme.set.gradientEnabled} />
+            <Switch checked={theme.gradientEnabled} onCheckedChange={setGradientEnabled} />
             <Label>Enable gradient background</Label>
           </div>
 
-          <div className={theme.get.gradientEnabled ? '' : 'opacity-50 pointer-events-none'}>
+          <div className={theme.gradientEnabled ? '' : 'opacity-50 pointer-events-none'}>
             <div>
-              <Label>Start Color {theme.get.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+              <Label>Start Color {theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
               <div className="flex items-center gap-2 mt-1.5">
                 <div
                   className="w-10 h-10 rounded-lg shadow-inner"
                   style={{
-                    backgroundColor: theme.get.darkMode ? theme.get.gradientStart.dark : theme.get.gradientStart.light,
+                    backgroundColor: theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light,
                   }}
                 ></div>
                 <Input
                   type="color"
-                  value={theme.get.darkMode ? theme.get.gradientStart.dark : theme.get.gradientStart.light}
+                  value={theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const newGradientStart = {
-                      ...theme.get.gradientStart,
-                      [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
+                      ...theme.gradientStart,
+                      [theme.darkMode ? 'dark' : 'light']: e.target.value,
                     };
-                    theme.set.gradientStart(newGradientStart);
+                    setGradientStart(newGradientStart);
                   }}
                   className="h-10 rounded-xl w-full"
                 />
               </div>
             </div>
             <div>
-              <Label>Middle Color {theme.get.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+              <Label>Middle Color {theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
               <div className="flex items-center gap-2 mt-1.5">
                 <div
                   className="w-10 h-10 rounded-lg shadow-inner"
                   style={{
-                    backgroundColor: theme.get.darkMode
-                      ? theme.get.gradientMiddle.dark
-                      : theme.get.gradientMiddle.light,
+                    backgroundColor: theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light,
                   }}
                 ></div>
                 <Input
                   type="color"
-                  value={theme.get.darkMode ? theme.get.gradientMiddle.dark : theme.get.gradientMiddle.light}
+                  value={theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const newGradientMiddle = {
-                      ...theme.get.gradientMiddle,
-                      [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
+                      ...theme.gradientMiddle,
+                      [theme.darkMode ? 'dark' : 'light']: e.target.value,
                     };
-                    theme.set.gradientMiddle(newGradientMiddle);
+                    setGradientMiddle(newGradientMiddle);
                   }}
                   className="h-10 rounded-xl w-full"
                 />
               </div>
             </div>
             <div>
-              <Label>End Color {theme.get.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
+              <Label>End Color {theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
               <div className="flex items-center gap-2 mt-1.5">
                 <div
                   className="w-10 h-10 rounded-lg shadow-inner"
                   style={{
-                    backgroundColor: theme.get.darkMode ? theme.get.gradientEnd.dark : theme.get.gradientEnd.light,
+                    backgroundColor: theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light,
                   }}
                 ></div>
                 <Input
                   type="color"
-                  value={theme.get.darkMode ? theme.get.gradientEnd.dark : theme.get.gradientEnd.light}
+                  value={theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const newGradientEnd = {
-                      ...theme.get.gradientEnd,
-                      [theme.get.darkMode ? 'dark' : 'light']: e.target.value,
+                      ...theme.gradientEnd,
+                      [theme.darkMode ? 'dark' : 'light']: e.target.value,
                     };
-                    theme.set.gradientEnd(newGradientEnd);
+                    setGradientEnd(newGradientEnd);
                   }}
                   className="h-10 rounded-xl w-full"
                 />
@@ -381,14 +387,14 @@ export default function SettingsTab() {
               variant="outline"
               className="rounded-xl w-full mt-4"
               onClick={() => {
-                if (theme.get.darkMode) {
-                  theme.set.gradientStart({ ...theme.get.gradientStart, dark: '#18181b' });
-                  theme.set.gradientMiddle({ ...theme.get.gradientMiddle, dark: '#0f172a' });
-                  theme.set.gradientEnd({ ...theme.get.gradientEnd, dark: '#1e293b' });
+                if (theme.darkMode) {
+                  setGradientStart({ ...theme.gradientStart, dark: '#18181b' });
+                  setGradientMiddle({ ...theme.gradientMiddle, dark: '#0f172a' });
+                  setGradientEnd({ ...theme.gradientEnd, dark: '#1e293b' });
                 } else {
-                  theme.set.gradientStart({ ...theme.get.gradientStart, light: '#ffd2e9' });
-                  theme.set.gradientMiddle({ ...theme.get.gradientMiddle, light: '#bae6fd' });
-                  theme.set.gradientEnd({ ...theme.get.gradientEnd, light: '#a7f3d0' });
+                  setGradientStart({ ...theme.gradientStart, light: '#ffd2e9' });
+                  setGradientMiddle({ ...theme.gradientMiddle, light: '#bae6fd' });
+                  setGradientEnd({ ...theme.gradientEnd, light: '#a7f3d0' });
                 }
               }}
             >

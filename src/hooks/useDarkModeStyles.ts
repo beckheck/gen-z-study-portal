@@ -1,10 +1,12 @@
 import { useLayoutEffect } from 'react';
+import { useTheme } from './useStore';
 
-export default function useDarkMode(darkMode: boolean): void {
+export default function useDarkMode(): void {
+  const { theme } = useTheme();
   // Apply theme and accent color before paint + minimal reset for consistency
   useLayoutEffect(() => {
     const root = document.documentElement;
-    if (darkMode) {
+    if (theme.darkMode) {
       root.classList.remove('light');
       root.classList.add('dark');
       root.style.colorScheme = 'dark';
@@ -15,5 +17,5 @@ export default function useDarkMode(darkMode: boolean): void {
       root.style.colorScheme = 'light';
       root.style.setProperty('--background', '#ffffff');
     }
-  }, [darkMode]);
+  }, [theme.darkMode]);
 }

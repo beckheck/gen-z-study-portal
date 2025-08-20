@@ -11,8 +11,11 @@ import TimetableTab from '@/components/TimetableTab';
 import WellnessTab from '@/components/WellnessTab';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { useAppState, useSoundtrack } from '@/hooks/useStore';
-import useTheme from '@/hooks/useTheme';
+import useAccentColorStyles from '@/hooks/useAccentColorStyles';
+import useBaseStyles from '@/hooks/useBaseStyles';
+import useCardOpacityStyles from '@/hooks/useCardOpacityStyles';
+import useDarkModeStyles from '@/hooks/useDarkModeStyles';
+import { useSoundtrack, useTheme } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import {
   Brain,
@@ -26,7 +29,7 @@ import {
   Settings as SettingsIcon,
   Sparkles,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { AppTab } from './types';
 
 const APP_TITLE = 'StudyHub ✨';
@@ -64,38 +67,46 @@ const tabs: AppTab[] = [
 // -----------------------------
 export default function StudyPortal(): React.JSX.Element {
   // Get state from centralized store
-  const state = useAppState();
-  const theme = useTheme();
+  const { theme, setDarkMode } = useTheme();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
 
   // Local UI state (not persisted)
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setIsDrawerOpen(false); // Close drawer when tab is selected
-  };
+  // Style hooks
+  useDarkModeStyles();
+  useAccentColorStyles();
+  useBaseStyles();
+  useCardOpacityStyles();
+
+  const handleTabChange = useCallback(
+    (value: string) => {
+      setActiveTab(value);
+      setIsDrawerOpen(false); // Close drawer when tab is selected
+    },
+    [setActiveTab, setIsDrawerOpen]
+  );
 
   return (
     <div
       className="min-h-screen relative text-zinc-900 dark:text-zinc-100"
       style={
-        theme.get.gradientEnabled
+        theme.gradientEnabled
           ? {
               background: `linear-gradient(to bottom right, ${
-                theme.get.darkMode ? theme.get.gradientStart.dark : theme.get.gradientStart.light
-              }, ${theme.get.darkMode ? theme.get.gradientMiddle.dark : theme.get.gradientMiddle.light}, ${
-                theme.get.darkMode ? theme.get.gradientEnd.dark : theme.get.gradientEnd.light
+                theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light
+              }, ${theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light}, ${
+                theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light
               })`,
             }
           : {}
       }
     >
-      {theme.get.bgImage && (
+      {theme.bgImage && (
         <div
           className="pointer-events-none absolute inset-0 bg-center bg-cover bg-no-repeat opacity-60 mix-blend-luminosity"
-          style={{ backgroundImage: `url(${theme.get.bgImage})` }}
+          style={{ backgroundImage: `url(${theme.bgImage})` }}
           aria-hidden="true"
         />
       )}
@@ -129,7 +140,7 @@ export default function StudyPortal(): React.JSX.Element {
 
                 {/* Dark/Light mode toggle in drawer */}
                 <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur">
-                  <MoonSunToggle checked={theme.get.darkMode} onCheckedChange={theme.set.darkMode} />
+                  <MoonSunToggle checked={theme.darkMode} onCheckedChange={setDarkMode} />
                 </div>
 
                 {/* Navigation */}
@@ -189,7 +200,7 @@ export default function StudyPortal(): React.JSX.Element {
           {/* Desktop dark/light mode toggle */}
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur">
-              <MoonSunToggle checked={theme.get.darkMode} onCheckedChange={theme.set.darkMode} />
+              <MoonSunToggle checked={theme.darkMode} onCheckedChange={setDarkMode} />
             </div>
           </div>
         </motion.header>
