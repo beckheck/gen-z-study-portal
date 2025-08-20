@@ -214,11 +214,37 @@ function loadState(): AppState {
 }
 
 // Create the Valtio store
-export const store = proxy<AppState>(loadState());
+const initialState = loadState();
+console.log('Store initialization - loaded state:', {
+  theme: initialState.theme,
+});
+
+export const store = proxy<AppState>(initialState);
+
+console.log('Store initialization - proxy created:', {
+  theme: store.theme,
+});
+
+// Check what's in localStorage after initialization
+console.log('Store initialization - localStorage keys:', Object.keys(localStorage).filter(k => k.startsWith('sp:')));
+Object.keys(localStorage).filter(k => k.startsWith('sp:')).forEach(key => {
+  console.log(`localStorage['${key}']:`, localStorage.getItem(key));
+});
 
 // Function to update the store state (for data import)
 export const patchStoreState = (newState: Partial<AppState>) => {
+  console.log('patchStoreState - received:', newState);
+  console.log('patchStoreState - current store theme before update:', {
+    accentColor: store.theme.accentColor,
+    cardOpacity: store.theme.cardOpacity,
+  });
+  
   updateProxyFromState(store, newState, true);
+  
+  console.log('patchStoreState - store theme after update:', {
+    accentColor: store.theme.accentColor,
+    cardOpacity: store.theme.cardOpacity,
+  });
 };
 
 // Flag to track if we're currently applying changes from storage
@@ -228,11 +254,26 @@ let isApplyingFromStorage = false;
 subscribe(store, () => {
   // Skip persistence if this change came from a storage event
   if (isApplyingFromStorage) {
+    console.log('Store subscription - skipping persistence (applying from storage)');
     return;
   }
 
+  console.log('Store subscription - persisting to localStorage:', {
+    theme: store.theme,
+  });
+
   try {
     localStorage.setItem('sp:appState', JSON.stringify(store));
+    console.log('Store subscription - successfully saved to localStorage');
+    
+    // Also clean up any old localStorage keys that might still exist
+    Object.keys(MIGRATION_MAP).forEach(oldKey => {
+      if (localStorage.getItem(oldKey) !== null) {
+        console.log(`Store subscription - removing old key: ${oldKey}`);
+        localStorage.removeItem(oldKey);
+      }
+    });
+    
     // Note: Browser's native storage events will notify other tabs automatically
   } catch (error) {
     console.error('Failed to persist state to localStorage:', error);

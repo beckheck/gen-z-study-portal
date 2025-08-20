@@ -240,11 +240,15 @@ export function useThemeStore() {
   }, []);
 
   const setAccentColor = useCallback((accentColor: typeof theme.accentColor) => {
+    console.log('setAccentColor called with:', accentColor);
     store.theme.accentColor = accentColor;
+    console.log('store.theme.accentColor updated to:', store.theme.accentColor);
   }, []);
 
   const setCardOpacity = useCallback((cardOpacity: typeof theme.cardOpacity) => {
+    console.log('setCardOpacity called with:', cardOpacity);
     store.theme.cardOpacity = cardOpacity;
+    console.log('store.theme.cardOpacity updated to:', store.theme.cardOpacity);
   }, []);
 
   const setGradientEnabled = useCallback((gradientEnabled: boolean) => {

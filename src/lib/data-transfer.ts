@@ -137,16 +137,21 @@ export class DataTransfer {
   private importDataV1(data: ExchangeFormatV1) {
     // Extract settings first
     if (data.settings) {
-      this.setState({
+      console.log('DataTransfer - importing theme data:', {
+        accentColor: data.settings.accentColor,
+        cardOpacity: data.settings.cardOpacity,
+      });
+      
+      const newState = {
         courses: data.settings.courses,
         selectedCourse: data.settings.selectedCourse,
         theme: {
           darkMode: data.settings.darkMode,
+          bgImage: data.settings.bgImage,
           gradientEnabled: data.settings.gradient.enabled,
           gradientStart: data.settings.gradient.start,
           gradientMiddle: data.settings.gradient.middle,
           gradientEnd: data.settings.gradient.end,
-          bgImage: data.settings.bgImage,
           accentColor: data.settings.accentColor,
           cardOpacity: data.settings.cardOpacity,
         },
@@ -157,7 +162,10 @@ export class DataTransfer {
         weatherApiKey: data.settings.weatherApiKey,
         weatherLocation: data.settings.weatherLocation,
         degreePlan: data.settings.degreePlan || { semesters: [], completedCourses: [] },
-      });
+      };
+      
+      console.log('DataTransfer - calling setState with:', newState);
+      this.setState(newState);
     }
 
     // Import degree plan data (for backward compatibility)
