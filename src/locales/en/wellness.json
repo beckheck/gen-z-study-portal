@@ -1,0 +1,87 @@
+{
+  "title": "Wellness",
+  "hydration": {
+    "title": "Hydration",
+    "goal": "Goal: {{count}} cups / day",
+    "cups": "cups",
+    "cupsSingular": "cup",
+    "progress": "{{current}} / {{target}} cups today"
+  },
+  "mood": {
+    "title": "Mood Bubble",
+    "subtitle": "Track and visualize your daily emotions",
+    "todaysMoodBubble": "Today's Mood Bubble",
+    "breakdown": "Breakdown",
+    "total": "Total: {{percentage}}%",
+    "totalMood": "total mood",
+    "moodEmojis": {
+      "happy": "happy",
+      "sad": "sad",
+      "angry": "angry",
+      "excited": "excited",
+      "neutral": "neutral"
+    },
+    "clickToAdd": "Click to add 20%",
+    "reset": "Reset",
+    "customize": "Customize",
+    "thisMonth": "This Month",
+    "daysTracked": "{{count}} day tracked",
+    "daysTracked_plural": "{{count}} days tracked"
+  },
+  "gratitude": {
+    "title": "Gratitude",
+    "note": "Gratitude note",
+    "placeholder": "One thing you're grateful for today…",
+    "protectVibe": "Protect your vibe 💖",
+    "dailyReflection": "Daily reflection"
+  },
+  "breathing": {
+    "title": "Breathing box",
+    "subtitle": "4 in · 4 hold · 4 out · 4 hold",
+    "instructions": {
+      "inhale": "Inhale",
+      "hold": "Hold", 
+      "exhale": "Exhale",
+      "breatheIn": "Breathe in for {{seconds}} seconds",
+      "holdBreath": "Hold for {{seconds}} seconds",
+      "breatheOut": "Breathe out for {{seconds}} seconds"
+    },
+    "duration": "Duration: {{minutes}} minutes",
+    "start": "Start",
+    "stop": "Stop",
+    "startSession": "Start Breathing Session",
+    "endSession": "End Session"
+  },
+  "activities": {
+    "meditation": "Meditation",
+    "exercise": "Exercise",
+    "reading": "Reading",
+    "music": "Music",
+    "nature": "Nature",
+    "socializing": "Socializing",
+    "cooking": "Cooking",
+    "art": "Art"
+  },
+  "stats": {
+    "todayStats": "Today's Stats",
+    "weeklyProgress": "Weekly Progress",
+    "streakCount": "{{count}} day streak",
+    "streakCount_plural": "{{count}} days streak",
+    "averageMood": "Average mood",
+    "waterIntake": "Water intake"
+  },
+  "messages": {
+    "wellDone": "Well done!",
+    "keepItUp": "Keep it up!",
+    "greatProgress": "Great progress today!",
+    "stayHydrated": "Remember to stay hydrated",
+    "breathingComplete": "Breathing session complete"
+  },
+  "customize": {
+    "title": "Customize Mood Emojis",
+    "description": "Personalize your mood emojis and colors",
+    "showMoodWords": "Show mood words",
+    "clickToChangeColor": "Click to change color",
+    "saveChanges": "Save Changes"
+  }
+}

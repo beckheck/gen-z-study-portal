@@ -9,8 +9,12 @@ import { useCourses, useSessions } from '@/hooks/useStore';
 import useStudyTimer from '@/hooks/useStudyTimer';
 import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function StudyTrackerTab() {
+  // Translation hooks
+  const { t } = useTranslation('tracker');
+  const { t: tCommon } = useTranslation('common');
   const { courses, selectedCourse, setSelectedCourse } = useCourses();
   const {
     sessions,
@@ -53,14 +57,14 @@ export default function StudyTrackerTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="w-5 h-5" />
-            Focus Timer
+            {t('focusTimer.title')}
           </CardTitle>
-          <CardDescription>Track study sessions and vibes</CardDescription>
+          <CardDescription>{t('focusTimer.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-3">
             <div>
-              <Label>Course</Label>
+              <Label>{t('focusTimer.course')}</Label>
               <Select value={String(selectedCourse)} onValueChange={v => setSelectedCourse(Number(v))}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />
@@ -75,35 +79,41 @@ export default function StudyTrackerTab() {
               </Select>
             </div>
             <div>
-              <Label>Technique</Label>
+              <Label>{t('focusTimer.technique')}</Label>
               <Select value={studyTimer.technique} onValueChange={studyTimer.setTechnique}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Pomodoro 25/5">Pomodoro 25/5</SelectItem>
-                  <SelectItem value="Deep Work 50/10">Deep Work 50/10</SelectItem>
-                  <SelectItem value="Flow (no breaks)">Flow (no breaks)</SelectItem>
+                  <SelectItem value="Pomodoro 25/5">{t('focusTimer.techniques.pomodoro')}</SelectItem>
+                  <SelectItem value="Deep Work 50/10">{t('focusTimer.techniques.deepWork')}</SelectItem>
+                  <SelectItem value="Flow (no breaks)">{t('focusTimer.techniques.flow')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-3">
-            <MoodSlider label="Mood start" value={studyTimer.moodStart} onChange={studyTimer.setMoodStart} />
-            <MoodSlider label="Mood end" value={studyTimer.moodEnd} onChange={studyTimer.setMoodEnd} />
+            <MoodSlider
+              label={t('focusTimer.moodStart')}
+              value={studyTimer.moodStart}
+              onChange={studyTimer.setMoodStart}
+            />
+            <MoodSlider label={t('focusTimer.moodEnd')} value={studyTimer.moodEnd} onChange={studyTimer.setMoodEnd} />
           </div>
 
           <div className="text-center p-6 bg-white/70 dark:bg-white/5 rounded-2xl">
             <div className="text-5xl font-extrabold tracking-wider tabular-nums">
               {elapsedMin}:{elapsedSec}
             </div>
-            <div className="text-xs text-zinc-500 mt-1">{studyTimer.running ? 'Studying…' : 'Ready'}</div>
+            <div className="text-xs text-zinc-500 mt-1">
+              {studyTimer.running ? t('focusTimer.status.studying') : t('focusTimer.status.ready')}
+            </div>
             <div className="flex items-center justify-center gap-2 mt-4">
               {!studyTimer.running ? (
                 <Button onClick={studyTimer.startTimer} className="rounded-xl">
                   <Flame className="w-4 h-4 mr-2" />
-                  Start
+                  {t('focusTimer.buttons.start')}
                 </Button>
               ) : (
                 <>
@@ -113,11 +123,11 @@ export default function StudyTrackerTab() {
                     className="rounded-xl"
                   >
                     <HeartHandshake className="w-4 h-4 mr-2" />
-                    Stop
+                    {t('focusTimer.buttons.stop')}
                   </Button>
                   <Button onClick={studyTimer.resetTimer} variant="ghost" className="rounded-xl">
                     <TimerReset className="w-4 h-4 mr-2" />
-                    Reset
+                    {t('focusTimer.buttons.reset')}
                   </Button>
                 </>
               )}
@@ -125,12 +135,12 @@ export default function StudyTrackerTab() {
           </div>
 
           <div>
-            <Label>Session notes</Label>
+            <Label>{t('focusTimer.sessionNotes')}</Label>
             <Textarea
               value={studyTimer.note}
               onChange={e => studyTimer.setNote(e.target.value)}
               className="rounded-xl"
-              placeholder="What did you cover? Any blockers?"
+              placeholder={t('focusTimer.notesPlaceholder')}
             />
           </div>
         </CardContent>
@@ -141,9 +151,9 @@ export default function StudyTrackerTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ListTodo className="w-5 h-5" />
-            Session Tasks
+            {t('sessionTasks.title')}
           </CardTitle>
-          <CardDescription>Tasks just for this study block</CardDescription>
+          <CardDescription>{t('sessionTasks.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex gap-2">
@@ -151,62 +161,67 @@ export default function StudyTrackerTab() {
               value={sessionTaskTitle}
               onChange={e => setSessionTaskTitle(e.target.value)}
               className="rounded-xl"
-              placeholder="Quick task…"
+              placeholder={t('sessionTasks.placeholder')}
             />
             <Button onClick={addSessionTaskAndClearInput} className="rounded-xl">
               <Plus className="w-4 h-4 mr-1" />
-              Add
+              {tCommon('actions.add')}
             </Button>
           </div>
           <div className="space-y-2">
-            <div className="text-xs uppercase tracking-wide text-zinc-500">Open</div>
+            <div className="text-xs uppercase tracking-wide text-zinc-500">{t('sessionTasks.open')}</div>
             {sessionTasks.filter(t => !t.done).length === 0 && (
-              <div className="text-sm text-zinc-500">Add a couple of tasks to guide this session.</div>
+              <div className="text-sm text-zinc-500">{t('sessionTasks.noTasks')}</div>
             )}
             {sessionTasks
-              .filter(t => !t.done)
-              .map(t => (
+              .filter(task => !task.done)
+              .map(task => (
                 <div
-                  key={t.id}
+                  key={task.id}
                   className="flex items-center justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl"
                 >
-                  <div className="font-medium">{t.title}</div>
+                  <div className="font-medium">{task.title}</div>
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
                       variant="secondary"
                       className="rounded-xl"
-                      onClick={() => toggleSessionTask(t.id)}
+                      onClick={() => toggleSessionTask(task.id)}
                     >
-                      Done
+                      {tCommon('actions.done')}
                     </Button>
-                    <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSessionTask(t.id)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="rounded-xl"
+                      onClick={() => deleteSessionTask(task.id)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
               ))}
 
-            {sessionTasks.filter(t => t.done).length > 0 && (
-              <div className="text-xs uppercase tracking-wide text-zinc-500 mt-3">Completed</div>
+            {sessionTasks.filter(task => task.done).length > 0 && (
+              <div className="text-xs uppercase tracking-wide text-zinc-500 mt-3">{tCommon('status.completed')}</div>
             )}
             {sessionTasks
-              .filter(t => t.done)
-              .map(t => (
+              .filter(task => task.done)
+              .map(task => (
                 <div
-                  key={t.id}
+                  key={task.id}
                   className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl opacity-70"
                 >
-                  <div className="line-through">{t.title}</div>
-                  <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSessionTask(t.id)}>
+                  <div className="line-through">{task.title}</div>
+                  <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSessionTask(task.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
           </div>
-          {sessionTasks.some(t => t.done) && (
+          {sessionTasks.some(task => task.done) && (
             <Button variant="outline" size="sm" onClick={clearCompletedSessionTasks} className="rounded-xl mt-2">
-              Clear completed
+              {t('sessionTasks.clearCompleted')}
             </Button>
           )}
         </CardContent>
@@ -217,25 +232,32 @@ export default function StudyTrackerTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ListTodo className="w-5 h-5" />
-            Session Log
+            {t('sessionLog.title')}
           </CardTitle>
-          <CardDescription>Your recent sessions</CardDescription>
+          <CardDescription>{t('sessionLog.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {sessions.length === 0 && <div className="text-sm text-zinc-500">No sessions yet. Let's cook. 👨‍🍳</div>}
+          {sessions.length === 0 && <div className="text-sm text-zinc-500">{t('sessionLog.noSessions')}</div>}
           <div className="space-y-2 max-h-[420px] overflow-auto pr-1">
-            {sessions.map(s => (
-              <div key={s.id} className="flex items-start justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl">
+            {sessions.map(session => (
+              <div
+                key={session.id}
+                className="flex items-start justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl"
+              >
                 <div className="flex-1">
                   <div className="font-medium">
-                    {courses[s.courseIndex]} · {s.durationMin}m · {s.technique}
+                    {t('sessionLog.sessionInfo', {
+                      course: courses[session.courseIndex],
+                      duration: session.durationMin,
+                      technique: session.technique,
+                    })}
                   </div>
                   <div className="text-xs text-zinc-500">
-                    {new Date(s.startTs).toLocaleString()} → {new Date(s.endTs).toLocaleString()}
+                    {new Date(session.startTs).toLocaleString()} → {new Date(session.endTs).toLocaleString()}
                   </div>
-                  {s.note && <div className="text-sm mt-1">{s.note}</div>}
+                  {session.note && <div className="text-sm mt-1">{session.note}</div>}
                 </div>
-                <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSession(s.id)}>
+                <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSession(session.id)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>

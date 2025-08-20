@@ -1,0 +1,16 @@
+{
+  "title": "Soundtrack",
+  "description": "Focus with your own vibe",
+  "empty": {
+    "message": "Add an embed URL in <strong>Settings → Soundtrack</strong> (e.g., Spotify/YouTube embed link) and it will show up here."
+  },
+  "actions": {
+    "minimize": "Minimize",
+    "maximizeToDashboard": "Maximize to Dashboard",
+    "close": "Close",
+    "minimizeToFloating": "Minimize to floating player (plays across all tabs)"
+  },
+  "accessibility": {
+    "iframe": "Study soundtrack"
+  }
+}

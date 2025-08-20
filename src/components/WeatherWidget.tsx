@@ -1,5 +1,6 @@
 import { OpenWeatherMapResponse, Weather, WeatherCondition, WeatherLocation } from '@/types';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface WeatherWidgetProps {
   apiKey?: string;
@@ -7,11 +8,12 @@ interface WeatherWidgetProps {
 }
 
 export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) {
+  const { t } = useTranslation('common');
   const [weather, setWeather] = useState<Weather>({
     condition: 'loading',
     temperature: '--',
-    location: 'Getting location...',
-    description: 'Loading...',
+    location: t('weather.loading.location'),
+    description: t('weather.loading.description'),
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +24,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
     const fetchWeatherByCity = async (city: string): Promise<void> => {
       try {
         if (!apiKey || apiKey.trim() === '') {
-          throw new Error('No API key provided');
+          throw new Error(t('weather.errors.noApiKey'));
         }
 
         const response = await fetch(
@@ -31,11 +33,11 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
 
         if (!response.ok) {
           if (response.status === 401) {
-            throw new Error('Invalid API key or key not yet activated');
+            throw new Error(t('weather.errors.invalidApiKey'));
           } else if (response.status === 404) {
-            throw new Error(`City "${city}" not found`);
+            throw new Error(t('weather.errors.cityNotFound', { city }));
           } else {
-            throw new Error(`Weather API error: ${response.status}`);
+            throw new Error(t('weather.errors.apiError', { status: response.status }));
           }
         }
 
@@ -66,7 +68,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
         });
         setError(null);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        const errorMessage = err instanceof Error ? err.message : t('weather.errors.unknownError');
         console.error('Weather API failed:', errorMessage);
         setError(errorMessage);
         fallbackToSimulation();
@@ -76,7 +78,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
     const fetchWeatherData = async (lat: number, lon: number): Promise<void> => {
       try {
         if (!apiKey || apiKey.trim() === '') {
-          throw new Error('No API key provided');
+          throw new Error(t('weather.errors.noApiKey'));
         }
 
         const response = await fetch(
@@ -85,9 +87,9 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
 
         if (!response.ok) {
           if (response.status === 401) {
-            throw new Error('Invalid API key or key not yet activated');
+            throw new Error(t('weather.errors.invalidApiKey'));
           } else {
-            throw new Error(`Weather API error: ${response.status}`);
+            throw new Error(t('weather.errors.apiError', { status: response.status }));
           }
         }
 
@@ -118,7 +120,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
         });
         setError(null);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        const errorMessage = err instanceof Error ? err.message : t('weather.errors.unknownError');
         console.error('Weather API failed, falling back to simulation:', errorMessage);
         // Fallback to simulated weather if API fails
         fallbackToSimulation();
@@ -127,10 +129,10 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
 
     const fallbackToSimulation = (): void => {
       const conditions: WeatherCondition[] = [
-        { condition: 'sunny', temp: 28, icon: '☀️', desc: 'Clear sky' },
-        { condition: 'cloudy', temp: 24, icon: '☁️', desc: 'Overcast clouds' },
-        { condition: 'rainy', temp: 18, icon: '🌧️', desc: 'Light rain' },
-        { condition: 'partly-cloudy', temp: 25, icon: '⛅', desc: 'Partly cloudy' },
+        { condition: 'sunny', temp: 28, icon: '☀️', desc: t('weather.simulated.descriptions.clearSky') },
+        { condition: 'cloudy', temp: 24, icon: '☁️', desc: t('weather.simulated.descriptions.overcastClouds') },
+        { condition: 'rainy', temp: 18, icon: '🌧️', desc: t('weather.simulated.descriptions.lightRain') },
+        { condition: 'partly-cloudy', temp: 25, icon: '⛅', desc: t('weather.simulated.descriptions.partlyCloudy') },
       ];
 
       const hour = new Date().getHours();
@@ -145,7 +147,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
       setWeather({
         condition: selectedWeather.condition,
         temperature: selectedWeather.temp + Math.floor(Math.random() * 6 - 3),
-        location: 'Simulated',
+        location: t('weather.simulated.location'),
         description: selectedWeather.desc,
         icon: selectedWeather.icon,
       });
@@ -164,7 +166,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
           },
           (err: GeolocationPositionError) => {
             console.error('Geolocation failed:', err.message);
-            setError('Location access denied');
+            setError(t('weather.errors.locationDenied'));
             if (location && location.city) {
               // Try fallback to city if available
               fetchWeatherByCity(location.city);
@@ -175,7 +177,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
           { timeout: 10000, enableHighAccuracy: true }
         );
       } else {
-        setError('Geolocation not supported');
+        setError(t('weather.errors.geolocationNotSupported'));
         if (location && location.city) {
           // Try fallback to city if available
           fetchWeatherByCity(location.city);
@@ -194,24 +196,58 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
   }, [apiKey, location]);
 
   const getWeatherDescription = (condition: string): string => {
+    // If we have a specific description from the API, try to translate it first
     if (weather.description) {
+      const apiDescription = weather.description.toLowerCase();
+      const apiDescriptionMappings: { [key: string]: string } = {
+        'clear sky': t('weather.conditions.clear'),
+        'few clouds': t('weather.conditions.partlyCloudy'),
+        'scattered clouds': t('weather.conditions.partlyCloudy'),
+        'broken clouds': t('weather.conditions.brokenClouds'),
+        'overcast clouds': t('weather.conditions.cloudy'),
+        'shower rain': t('weather.conditions.rain'),
+        rain: t('weather.conditions.rain'),
+        thunderstorm: t('weather.conditions.thunderstorm'),
+        snow: t('weather.conditions.snow'),
+        mist: t('weather.conditions.mist'),
+        fog: t('weather.conditions.fog'),
+        drizzle: t('weather.conditions.drizzle'),
+      };
+
+      if (apiDescriptionMappings[apiDescription]) {
+        return apiDescriptionMappings[apiDescription];
+      }
+
+      // If no specific mapping, return capitalized original description
       return weather.description.charAt(0).toUpperCase() + weather.description.slice(1);
     }
 
+    // Try to get localized description based on condition, fallback to capitalized condition
+    const translationKey = `weather.conditions.${condition}`;
+    const translatedDescription = t(translationKey);
+
+    // If translation exists (not the same as the key), use it
+    if (translatedDescription !== translationKey) {
+      return translatedDescription;
+    }
+
+    // Fallback to default English descriptions for backward compatibility
     const descriptions: { [key: string]: string } = {
-      clear: 'Clear Sky',
-      sunny: 'Sunny',
-      clouds: 'Cloudy',
-      rain: 'Rainy',
-      drizzle: 'Drizzle',
-      thunderstorm: 'Stormy',
-      snow: 'Snowy',
-      mist: 'Misty',
-      fog: 'Foggy',
-      'partly-cloudy': 'Partly Cloudy',
-      loading: 'Loading...',
+      clear: t('weather.conditions.clear'),
+      sunny: t('weather.conditions.sunny'),
+      clouds: t('weather.conditions.clouds'),
+      cloudy: t('weather.conditions.cloudy'),
+      rain: t('weather.conditions.rain'),
+      rainy: t('weather.conditions.rainy'),
+      drizzle: t('weather.conditions.drizzle'),
+      thunderstorm: t('weather.conditions.thunderstorm'),
+      snow: t('weather.conditions.snow'),
+      mist: t('weather.conditions.mist'),
+      fog: t('weather.conditions.fog'),
+      'partly-cloudy': t('weather.conditions.partlyCloudy'),
+      loading: t('weather.conditions.loading'),
     };
-    return descriptions[condition] || 'Clear';
+    return descriptions[condition] || t('weather.conditions.clear');
   };
 
   return (
@@ -229,7 +265,10 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
           </div>
           {error && (
             <div className="text-xs text-orange-500 dark:text-orange-400">
-              {error} {!error.includes('Invalid API key') && !error.includes('not found') ? '(simulated)' : ''}
+              {error}{' '}
+              {!error.includes(t('weather.errors.invalidApiKey')) && !error.includes('not found')
+                ? t('weather.errors.simulated')
+                : ''}
             </div>
           )}
           <div className="text-xs text-zinc-500 dark:text-zinc-400">{weather.location}</div>

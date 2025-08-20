@@ -1,0 +1,170 @@
+{
+  "actions": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "reset": "Reset",
+    "start": "Start",
+    "stop": "Stop",
+    "next": "Next",
+    "previous": "Previous",
+    "today": "Today",
+    "clear": "Clear",
+    "done": "Done"
+  },
+  "priorities": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High"
+  },
+  "status": {
+    "completed": "Completed",
+    "pending": "Pending",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "fields": {
+    "title": "Title",
+    "description": "Description",
+    "name": "Name",
+    "date": "Date",
+    "time": "Time",
+    "today": "Today",
+    "tomorrow": "Tomorrow"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "optional": "(Optional)",
+    "required": "Required",
+    "untitled": "Untitled",
+    "none": "None",
+    "all": "All"
+  },
+  "time": {
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday", 
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December",
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may_short": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
+    }
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "planner": "Planner",
+    "timetable": "Timetable",
+    "courses": "Courses",
+    "degreePlan": "Degree Plan",
+    "study": "Study Tracker",
+    "wellness": "Wellness",
+    "settings": "Settings",
+    "openNavigationMenu": "Open navigation menu"
+  },
+  "app": {
+    "title": "StudyHub ✨",
+    "tagline": "Plan smarter. Study deeper. Protect your vibe.",
+    "subtitle": {
+      "genZ": "Gen Z",
+      "portal": "Portal"
+    }
+  },
+  "moodSlider": {
+    "low": "low",
+    "high": "high"
+  },
+  "upcoming": {
+    "exams": "Exams",
+    "tasks": "Tasks",
+    "noExams": "No exams scheduled yet.",
+    "noTasks": "No tasks due soon. Love that for you ✨",
+    "dDay": "D-DAY"
+  },
+  "dashboard": {
+    "nextUp": "Next Up",
+    "upcomingExamsAndTasks": "Upcoming exams & tasks"
+  },
+  "weather": {
+    "loading": {
+      "location": "Getting location...",
+      "description": "Loading...",
+      "temperature": "--"
+    },
+    "errors": {
+      "noApiKey": "No API key provided",
+      "invalidApiKey": "Invalid API key or key not yet activated",
+      "cityNotFound": "City \"{{city}}\" not found",
+      "apiError": "Weather API error: {{status}}",
+      "unknownError": "Unknown error occurred",
+      "locationDenied": "Location access denied",
+      "geolocationNotSupported": "Geolocation not supported",
+      "simulated": "(simulated)"
+    },
+    "conditions": {
+      "clear": "Clear Sky",
+      "sunny": "Sunny",
+      "clouds": "Cloudy",
+      "cloudy": "Cloudy",
+      "rain": "Rainy",
+      "rainy": "Rainy",
+      "drizzle": "Drizzle",
+      "thunderstorm": "Stormy",
+      "snow": "Snowy",
+      "mist": "Misty",
+      "fog": "Foggy",
+      "partlyCloudy": "Partly Cloudy",
+      "brokenClouds": "Broken Clouds",
+      "loading": "Loading..."
+    },
+    "simulated": {
+      "location": "Simulated",
+      "descriptions": {
+        "clearSky": "Clear sky",
+        "overcastClouds": "Overcast clouds",
+        "lightRain": "Light rain",
+        "partlyCloudy": "Partly cloudy"
+      }
+    }
+  }
+}

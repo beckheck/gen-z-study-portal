@@ -3,6 +3,7 @@ import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import SwipeableTask from './SwipeableTask';
 import { Task } from '@/types';
 
@@ -21,6 +22,7 @@ export default function Upcoming({
   onTabChange,
   onCourseSelect,
 }: UpcomingProps) {
+  const { t } = useTranslation('common');
   const { courses } = useCourses();
   const { tasks, toggleTask } = useTasks();
   const { exams } = useExams();
@@ -61,7 +63,7 @@ export default function Upcoming({
     // Add 1 day to all calculations
     diffDays = diffDays + 1;
 
-    if (diffDays === 0) return 'D-DAY';
+    if (diffDays === 0) return t('upcoming.dDay');
     if (diffDays > 0) return `D-${diffDays}`;
     return `D+${Math.abs(diffDays)}`;
   };
@@ -69,9 +71,9 @@ export default function Upcoming({
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div>
-        <div className="text-xs uppercase tracking-wide text-zinc-500 mb-2">Exams</div>
+        <div className="text-xs uppercase tracking-wide text-zinc-500 mb-2">{t('upcoming.exams')}</div>
         <div className="space-y-2">
-          {upcomingExams.length === 0 && <div className="text-sm text-zinc-500">No exams scheduled yet.</div>}
+          {upcomingExams.length === 0 && <div className="text-sm text-zinc-500">{t('upcoming.noExams')}</div>}
           <AnimatePresence mode="popLayout">
             {upcomingExams.map((e, index) => (
               <motion.div
@@ -118,11 +120,9 @@ export default function Upcoming({
         </div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-zinc-500 mb-2">Tasks</div>
+        <div className="text-xs uppercase tracking-wide text-zinc-500 mb-2">{t('upcoming.tasks')}</div>
         <div className="space-y-2">
-          {upcomingTasks.length === 0 && (
-            <div className="text-sm text-zinc-500">No tasks due soon. Love that for you ✨</div>
-          )}
+          {upcomingTasks.length === 0 && <div className="text-sm text-zinc-500">{t('upcoming.noTasks')}</div>}
           <AnimatePresence mode="popLayout">
             {upcomingTasks.map((t, index) => {
               return (

@@ -1,5 +1,6 @@
 import { Label } from '@/components/ui/label';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface MoodSliderProps {
   /** Label text for the mood slider */
@@ -15,6 +16,7 @@ interface MoodSliderProps {
  * Displays a slider with emoji faces representing mood levels
  */
 export default function MoodSlider({ label, value, onChange }: MoodSliderProps): React.ReactElement {
+  const { t } = useTranslation('common');
   const faces: string[] = ['💀', '😕', '😐', '🙂', '🔥'];
   return (
     <div>
@@ -30,8 +32,8 @@ export default function MoodSlider({ label, value, onChange }: MoodSliderProps):
         className="w-full"
       />
       <div className="flex justify-between text-xs text-zinc-500">
-        <span>low</span>
-        <span>high</span>
+        <span>{t('moodSlider.low')}</span>
+        <span>{t('moodSlider.high')}</span>
       </div>
     </div>
   );

@@ -1,0 +1,83 @@
+{
+  "title": "Planner",
+  "views": {
+    "week": "Week",
+    "month": "Month"
+  },
+  "events": {
+    "addEvent": "Add Event",
+    "editEvent": "Edit Event",
+    "deleteEvent": "Delete Event",
+    "eventDetails": "Event Details",
+    "allDay": "All day",
+    "recurring": "Recurring"
+  },
+  "forms": {
+    "eventCategory": "Event Category",
+    "course": "Course",
+    "courseOptional": "Course (Optional)",
+    "title": "Title",
+    "type": "Type",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "day": "Day",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "location": "Location",
+    "weight": "Weight (%)",
+    "priority": "Priority",
+    "notes": "Notes",
+    "color": "Color"
+  },
+  "eventTypes": {
+    "regular": "Regular Event",
+    "exam": "Exam",
+    "task": "Task",
+    "class": "Class",
+    "lab": "Lab",
+    "workshop": "Workshop",
+    "assistantship": "Assistantship"
+  },
+  "goals": {
+    "weeklyGoals": "Weekly Goals",
+    "weeklyFocusGoals": "Weekly focus goals - stay on track!",
+    "addGoal": "Add Goal",
+    "goalPlaceholder": "Enter your weekly goal...",
+    "remaining": "Remaining",
+    "congratulations": "Congratulations! All goals completed! 🎉"
+  },
+  "filters": {
+    "filterByCourse": "Filter by Course",
+    "showMultiDayEvents": "Show multi-day events",
+    "allCourses": "All Courses"
+  },
+  "messages": {
+    "noEvents": "No events scheduled",
+    "eventCreated": "Event created successfully",
+    "eventUpdated": "Event updated successfully",
+    "eventDeleted": "Event deleted successfully",
+    "goalAdded": "Goal added successfully",
+    "goalCompleted": "Goal marked as completed",
+    "allGoalsCompleted": "Amazing! All weekly goals completed!",
+    "deleteScheduleEvent": "Delete this schedule event?",
+    "clickToCreate": "Click to create new event on this date",
+    "clickToEdit": "Click to edit or delete event",
+    "upcoming": "Upcoming",
+    "noGoalsSet": "No goals set for this week.\nAdd one to get started! 🎯",
+    "goals": "goals",
+    "allGoalsCompletedStatus": "🎉 All goals completed!",
+    "hiddenMultiDayEvents": "Hidden Multi-Day Events",
+    "eventDetailsAgenda": "Event details, agenda, etc.",
+    "examTopicsChapters": "Chapters, topics, allowed materials...",
+    "taskDetails": "Additional task details...",
+    "modifyEventDetails": "Modify the event details below",
+    "createEventDescription": "Create a regular event, exam, or task",
+    "moreEvents": "more..."
+  },
+  "placeholders": {
+    "locationExample": "e.g., Main Auditorium",
+    "regularEventTitle": "e.g., Math Olympics Week",
+    "examTitle": "e.g., Midterm Exam",
+    "taskTitle": "e.g., Submit Assignment"
+  }
+}

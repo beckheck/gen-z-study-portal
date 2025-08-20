@@ -1,0 +1,41 @@
+{
+  "focusTimer": {
+    "title": "Focus Timer",
+    "description": "Track study sessions and vibes",
+    "course": "Course",
+    "technique": "Technique",
+    "techniques": {
+      "pomodoro": "Pomodoro 25/5",
+      "deepWork": "Deep Work 50/10",
+      "flow": "Flow (no breaks)"
+    },
+    "moodStart": "Mood start",
+    "moodEnd": "Mood end",
+    "status": {
+      "studying": "Studying…",
+      "ready": "Ready"
+    },
+    "buttons": {
+      "start": "Start",
+      "stop": "Stop",
+      "reset": "Reset"
+    },
+    "sessionNotes": "Session notes",
+    "notesPlaceholder": "What did you cover? Any blockers?"
+  },
+  "sessionTasks": {
+    "title": "Session Tasks",
+    "description": "Tasks just for this study block",
+    "placeholder": "Quick task…",
+    "open": "Open",
+    "noTasks": "Add a couple of tasks to guide this session.",
+    "clearCompleted": "Clear completed"
+  },
+  "sessionLog": {
+    "title": "Session Log",
+    "description": "Your recent sessions",
+    "noSessions": "No sessions yet. Let's cook. 👨‍🍳",
+    "duration": "{{duration}}m",
+    "sessionInfo": "{{course}} · {{duration}}m · {{technique}}"
+  }
+}

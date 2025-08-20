@@ -1,0 +1,89 @@
+{
+  "title": "Settings",
+  "courses": {
+    "title": "Courses",
+    "description": "Rename your 7 courses",
+    "courseLabel": "Course {{number}}"
+  },
+  "about": {
+    "title": "About",
+    "description": "Local-first · Private · Cute af",
+    "localFirst": "Everything saves to your browser (localStorage).",
+    "builtWith": "Built with Tailwind, shadcn/ui, lucide icons, framer‑motion, and Recharts.",
+    "proTip": "Pro tip: pin this tab and live your best study life ✨",
+    "exportData": "Export Data",
+    "importData": "Import Data",
+    "importSuccess": "✨ Data imported successfully!",
+    "importError": "❌ Failed to import data. Please check if the file is valid.",
+    "importErrorGeneral": "❌ Error importing data. Make sure this is a valid StudyHub export file."
+  },
+  "soundtrack": {
+    "title": "Soundtrack",
+    "description": "Paste an embed URL (Spotify/YouTube)",
+    "position": "Position",
+    "selectPosition": "Select position",
+    "positions": {
+      "dashboard": "Dashboard",
+      "floating": "Floating", 
+      "hidden": "Hidden"
+    },
+    "placeholder": "https://open.spotify.com/embed/playlist/...",
+    "preview": "Soundtrack preview"
+  },
+  "background": {
+    "title": "Background",
+    "description": "Upload a custom wallpaper",
+    "clear": "Clear",
+    "preview": "Background preview"
+  },
+  "accentColor": {
+    "title": "Accent Color",
+    "description": "Customize the main theme color",
+    "mode": "Accent Color {{mode}}",
+    "light": "(Light Mode)",
+    "dark": "(Dark Mode)",
+    "reset": "Reset to Default"
+  },
+  "cardOpacity": {
+    "title": "Card Opacity",
+    "description": "Adjust card transparency for better visibility",
+    "lightMode": "Light Mode Opacity: {{value}}%",
+    "darkMode": "Dark Mode Opacity: {{value}}%",
+    "reset": "Reset to Default"
+  },
+  "backgroundGradient": {
+    "title": "Background Gradient",
+    "description": "Customize the background colors",
+    "enable": "Enable gradient background",
+    "startColor": "Start Color {{mode}}",
+    "middleColor": "Middle Color {{mode}}",
+    "endColor": "End Color {{mode}}",
+    "reset": "Reset to Default"
+  },
+  "weatherApi": {
+    "title": "🌤️ Weather API",
+    "description": "Get real weather data for your location",
+    "apiKeyLabel": "OpenWeatherMap API Key",
+    "placeholder": "Enter your API key here...",
+    "note": "Without an API key, weather will be simulated. Get a free key from",
+    "linkText": "OpenWeatherMap",
+    "instructions": {
+      "title": "📋 How to get an API key:",
+      "step1": "Visit",
+      "step2": "Sign up for a free account",
+      "step3": "Go to \"My API keys\" in your account",
+      "step4": "Copy your key and paste it above",
+      "important": "Important:",
+      "step5": "New API keys may take 2-24 hours to activate!"
+    },
+    "configured": "✅ API key configured! Real weather data will be used.",
+    "location": {
+      "title": "Weather Location Settings",
+      "useDevice": "Use device location",
+      "cityLabel": "City name",
+      "cityPlaceholder": "Enter city name (e.g., London, Tokyo, New York)",
+      "deviceLocationNote": "Turn off device location to enter a city manually",
+      "manualLocationNote": "Enter a city name to get weather for that location"
+    }
+  }
+}

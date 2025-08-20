@@ -18,10 +18,12 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useContextMenu } from '@/hooks/useContextMenu';
 import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
+import { useLocalization } from '@/hooks/useLocalization';
 import { uid } from '@/lib/utils';
 import { CalendarDays, Plus, Target, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
+import { useTranslation } from 'react-i18next';
 import { CalendarView } from '../types';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
@@ -82,20 +84,6 @@ const DEFAULT_PLANNER_FORM: PlannerForm = {
 };
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONTHS_LONG = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
 
 // -----------------------------
 // Planner (Week + Month views)
@@ -107,6 +95,11 @@ export default function PlannerTab() {
   const { exams, addExam, deleteExam } = useExams();
   const { regularEvents, addRegularEvent, deleteRegularEvent } = useRegularEvents();
   const { eventsForDay, removeSchedule } = useSchedule();
+
+  // Localization hooks
+  const { t } = useTranslation('planner');
+  const { t: tCommon } = useTranslation('common');
+  const { getShortDayNames, getShortMonthNames, getMonthNames, formatDate: localizedFormatDate } = useLocalization();
 
   const [open, setOpen] = useState<boolean>(false);
   const contextMenu = useContextMenu<any>();
@@ -583,10 +576,10 @@ export default function PlannerTab() {
         <div className="flex items-center gap-3">
           <Select value={filterCourse} onValueChange={setFilterCourse}>
             <SelectTrigger className="w-48 rounded-xl">
-              <SelectValue placeholder="Filter course" />
+              <SelectValue placeholder={t('filters.filterByCourse')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All courses</SelectItem>
+              <SelectItem value="all">{t('filters.allCourses')}</SelectItem>
               {courses.map((c, i) => (
                 <SelectItem key={i} value={String(i)}>
                   {c}
@@ -601,49 +594,49 @@ export default function PlannerTab() {
             onClick={() => setView('week')}
             className="rounded-xl"
           >
-            Week
+            {t('views.week')}
           </Button>
           <Button
             variant={view === 'month' ? 'default' : 'outline'}
             onClick={() => setView('month')}
             className="rounded-xl"
           >
-            Month
+            {t('views.month')}
           </Button>
           {view === 'week' ? (
             <div className="flex items-center gap-2 ml-2">
               <Button variant="outline" onClick={() => setWeekOffset(offset => offset - 1)} className="rounded-xl">
                 <CalendarDays className="w-4 h-4 mr-2" />
-                Prev Week
+                {tCommon('actions.previous')}
               </Button>
               <div className="font-medium">
                 {formatDate(startOfWeek)} - {formatDate(new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000))}
               </div>
               <Button variant="outline" onClick={() => setWeekOffset(offset => offset + 1)} className="rounded-xl">
-                Next Week
+                {tCommon('actions.next')}
                 <CalendarDays className="w-4 h-4 ml-2" />
               </Button>
               {weekOffset !== 0 && (
                 <Button variant="ghost" onClick={() => setWeekOffset(0)} className="rounded-xl">
-                  Today
+                  {tCommon('actions.today')}
                 </Button>
               )}
             </div>
           ) : (
             <div className="flex items-center gap-2 ml-2">
               <Button variant="outline" onClick={() => shiftMonth(-1)} className="rounded-xl">
-                Prev
+                {tCommon('actions.previous')}
               </Button>
               <div className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-gray-100">
                 <span className="sm:hidden">
-                  {MONTHS_SHORT[monthView.month]} '{String(monthView.year).slice(-2)}
+                  {getShortMonthNames()[monthView.month]} '{String(monthView.year).slice(-2)}
                 </span>
                 <span className="hidden sm:block">
-                  {MONTHS_LONG[monthView.month]} {monthView.year}
+                  {getMonthNames()[monthView.month]} {monthView.year}
                 </span>
               </div>
               <Button variant="outline" onClick={() => shiftMonth(1)} className="rounded-xl">
-                Next
+                {tCommon('actions.next')}
               </Button>
             </div>
           )}
@@ -656,51 +649,51 @@ export default function PlannerTab() {
                 onCheckedChange={setShowMultiDayEvents}
                 className="data-[state=checked]:bg-blue-600"
               />
-              <Label className="text-sm text-gray-900 dark:text-gray-100">Show multi-day events on cards</Label>
+              <Label className="text-sm text-gray-900 dark:text-gray-100">{t('filters.showMultiDayEvents')}</Label>
             </div>
           )}
           <Dialog open={open} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button className="rounded-xl">
                 <Plus className="w-4 h-4 mr-2" />
-                Add event
+                {t('events.addEvent')}
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
               <DialogHeader className="">
                 <DialogTitle className="text-gray-900 dark:text-gray-100">
-                  {editingEvent ? 'Edit Event' : 'Add Event'}
+                  {editingEvent ? t('events.editEvent') : t('events.addEvent')}
                 </DialogTitle>
                 <DialogDescription className="text-gray-600 dark:text-gray-300">
-                  {editingEvent ? 'Modify the event details below' : 'Create a regular event, exam, or task'}
+                  {editingEvent ? t('messages.modifyEventDetails') : t('messages.createEventDescription')}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4">
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300">Event Type</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">{t('forms.eventCategory')}</Label>
                   <Select value={form.eventCategory} onValueChange={v => setForm({ ...form, eventCategory: v })}>
                     <SelectTrigger className="rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="regular">Regular Event</SelectItem>
-                      <SelectItem value="exam">Exam</SelectItem>
-                      <SelectItem value="task">Task</SelectItem>
+                      <SelectItem value="regular">{t('eventTypes.regular')}</SelectItem>
+                      <SelectItem value="exam">{t('eventTypes.exam')}</SelectItem>
+                      <SelectItem value="task">{t('eventTypes.task')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300">Course (Optional)</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">{t('forms.courseOptional')}</Label>
                   <Select
                     value={String(form.courseIndex)}
                     onValueChange={v => setForm({ ...form, courseIndex: Number(v) })}
                   >
                     <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder="Select a course (optional)" />
+                      <SelectValue placeholder={t('forms.courseOptional')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="-1">No Course</SelectItem>
+                      <SelectItem value="-1">{tCommon('common.none')}</SelectItem>
                       {courses.map((c, i) => (
                         <SelectItem key={i} value={String(i)}>
                           {c}
@@ -711,17 +704,17 @@ export default function PlannerTab() {
                 </div>
 
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300">Title</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">{t('forms.title')}</Label>
                   <Input
                     value={form.title}
                     onChange={e => setForm({ ...form, title: e.target.value })}
                     className="rounded-xl"
                     placeholder={
                       form.eventCategory === 'regular'
-                        ? 'e.g., Math Olympics Week'
+                        ? t('placeholders.regularEventTitle')
                         : form.eventCategory === 'exam'
-                        ? 'e.g., Midterm Exam'
-                        : 'e.g., Submit Assignment'
+                        ? t('placeholders.examTitle')
+                        : t('placeholders.taskTitle')
                     }
                   />
                 </div>
@@ -730,10 +723,10 @@ export default function PlannerTab() {
                   <div>
                     <Label className="text-gray-700 dark:text-gray-300">
                       {form.eventCategory === 'regular'
-                        ? 'Start Date'
+                        ? t('forms.startDate')
                         : form.eventCategory === 'exam'
-                        ? 'Exam Date'
-                        : 'Due Date'}
+                        ? t('forms.startDate')
+                        : t('forms.startDate')}
                     </Label>
                     <Input
                       type="date"
@@ -744,7 +737,9 @@ export default function PlannerTab() {
                   </div>
                   {form.eventCategory === 'regular' && (
                     <div>
-                      <Label className="text-gray-700 dark:text-gray-300">End Date (Optional)</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">
+                        {t('forms.endDate')} {tCommon('common.optional')}
+                      </Label>
                       <Input
                         type="date"
                         value={form.endDate}
@@ -758,23 +753,29 @@ export default function PlannerTab() {
 
                 {form.eventCategory === 'regular' && (
                   <div>
-                    <Label className="text-gray-700 dark:text-gray-300">Location (Optional)</Label>
+                    <Label className="text-gray-700 dark:text-gray-300">
+                      {t('forms.location')} {tCommon('common.optional')}
+                    </Label>
                     <Input
                       value={form.location}
                       onChange={e => setForm({ ...form, location: e.target.value })}
                       className="rounded-xl"
-                      placeholder="e.g., Main Auditorium"
+                      placeholder={t('placeholders.locationExample')}
                     />
                   </div>
                 )}
 
                 {form.eventCategory === 'regular' && (
-                  <ColorPicker label="Color" value={form.color} onChange={color => setForm({ ...form, color })} />
+                  <ColorPicker
+                    label={t('forms.color')}
+                    value={form.color}
+                    onChange={color => setForm({ ...form, color })}
+                  />
                 )}
 
                 {form.eventCategory === 'exam' && (
                   <div>
-                    <Label className="text-gray-700 dark:text-gray-300">Weight (%)</Label>
+                    <Label className="text-gray-700 dark:text-gray-300">{t('forms.weight')}</Label>
                     <Input
                       type="number"
                       value={form.weight}
@@ -788,40 +789,46 @@ export default function PlannerTab() {
 
                 {form.eventCategory === 'task' && (
                   <div>
-                    <Label className="text-gray-700 dark:text-gray-300">Priority</Label>
+                    <Label className="text-gray-700 dark:text-gray-300">{t('forms.priority')}</Label>
                     <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
                       <SelectTrigger className="rounded-xl">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="low">{tCommon('priorities.low')}</SelectItem>
+                        <SelectItem value="normal">{tCommon('priorities.normal')}</SelectItem>
+                        <SelectItem value="high">{tCommon('priorities.high')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 )}
 
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300">Notes (Optional)</Label>
+                  <Label className="text-gray-700 dark:text-gray-300">
+                    {t('forms.notes')} {tCommon('common.optional')}
+                  </Label>
                   <Textarea
                     value={form.notes}
                     onChange={e => setForm({ ...form, notes: e.target.value })}
                     className="rounded-xl"
                     placeholder={
                       form.eventCategory === 'regular'
-                        ? 'Event details, agenda, etc.'
+                        ? t('messages.eventDetailsAgenda')
                         : form.eventCategory === 'exam'
-                        ? 'Chapters, topics, allowed materials...'
-                        : 'Additional task details...'
+                        ? t('messages.examTopicsChapters')
+                        : t('messages.taskDetails')
                     }
                     rows={3}
                   />
                 </div>
 
                 <Button onClick={handleAddEvent} className="rounded-xl mt-2">
-                  {editingEvent ? 'Update' : 'Add'}{' '}
-                  {form.eventCategory === 'regular' ? 'Event' : form.eventCategory === 'exam' ? 'Exam' : 'Task'}
+                  {editingEvent ? tCommon('actions.edit') : tCommon('actions.add')}{' '}
+                  {form.eventCategory === 'regular'
+                    ? t('eventTypes.regular')
+                    : form.eventCategory === 'exam'
+                    ? t('eventTypes.exam')
+                    : t('eventTypes.task')}
                 </Button>
               </div>
             </DialogContent>
@@ -831,9 +838,11 @@ export default function PlannerTab() {
           <ContextMenu show={contextMenu.showMenu} position={contextMenu.position} menuRef={contextMenu.menuRef}>
             {contextMenu.selectedItem && (
               <>
-                <ContextMenuItem onClick={() => editEvent(contextMenu.selectedItem)}>Edit Event</ContextMenuItem>
+                <ContextMenuItem onClick={() => editEvent(contextMenu.selectedItem)}>
+                  {t('events.editEvent')}
+                </ContextMenuItem>
                 <ContextMenuItem variant="destructive" onClick={() => deleteEvent(contextMenu.selectedItem)}>
-                  Delete Event
+                  {t('events.deleteEvent')}
                 </ContextMenuItem>
               </>
             )}
@@ -845,48 +854,49 @@ export default function PlannerTab() {
       {view === 'week' ? (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-7 gap-4 relative">
-            {DAYS.map((d, idx) => {
+            {getShortDayNames().map((dayName, idx) => {
               // Calculate the date for this day
               const dayDate = new Date(startOfWeek);
               dayDate.setDate(startOfWeek.getDate() + idx);
+              const dayKey = DAYS[idx]; // Keep original key for logic
 
               return (
                 <Card
-                  key={d}
+                  key={dayKey}
                   className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur relative cursor-pointer hover:shadow-2xl transition-shadow duration-200"
                   onClick={() => handleDayClick(dayDate)}
-                  title="Click to create new event on this date"
+                  title={t('messages.clickToCreate')}
                 >
                   <CardHeader className="relative z-[1] lg:block hidden">
                     <CardTitle className="flex items-center justify-start gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">{d}</span>
+                        <span className="text-base">{dayName}</span>
                         <div className="flex items-center gap-1.5">
                           <div className="w-8 h-8 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur flex items-center justify-center font-medium">
                             {dayNumOfWeek(idx)}
                           </div>
-                          {eventsForWeekdayName(d).length > 0 && (
+                          {eventsForWeekdayName(dayKey).length > 0 && (
                             <Badge variant="secondary" className="h-8 px-2.5 rounded-xl flex items-center gap-1.5">
                               <div className="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
-                              <span>{eventsForWeekdayName(d).length}</span>
+                              <span>{eventsForWeekdayName(dayKey).length}</span>
                             </Badge>
                           )}
                         </div>
                       </div>
                     </CardTitle>
-                    <CardDescription>Upcoming</CardDescription>
+                    <CardDescription>{t('messages.upcoming')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {/* Mobile & Medium: Horizontal same-row layout for space efficiency */}
                     <div className="block lg:hidden">
-                      {eventsForWeekdayName(d).length === 0 ? (
+                      {eventsForWeekdayName(dayKey).length === 0 ? (
                         <div className="flex items-start gap-3 h-12 pt-2">
                           {/* Left: Consistent day name and date layout */}
                           <div className="flex flex-col gap-1 flex-shrink-0 w-20 sm:w-24">
                             {/* Top row: Day name and date */}
                             <div className="flex items-center justify-start gap-2">
                               <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 min-w-[2rem] text-left">
-                                {d}
+                                {dayName}
                               </span>
                               <div className="w-8 h-8 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur flex items-center justify-center font-medium text-lg">
                                 {dayNumOfWeek(idx)}
@@ -896,11 +906,13 @@ export default function PlannerTab() {
                             <div className="h-6"></div>
                           </div>
                           {/* Right: No events message */}
-                          <div className="flex-1 text-sm text-zinc-500 dark:text-zinc-400 ml-3">No events</div>
+                          <div className="flex-1 text-sm text-zinc-500 dark:text-zinc-400 ml-3">
+                            {t('messages.noEvents')}
+                          </div>
                         </div>
                       ) : (
                         <div className="space-y-2 pt-2">
-                          {eventsForWeekdayName(d).map((e, eventIdx) => (
+                          {eventsForWeekdayName(dayKey).map((e, eventIdx) => (
                             <div key={e.id} className="flex items-start gap-3 min-h-[3rem]">
                               {/* Left: Day name, Date and Counter (only show on first event) */}
                               {eventIdx === 0 && (
@@ -908,7 +920,7 @@ export default function PlannerTab() {
                                   {/* Top row: Day name and date */}
                                   <div className="flex items-center justify-start gap-2">
                                     <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 min-w-[2rem] text-left">
-                                      {d}
+                                      {dayName}
                                     </span>
                                     <div className="w-8 h-8 rounded-xl bg-white/50 dark:bg-white/5 backdrop-blur flex items-center justify-center font-medium text-lg">
                                       {dayNumOfWeek(idx)}
@@ -920,7 +932,7 @@ export default function PlannerTab() {
                                     className="h-6 px-2 rounded-xl flex items-center gap-1 self-start"
                                   >
                                     <div className="w-1 h-1 rounded-full bg-violet-500"></div>
-                                    <span className="text-xs">{eventsForWeekdayName(d).length}</span>
+                                    <span className="text-xs">{eventsForWeekdayName(dayKey).length}</span>
                                   </Badge>
                                 </div>
                               )}
@@ -933,7 +945,7 @@ export default function PlannerTab() {
                                 onClick={event => {
                                   if (e.eventType === 'schedule') {
                                     // For schedule events, show delete confirmation directly
-                                    if (confirm('Delete this schedule event?')) {
+                                    if (confirm(t('messages.deleteScheduleEvent'))) {
                                       removeSchedule(e.id);
                                     }
                                   } else {
@@ -967,14 +979,14 @@ export default function PlannerTab() {
 
                     {/* Large: Default vertical behavior */}
                     <div className="hidden lg:block space-y-2">
-                      {eventsForWeekdayName(d).map(e => (
+                      {eventsForWeekdayName(dayKey).map(e => (
                         <div
                           key={e.id}
                           className="group relative flex flex-row items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl mb-2 cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                           onClick={event => {
                             if (e.eventType === 'schedule') {
                               // For schedule events, show delete confirmation directly
-                              if (confirm('Delete this schedule event?')) {
+                              if (confirm(t('messages.deleteScheduleEvent'))) {
                                 removeSchedule(e.id);
                               }
                             } else {
@@ -1001,8 +1013,8 @@ export default function PlannerTab() {
                           <EventTooltip event={e} />
                         </div>
                       ))}
-                      {eventsForWeekdayName(d).length === 0 && (
-                        <div className="text-sm text-zinc-500 dark:text-zinc-400">No events.</div>
+                      {eventsForWeekdayName(dayKey).length === 0 && (
+                        <div className="text-sm text-zinc-500 dark:text-zinc-400">{t('messages.noEvents')}</div>
                       )}
                     </div>
                   </CardContent>
@@ -1016,9 +1028,9 @@ export default function PlannerTab() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="w-5 h-5" />
-                Present Goals
+                {t('goals.weeklyGoals')}
               </CardTitle>
-              <CardDescription>Weekly focus goals - stay on track!</CardDescription>
+              <CardDescription>{t('goals.weeklyFocusGoals')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-6">
@@ -1027,14 +1039,14 @@ export default function PlannerTab() {
                   {/* Add Goal Form */}
                   <div className="space-y-2">
                     <Label htmlFor="goalTitle" className="text-gray-700 dark:text-gray-300">
-                      Add New Goal
+                      {t('goals.addGoal')}
                     </Label>
                     <div className="flex gap-2">
                       <Input
                         id="goalTitle"
                         value={goalForm.title}
                         onChange={e => setGoalForm({ title: e.target.value })}
-                        placeholder="Enter your weekly goal..."
+                        placeholder={t('goals.goalPlaceholder')}
                         className="rounded-xl"
                         onKeyPress={e => e.key === 'Enter' && addGoal()}
                       />
@@ -1047,10 +1059,8 @@ export default function PlannerTab() {
                   {/* Goals List */}
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {weeklyGoals.length === 0 ? (
-                      <div className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
-                        No goals set for this week.
-                        <br />
-                        Add one to get started! 🎯
+                      <div className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8 whitespace-pre-line">
+                        {t('messages.noGoalsSet')}
                       </div>
                     ) : (
                       weeklyGoals.map(goal => (
@@ -1137,7 +1147,7 @@ export default function PlannerTab() {
                           <div className="text-lg font-bold text-zinc-700 dark:text-zinc-300">
                             {completedGoals}/{totalGoals}
                           </div>
-                          <div className="text-xs text-zinc-500 dark:text-zinc-400">goals</div>
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400">{t('messages.goals')}</div>
                         </div>
                       </div>
                     </div>
@@ -1145,7 +1155,7 @@ export default function PlannerTab() {
 
                   {fillPercentage === 100 && totalGoals > 0 && (
                     <div className="text-sm font-medium text-green-600 dark:text-green-400 animate-pulse">
-                      🎉 All goals completed!
+                      {t('messages.allGoalsCompletedStatus')}
                     </div>
                   )}
                 </div>
@@ -1156,9 +1166,9 @@ export default function PlannerTab() {
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-7 gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-            {DAYS.map(d => (
-              <div key={d} className="text-center py-2">
-                {d}
+            {getShortDayNames().map((dayName, idx) => (
+              <div key={DAYS[idx]} className="text-center py-2">
+                {dayName}
               </div>
             ))}
           </div>
@@ -1192,7 +1202,7 @@ export default function PlannerTab() {
                     borderTopColor: hasMultiDayEvent ? multiDayEventColor : undefined,
                   }}
                   onClick={() => handleDayClick(date)}
-                  title="Click to create new event on this date"
+                  title={t('messages.clickToCreate')}
                 >
                   <div className="flex items-center justify-between mb-1 sm:mb-2">
                     <div
@@ -1232,7 +1242,7 @@ export default function PlannerTab() {
                         onClick={event => {
                           contextMenu.showContextMenu(e, event);
                         }}
-                        title="Click to edit or delete event"
+                        title={t('messages.clickToEdit')}
                       >
                         <EventTypeIndicator event={e} />
                         <span className="font-medium truncate">{e.title || e.type}</span>
@@ -1240,7 +1250,7 @@ export default function PlannerTab() {
                     ))}
                     {dayEvents.length > 4 && (
                       <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1">
-                        +{dayEvents.length - 4} more...
+                        +{dayEvents.length - 4} {t('messages.moreEvents')}
                       </div>
                     )}
                   </div>
@@ -1250,7 +1260,7 @@ export default function PlannerTab() {
                     <div className="absolute left-1/2 bottom-full mb-2 w-80 bg-white dark:bg-zinc-800 shadow-xl rounded-xl p-4 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform -translate-x-1/2 border border-white/20 dark:border-white/10">
                       <div className="mb-3">
                         <div className="font-bold text-zinc-900 dark:text-zinc-100">
-                          {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                          {localizedFormatDate(date, { weekday: 'long', month: 'long', day: 'numeric' })}
                         </div>
                         <div className="text-sm text-zinc-500 dark:text-zinc-400">
                           {tooltipEvents.length} event{tooltipEvents.length !== 1 ? 's' : ''}
@@ -1294,7 +1304,9 @@ export default function PlannerTab() {
           {!showMultiDayEvents &&
             regularEvents.some(e => e.isMultiDay !== false && e.endDate && e.endDate !== e.startDate) && (
               <div className="mt-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Hidden Multi-Day Events</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
+                  {t('messages.hiddenMultiDayEvents')}
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {regularEvents
                     .filter(
@@ -1313,7 +1325,7 @@ export default function PlannerTab() {
                         onClick={e => {
                           contextMenu.showContextMenu({ ...event, eventType: 'regular' }, e);
                         }}
-                        title="Click to edit or delete event"
+                        title={t('messages.clickToEdit')}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">

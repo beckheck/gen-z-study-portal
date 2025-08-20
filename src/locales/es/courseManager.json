@@ -1,0 +1,71 @@
+{
+  "actions": {
+    "addTask": "Agregar tarea",
+    "addExam": "Agregar examen",
+    "updateExam": "Actualizar examen",
+    "done": "Hecho",
+    "undo": "Deshacer",
+    "clearCourseData": "Limpiar Datos del Curso",
+    "cancelEdit": "Cancelar Edición"
+  },
+  "tasks": {
+    "title": "Tareas",
+    "description": "Agregar, completar, eliminar",
+    "form": {
+      "title": "Título",
+      "dueDate": "Fecha de entrega",
+      "priority": "Prioridad"
+    },
+    "placeholders": {
+      "title": "Tarea, lectura, proyecto…",
+      "grade": "Nota"
+    },
+    "sections": {
+      "open": "Pendientes"
+    },
+    "empty": {
+      "noPending": "Nada pendiente. Ve a tocar el cielo ☁️"
+    },
+    "due": "vence {{date}}",
+    "taskProgress": "Progreso de tareas"
+  },
+  "exams": {
+    "title": "Exámenes / Evaluaciones",
+    "description": "Fechas, peso, notas",
+    "upcoming": {
+      "title": "Próximas Evaluaciones",
+      "description": "Tus próximas evaluaciones",
+      "empty": "Aún no hay exámenes próximos."
+    },
+    "form": {
+      "title": "Título",
+      "date": "Fecha",
+      "weight": "Ponderación (%)",
+      "notes": "Notas"
+    },
+    "placeholders": {
+      "title": "Parcial, quiz, revisión de lab…",
+      "notes": "Capítulos, temas, materiales permitidos…"
+    },
+    "timing": {
+      "days": "{{count}} días"
+    }
+  },
+  "grades": {
+    "title": "Calculadora de Notas",
+    "description": "Registra calificaciones de exámenes (escala 1-7)",
+    "examGrades": "Calificaciones de Exámenes",
+    "courseAverage": "Promedio del Curso",
+    "outOf": "de 7.0",
+    "examsSummary": "{{graded}} de {{total}} exámenes calificados",
+    "addExamsFirst": "Agrega exámenes primero para registrar calificaciones",
+    "weight": "peso {{weight}}%"
+  },
+  "confirmations": {
+    "clearData": {
+      "title": "Limpiar Datos de {{course}}",
+      "description": "Esto eliminará permanentemente todas las tareas, exámenes y eventos del horario asociados con el curso {{course}}. Esta acción no se puede deshacer.",
+      "clearButton": "Limpiar Datos"
+    }
+  }
+}

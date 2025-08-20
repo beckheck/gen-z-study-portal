@@ -7,6 +7,7 @@ import { useDegreePlan } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Check, Edit, GraduationCap, Plus, Trash2, X } from 'lucide-react';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DegreeCourse } from '../types';
 
 interface SemesterForm {
@@ -18,6 +19,9 @@ interface SemesterForm {
 }
 
 export default function DegreePlanTab() {
+  const { t } = useTranslation('degreePlan');
+  const { t: tCommon } = useTranslation('common');
+
   // State management
   const { degreePlan, setDegreePlan, setSemesters, addCompletedCourse, removeCompletedCourse, removeSemester } =
     useDegreePlan();
@@ -220,19 +224,21 @@ export default function DegreePlanTab() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="w-5 h-5" />
-                Degree Plan
+                {t('title')}
               </CardTitle>
-              <CardDescription>Plan your academic journey</CardDescription>
+              <CardDescription>{t('description')}</CardDescription>
             </div>
             <div className="flex items-center gap-3">
               {degreePlan.semesters.length > 0 && (
                 <div className="text-right">
                   <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    {getCompletedCredits()}/{getTotalCredits()} credits done ✨
+                    {t('progress.creditsProgress', { completed: getCompletedCredits(), total: getTotalCredits() })}
                   </div>
                   <div className="text-xs text-zinc-500">
-                    {getTotalCredits() > 0 ? Math.round((getCompletedCredits() / getTotalCredits()) * 100) : 0}%
-                    complete
+                    {t('progress.percentComplete', {
+                      percent:
+                        getTotalCredits() > 0 ? Math.round((getCompletedCredits() / getTotalCredits()) * 100) : 0,
+                    })}
                   </div>
                 </div>
               )}
@@ -249,7 +255,7 @@ export default function DegreePlanTab() {
                   }
                   setDegreePlanDialog(true);
                 }}
-                title="Customize Degree Plan"
+                title={t('actions.customize')}
               >
                 <Edit className="w-4 h-4" />
               </Button>
@@ -260,17 +266,17 @@ export default function DegreePlanTab() {
           {degreePlan.semesters.length > 0 ? (
             <div className="space-y-6">
               <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  💡 <strong>Tip:</strong> Drag and drop courses between semesters to reorganize your degree plan. Click
-                  courses to mark as completed.
-                </p>
+                <p
+                  className="text-sm text-blue-700 dark:text-blue-300"
+                  dangerouslySetInnerHTML={{ __html: t('tips.dragAndDrop') }}
+                />
               </div>
               <div className="grid gap-4 lg:gap-6 grid-cols-2 md:grid-cols-3">
                 {degreePlan.semesters.map(semester => (
                   <div key={semester.id} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-center text-sm px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex-1">
-                        {semester.number}° Semestre
+                        {t('semester.title', { number: semester.number })}
                       </h3>
                     </div>
                     <div
@@ -311,11 +317,11 @@ export default function DegreePlanTab() {
                             }
                             title={`${
                               isCompleted
-                                ? 'Click to mark as incomplete'
+                                ? t('actions.markAsIncomplete')
                                 : prerequisitesMet
-                                ? 'Click to mark as completed'
-                                : 'Prerequisites not met'
-                            } • Drag to move between semesters`}
+                                ? t('actions.markAsCompleted')
+                                : t('course.prerequisitesNotMet')
+                            } • ${t('actions.dragToMove')}`}
                           >
                             <div className="flex items-start justify-between">
                               <div
@@ -345,7 +351,7 @@ export default function DegreePlanTab() {
                                   {course.name}
                                 </div>
                                 <div className="text-xs text-zinc-500 mt-1 flex items-center justify-between">
-                                  <span>{course.credits} créditos</span>
+                                  <span>{t('course.creditsShort', { count: parseInt(course.credits || '0') })}</span>
                                   {isCompleted && <Check className="w-3 h-3 text-green-600" />}
                                 </div>
                               </div>
@@ -368,7 +374,7 @@ export default function DegreePlanTab() {
                                   setDegreePlanDialog(true);
                                 }}
                                 className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                                title="Edit course"
+                                title={t('actions.editCourse')}
                               >
                                 <Edit className="w-3 h-3" />
                               </Button>
@@ -377,13 +383,13 @@ export default function DegreePlanTab() {
                         );
                       })}
                       {semester.courses.length === 0 && !draggedCourse && (
-                        <div className="text-center text-zinc-400 py-8 text-sm">No courses added</div>
+                        <div className="text-center text-zinc-400 py-8 text-sm">{t('semester.noCourses')}</div>
                       )}
                       {draggedCourse && draggedFromSemester !== semester.number && (
                         <div className="text-center text-blue-500 py-4 text-sm border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/20 dark:bg-blue-900/10">
                           {semester.courses.length >= 8
-                            ? 'Semester full (8/8 courses)'
-                            : `Drop course here (${semester.courses.length}/8 courses)`}
+                            ? t('dropZone.semesterFull')
+                            : t('dropZone.dropHere', { count: semester.courses.length })}
                         </div>
                       )}
                     </div>
@@ -392,8 +398,10 @@ export default function DegreePlanTab() {
               </div>
               <div className="text-center border-t pt-4">
                 <div className="text-sm text-zinc-500 mb-3">
-                  Progress: {degreePlan.completedCourses.length} / {degreePlan.semesters.flatMap(s => s.courses).length}{' '}
-                  courses completed
+                  {t('progress.coursesProgress', {
+                    completed: degreePlan.completedCourses.length,
+                    total: degreePlan.semesters.flatMap(s => s.courses).length,
+                  })}
                 </div>
                 <Button
                   variant="outline"
@@ -402,12 +410,12 @@ export default function DegreePlanTab() {
                   className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Clear Degree Plan
+                  {t('actions.clearDegreePlan')}
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="text-center py-12 text-zinc-500">Add your semesters and your courses here</div>
+            <div className="text-center py-12 text-zinc-500">{t('semester.noCourses')}</div>
           )}
         </CardContent>
       </Card>
@@ -418,30 +426,32 @@ export default function DegreePlanTab() {
           <DialogHeader className="">
             <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
               <GraduationCap className="w-5 h-5" />
-              {degreePlanStep === 'setup' && 'Setup Degree Plan'}
-              {degreePlanStep === 'courses' &&
-                `Semester ${currentSemester} Courses${editingCourse ? ' - Editing' : ''}`}
-              {degreePlanStep === 'view' && 'Degree Plan Overview'}
-            </DialogTitle>
-            <DialogDescription className="text-zinc-600 dark:text-zinc-400">
-              {degreePlanStep === 'setup' && 'Set up your degree plan by specifying the number of semesters.'}
+              {degreePlanStep === 'setup' && t('setup.title')}
               {degreePlanStep === 'courses' &&
                 (editingCourse
-                  ? `Edit course "${editingCourse.acronym}" in semester ${currentSemester}.`
-                  : `Add courses for semester ${currentSemester}. Maximum 8 courses per semester.`)}
-              {degreePlanStep === 'view' && 'Review and manage your complete degree plan.'}
+                  ? t('editing.title', { number: currentSemester })
+                  : t('semester.courses', { number: currentSemester }))}
+              {degreePlanStep === 'view' && t('view.title')}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-600 dark:text-zinc-400">
+              {degreePlanStep === 'setup' && t('setup.description')}
+              {degreePlanStep === 'courses' &&
+                (editingCourse
+                  ? t('editing.description', { acronym: editingCourse.acronym, number: currentSemester })
+                  : `${t('semester.courses', { number: currentSemester })}. Maximum 8 courses per semester.`)}
+              {degreePlanStep === 'view' && t('view.description')}
             </DialogDescription>
           </DialogHeader>
 
           {degreePlanStep === 'setup' && (
             <div className="space-y-6">
               <div className="space-y-4">
-                <Label className="text-zinc-900 dark:text-zinc-100">Number of Semesters in Your Degree</Label>
+                <Label className="text-zinc-900 dark:text-zinc-100">{t('setup.numberOfSemesters')}</Label>
                 <Input
                   type="number"
                   min="1"
                   max="12"
-                  placeholder="e.g., 8"
+                  placeholder={t('setup.semesterPlaceholder')}
                   value={totalSemestersInput || ''}
                   onChange={e => setTotalSemestersInput(parseInt(e.target.value) || 0)}
                   className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
@@ -453,14 +463,14 @@ export default function DegreePlanTab() {
                   onClick={() => setDegreePlanDialog(false)}
                   className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
-                  Cancel
+                  {tCommon('actions.cancel')}
                 </Button>
                 <Button
                   onClick={() => setupDegreePlan(totalSemestersInput)}
                   disabled={!totalSemestersInput || totalSemestersInput < 1}
                   className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                 >
-                  Next <ArrowRight className="w-4 h-4 ml-2" />
+                  {tCommon('actions.next')} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </div>
@@ -469,19 +479,19 @@ export default function DegreePlanTab() {
           {degreePlanStep === 'courses' && (
             <div className="space-y-6">
               <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                Semester {currentSemester} of {degreePlan.semesters.length}
+                {t('semester.ofTotal', { current: currentSemester, total: degreePlan.semesters.length })}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-4">
                   <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
-                    {editingCourse ? 'Edit Course' : 'Add Course'}
+                    {editingCourse ? t('course.editCourse') : t('course.addCourse')}
                   </h3>
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-zinc-900 dark:text-zinc-100">Course Acronym</Label>
+                      <Label className="text-zinc-900 dark:text-zinc-100">{t('course.acronym')}</Label>
                       <Input
-                        placeholder="e.g., MAT101"
+                        placeholder={t('placeholders.courseAcronym')}
                         value={semesterForm.acronym}
                         onChange={e =>
                           setSemesterForm(prev => ({
@@ -493,9 +503,9 @@ export default function DegreePlanTab() {
                       />
                     </div>
                     <div>
-                      <Label className="text-zinc-900 dark:text-zinc-100">Course Name</Label>
+                      <Label className="text-zinc-900 dark:text-zinc-100">{t('course.name')}</Label>
                       <Input
-                        placeholder="e.g., Calculus I"
+                        placeholder={t('placeholders.courseName')}
                         value={semesterForm.name}
                         onChange={e =>
                           setSemesterForm(prev => ({
@@ -507,12 +517,12 @@ export default function DegreePlanTab() {
                       />
                     </div>
                     <div>
-                      <Label className="text-zinc-900 dark:text-zinc-100">Credits</Label>
+                      <Label className="text-zinc-900 dark:text-zinc-100">{t('course.credits')}</Label>
                       <Input
                         type="number"
                         min="1"
                         max="12"
-                        placeholder="e.g., 4"
+                        placeholder={t('placeholders.credits')}
                         value={semesterForm.credits}
                         onChange={e =>
                           setSemesterForm(prev => ({
@@ -524,9 +534,9 @@ export default function DegreePlanTab() {
                       />
                     </div>
                     <div>
-                      <Label className="text-zinc-900 dark:text-zinc-100">Prerequisites (separate with commas)</Label>
+                      <Label className="text-zinc-900 dark:text-zinc-100">{t('course.prerequisites')}</Label>
                       <Input
-                        placeholder="e.g., MAT100, PHY101"
+                        placeholder={t('placeholders.prerequisites')}
                         value={semesterForm.prerequisites}
                         onChange={e =>
                           setSemesterForm(prev => ({
@@ -538,9 +548,9 @@ export default function DegreePlanTab() {
                       />
                     </div>
                     <div>
-                      <Label className="text-zinc-900 dark:text-zinc-100">Co-requisites (separate with commas)</Label>
+                      <Label className="text-zinc-900 dark:text-zinc-100">{t('course.corequisites')}</Label>
                       <Input
-                        placeholder="e.g., LAB101"
+                        placeholder={t('placeholders.corequisites')}
                         value={semesterForm.corequisites}
                         onChange={e =>
                           setSemesterForm(prev => ({
@@ -566,7 +576,7 @@ export default function DegreePlanTab() {
                         }}
                         className="rounded-xl w-full border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 mb-2"
                       >
-                        Cancel Editing
+                        {t('actions.cancelEditing')}
                       </Button>
                     )}
                     <Button
@@ -614,16 +624,18 @@ export default function DegreePlanTab() {
                       className="rounded-xl w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      {editingCourse ? 'Update Course' : 'Add Course'}
+                      {editingCourse ? t('actions.updateCourse') : t('actions.addCourse')}
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
-                    Semester {currentSemester} Courses (
-                    {degreePlan.semesters.find(s => s.number === currentSemester)?.courses.length || 0}
-                    /7)
+                    {t('semester.coursesWithCount', {
+                      number: currentSemester,
+                      count: degreePlan.semesters.find(s => s.number === currentSemester)?.courses.length || 0,
+                      max: 7,
+                    })}
                   </h3>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto">
                     {degreePlan.semesters
@@ -639,15 +651,17 @@ export default function DegreePlanTab() {
                                 {course.acronym}
                               </div>
                               <div className="text-sm text-zinc-700 dark:text-zinc-300">{course.name}</div>
-                              <div className="text-xs text-zinc-500 dark:text-zinc-400">{course.credits} credits</div>
+                              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                                {t('course.creditsShort', { count: parseInt(course.credits || '0') })}
+                              </div>
                               {course.prerequisites && (
                                 <div className="text-xs text-zinc-400 dark:text-zinc-500">
-                                  Prereq: {course.prerequisites}
+                                  {t('course.prereq', { prerequisites: course.prerequisites })}
                                 </div>
                               )}
                               {course.corequisites && (
                                 <div className="text-xs text-zinc-400 dark:text-zinc-500">
-                                  Co-req: {course.corequisites}
+                                  {t('course.coreq', { corequisites: course.corequisites })}
                                 </div>
                               )}
                             </div>
@@ -673,7 +687,9 @@ export default function DegreePlanTab() {
                         </div>
                       ))}
                     {!degreePlan.semesters.find(s => s.number === currentSemester)?.courses.length && (
-                      <div className="text-center text-zinc-500 dark:text-zinc-400 py-8">No courses added yet</div>
+                      <div className="text-center text-zinc-500 dark:text-zinc-400 py-8">
+                        {t('semester.noCoursesYet')}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -700,7 +716,7 @@ export default function DegreePlanTab() {
                   className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  {currentSemester > 1 ? 'Previous Semester' : 'Back to Setup'}
+                  {currentSemester > 1 ? t('semester.previousSemester') : t('semester.backToSetup')}
                 </Button>
 
                 {currentSemester < degreePlan.semesters.length ? (
@@ -718,7 +734,7 @@ export default function DegreePlanTab() {
                     }}
                     className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                   >
-                    Next Semester <ArrowRight className="w-4 h-4 ml-2" />
+                    {t('semester.nextSemester')} <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
                   <Button
@@ -737,7 +753,7 @@ export default function DegreePlanTab() {
                     className="rounded-xl bg-green-600 hover:bg-green-700 text-white dark:bg-green-500 dark:hover:bg-green-600"
                   >
                     <Check className="w-4 h-4 mr-2" />
-                    Finish Setup
+                    {t('actions.finishSetup')}
                   </Button>
                 )}
               </div>
@@ -753,7 +769,9 @@ export default function DegreePlanTab() {
                     className="space-y-3 border rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   >
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Semester {semester.number}</h3>
+                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {t('semester.title', { number: semester.number })}
+                      </h3>
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
@@ -771,7 +789,7 @@ export default function DegreePlanTab() {
                             setDegreePlanStep('courses');
                           }}
                           className="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                          title="Edit semester"
+                          title={t('actions.editSemester')}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -781,7 +799,7 @@ export default function DegreePlanTab() {
                             variant="ghost"
                             onClick={() => removeSemester(semester.number)}
                             className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            title="Remove empty semester"
+                            title={t('actions.removeEmptySemester')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -828,12 +846,16 @@ export default function DegreePlanTab() {
                             >
                               {course.name}
                             </div>
-                            <div className="text-zinc-500 dark:text-zinc-400 mt-1">{course.credits} credits</div>
+                            <div className="text-zinc-500 dark:text-zinc-400 mt-1">
+                              {t('course.creditsShort', { count: parseInt(course.credits || '0') })}
+                            </div>
                           </div>
                         );
                       })}
                       {semester.courses.length === 0 && (
-                        <div className="text-center text-zinc-400 dark:text-zinc-500 py-4">No courses</div>
+                        <div className="text-center text-zinc-400 dark:text-zinc-500 py-4">
+                          {t('semester.noCourses')}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -842,14 +864,15 @@ export default function DegreePlanTab() {
 
               <div className="border-t pt-4 border-zinc-200 dark:border-zinc-800">
                 <div className="text-center text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                  Overall Progress: {degreePlan.completedCourses.length} /{' '}
-                  {degreePlan.semesters.flatMap(s => s.courses).length} courses completed (
-                  {Math.round(
-                    (degreePlan.completedCourses.length /
-                      Math.max(1, degreePlan.semesters.flatMap(s => s.courses).length)) *
-                      100
-                  )}
-                  %)
+                  {t('progress.overallProgress', {
+                    completed: degreePlan.completedCourses.length,
+                    total: degreePlan.semesters.flatMap(s => s.courses).length,
+                    percent: Math.round(
+                      (degreePlan.completedCourses.length /
+                        Math.max(1, degreePlan.semesters.flatMap(s => s.courses).length)) *
+                        100
+                    ),
+                  })}
                 </div>
                 <div className="flex justify-between">
                   <Button
@@ -857,7 +880,7 @@ export default function DegreePlanTab() {
                     onClick={() => setResetConfirmDialog(true)}
                     className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   >
-                    Reset Plan
+                    {t('actions.resetPlan')}
                   </Button>
                   <div className="flex gap-3">
                     <Button
@@ -866,13 +889,13 @@ export default function DegreePlanTab() {
                       className="rounded-xl border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Add New Semester
+                      {t('actions.addNewSemester')}
                     </Button>
                     <Button
                       onClick={() => setDegreePlanDialog(false)}
                       className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                     >
-                      Close
+                      {tCommon('actions.close')}
                     </Button>
                   </div>
                 </div>
@@ -886,10 +909,9 @@ export default function DegreePlanTab() {
       <Dialog open={resetConfirmDialog} onOpenChange={setResetConfirmDialog}>
         <DialogContent className="max-w-md bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
           <DialogHeader className="">
-            <DialogTitle className="text-zinc-900 dark:text-zinc-100">Reset Degree Plan</DialogTitle>
+            <DialogTitle className="text-zinc-900 dark:text-zinc-100">{t('confirmations.reset.title')}</DialogTitle>
             <DialogDescription className="text-zinc-600 dark:text-zinc-400">
-              Are you sure you want to reset your entire degree plan? This will delete all semesters, courses, and
-              progress. This action cannot be undone.
+              {t('confirmations.reset.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-between pt-4">
@@ -898,7 +920,7 @@ export default function DegreePlanTab() {
               onClick={() => setResetConfirmDialog(false)}
               className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
-              Cancel
+              {tCommon('actions.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -908,7 +930,7 @@ export default function DegreePlanTab() {
               }}
               className="rounded-xl"
             >
-              Reset Everything
+              {t('confirmations.resetEverything')}
             </Button>
           </div>
         </DialogContent>
@@ -918,10 +940,9 @@ export default function DegreePlanTab() {
       <Dialog open={clearConfirmDialog} onOpenChange={setClearConfirmDialog}>
         <DialogContent className="max-w-md bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
           <DialogHeader className="">
-            <DialogTitle className="text-zinc-900 dark:text-zinc-100">Clear Degree Plan</DialogTitle>
+            <DialogTitle className="text-zinc-900 dark:text-zinc-100">{t('confirmations.clear.title')}</DialogTitle>
             <DialogDescription className="text-zinc-600 dark:text-zinc-400">
-              Are you sure you want to clear your entire degree plan? This will delete all semesters, courses, and
-              progress. This action cannot be undone.
+              {t('confirmations.clear.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-between pt-4">
@@ -930,7 +951,7 @@ export default function DegreePlanTab() {
               onClick={() => setClearConfirmDialog(false)}
               className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
-              Cancel
+              {tCommon('actions.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -941,7 +962,7 @@ export default function DegreePlanTab() {
               className="rounded-xl"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Clear Everything
+              {t('confirmations.clearEverything')}
             </Button>
           </div>
         </DialogContent>

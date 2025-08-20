@@ -1,0 +1,41 @@
+{
+  "focusTimer": {
+    "title": "Temporizador de Enfoque",
+    "description": "Rastrea sesiones de estudio y ambiente",
+    "course": "Curso",
+    "technique": "Técnica",
+    "techniques": {
+      "pomodoro": "Pomodoro 25/5",
+      "deepWork": "Trabajo Profundo 50/10",
+      "flow": "Flujo (sin descansos)"
+    },
+    "moodStart": "Estado inicial",
+    "moodEnd": "Estado final",
+    "status": {
+      "studying": "Estudiando…",
+      "ready": "Listo"
+    },
+    "buttons": {
+      "start": "Iniciar",
+      "stop": "Detener",
+      "reset": "Reiniciar"
+    },
+    "sessionNotes": "Notas de sesión",
+    "notesPlaceholder": "¿Qué cubriste? ¿Algún obstáculo?"
+  },
+  "sessionTasks": {
+    "title": "Tareas de Sesión",
+    "description": "Tareas solo para este bloque de estudio",
+    "placeholder": "Tarea rápida…",
+    "open": "Pendientes",
+    "noTasks": "Agrega un par de tareas para guiar esta sesión.",
+    "clearCompleted": "Limpiar completadas"
+  },
+  "sessionLog": {
+    "title": "Registro de Sesiones",
+    "description": "Tus sesiones recientes",
+    "noSessions": "Aún no hay sesiones. Vamos a cocinar. 👨‍🍳",
+    "duration": "{{duration}}m",
+    "sessionInfo": "{{course}} · {{duration}}m · {{technique}}"
+  }
+}

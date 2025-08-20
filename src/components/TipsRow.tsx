@@ -1,6 +1,7 @@
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Coffee, Music2, Target } from 'lucide-react';
 import { ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Tip {
   icon: ReactElement;
@@ -9,21 +10,23 @@ interface Tip {
 }
 
 export default function TipsRow() {
+  const { t } = useTranslation('tips');
+
   const tips: Tip[] = [
     {
       icon: <Target className="w-5 h-5" />,
-      title: 'Micro-goals',
-      tip: 'Break big tasks into 25–45 min sprints. Reward tiny wins.',
+      title: t('microGoals.title'),
+      tip: t('microGoals.tip'),
     },
     {
       icon: <Coffee className="w-5 h-5" />,
-      title: 'Break hygiene',
-      tip: '5–10 min off-screen breaks every hour. Hydrate + stretch.',
+      title: t('breakHygiene.title'),
+      tip: t('breakHygiene.tip'),
     },
     {
       icon: <Music2 className="w-5 h-5" />,
-      title: 'Soundtrack',
-      tip: 'Lo-fi beats or brown noise can boost focus.',
+      title: t('soundtrack.title'),
+      tip: t('soundtrack.tip'),
     },
   ];
 

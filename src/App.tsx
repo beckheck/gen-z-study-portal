@@ -1,6 +1,7 @@
 import CourseManagerTab from '@/components/CourseManagerTab';
 import DashboardTab from '@/components/DashboardTab';
 import DegreePlanTab from '@/components/DegreePlanTab';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import MoonSunToggle from '@/components/MoonSunToggle';
 import OverflowTabs from '@/components/OverflowTabs';
 import PlannerTab from '@/components/PlannerTab';
@@ -30,12 +31,12 @@ import {
   Sparkles,
 } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppTab } from './types';
 
-const APP_TITLE = 'StudyHub ✨';
-const APP_TAGLINE = 'Plan smarter. Study deeper. Protect your vibe.';
-
 function AppSubtitle() {
+  const { t } = useTranslation('common');
+
   return (
     <>
       <span
@@ -44,28 +45,20 @@ function AppSubtitle() {
           color: `hsl(var(--accent-h) var(--accent-s) var(--accent-l))`,
         }}
       >
-        Gen Z
+        {t('app.subtitle.genZ')}
       </span>{' '}
-      Portal
+      {t('app.subtitle.portal')}
     </>
   );
 }
-
-const tabs: AppTab[] = [
-  { value: 'dashboard', label: 'Dashboard', icon: Home },
-  { value: 'planner', label: 'Planner', icon: CalendarDays },
-  { value: 'timetable', label: 'Timetable', icon: CalendarRange },
-  { value: 'courses', label: 'Courses', icon: NotebookPen },
-  { value: 'degree-plan', label: 'Degree Plan', icon: GraduationCap },
-  { value: 'study', label: 'Study Tracker', icon: Brain },
-  { value: 'wellness', label: 'Wellness', icon: HeartPulse },
-  { value: 'settings', label: 'Settings', icon: SettingsIcon },
-];
 
 // -----------------------------
 // Main App Component
 // -----------------------------
 export default function StudyPortal(): React.JSX.Element {
+  // Translation hook
+  const { t } = useTranslation('common');
+
   // Get state from centralized store
   const { theme, setDarkMode } = useTheme();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
@@ -73,6 +66,18 @@ export default function StudyPortal(): React.JSX.Element {
   // Local UI state (not persisted)
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+
+  // Localized tabs array
+  const tabs: AppTab[] = [
+    { value: 'dashboard', label: t('navigation.dashboard'), icon: Home },
+    { value: 'planner', label: t('navigation.planner'), icon: CalendarDays },
+    { value: 'timetable', label: t('navigation.timetable'), icon: CalendarRange },
+    { value: 'courses', label: t('navigation.courses'), icon: NotebookPen },
+    { value: 'degree-plan', label: t('navigation.degreePlan'), icon: GraduationCap },
+    { value: 'study', label: t('navigation.study'), icon: Brain },
+    { value: 'wellness', label: t('navigation.wellness'), icon: HeartPulse },
+    { value: 'settings', label: t('navigation.settings'), icon: SettingsIcon },
+  ];
 
   // Style hooks
   useDarkModeStyles();
@@ -117,7 +122,7 @@ export default function StudyPortal(): React.JSX.Element {
             <SheetTrigger asChild>
               <button className="p-3 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-white/90 dark:hover:bg-zinc-900/90 transition-all duration-200 shadow-lg hover:shadow-xl border border-white/20 dark:border-white/10">
                 <Menu className="w-6 h-6" />
-                <span className="sr-only">Open navigation menu</span>
+                <span className="sr-only">{t('navigation.openNavigationMenu')}</span>
               </button>
             </SheetTrigger>
             <SheetContent
@@ -132,14 +137,15 @@ export default function StudyPortal(): React.JSX.Element {
                   </div>
                   <div>
                     <h1 className="text-xl font-extrabold tracking-tight">
-                      {APP_TITLE} — <AppSubtitle />
+                      {t('app.title')} — <AppSubtitle />
                     </h1>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{APP_TAGLINE}</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{t('app.tagline')}</p>
                   </div>
                 </div>
 
                 {/* Dark/Light mode toggle in drawer */}
-                <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur">
+                <div className="flex items-center justify-center gap-6 px-3 py-2 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur">
+                  <LanguageSelector />
                   <MoonSunToggle checked={theme.darkMode} onCheckedChange={setDarkMode} />
                 </div>
 
@@ -187,19 +193,20 @@ export default function StudyPortal(): React.JSX.Element {
             </div>
             <div className="hidden md:block">
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                {APP_TITLE} — <AppSubtitle />
+                {t('app.title')} — <AppSubtitle />
               </h1>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">{APP_TAGLINE}</p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">{t('app.tagline')}</p>
             </div>
             {/* Mobile title - simplified and centered */}
             <div className="md:hidden text-center">
-              <h1 className="text-3xl font-extrabold tracking-tight">{APP_TITLE}</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight">{t('app.title')}</h1>
             </div>
           </div>
 
           {/* Desktop dark/light mode toggle */}
           <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur">
+            <div className="flex items-center gap-6 px-3 py-2 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur">
+              <LanguageSelector />
               <MoonSunToggle checked={theme.darkMode} onCheckedChange={setDarkMode} />
             </div>
           </div>

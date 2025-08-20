@@ -1,0 +1,58 @@
+{
+  "title": "My Timetable",
+  "description": "Weekly schedule of your classes and activities",
+  "addEvent": "Add Event",
+  "editEvent": "Edit Event",
+  "deleteEvent": "Delete Event",
+  "addToTimetable": "Add to Timetable",
+  "updateEvent": "Update Event",
+  "days": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri"
+  },
+  "eventTypes": {
+    "catedra": "Cátedra",
+    "ayudantia": "Ayudantía",
+    "taller": "Taller",
+    "laboratorio": "Laboratorio"
+  },
+  "fields": {
+    "course": "Course",
+    "eventType": "Event Type",
+    "day": "Day",
+    "timeBlock": "Time Block",
+    "classroom": "Classroom",
+    "teacherName": "Teacher Name",
+    "taName": "TA Name",
+    "eventColor": "Event Color"
+  },
+  "placeholders": {
+    "selectCourse": "Select a course",
+    "selectEventType": "Select event type",
+    "selectDay": "Select day",
+    "selectTimeBlock": "Select time block",
+    "classroom": "e.g., A-101",
+    "teacherName": "Teacher's name",
+    "taName": "TA's name"
+  },
+  "timeBlocks": {
+    "block": "Block"
+  },
+  "hover": {
+    "type": "Type:",
+    "time": "Time:",
+    "classroom": "Classroom:",
+    "teacher": "Teacher:",
+    "ta": "TA:"
+  },
+  "unknownCourse": "Unknown Course",
+  "addEventHint": "Add event"
+}

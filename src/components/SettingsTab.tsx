@@ -10,8 +10,13 @@ import { DataTransfer } from '@/lib/data-transfer';
 import { patchStoreState } from '@/store';
 import { Download } from 'lucide-react';
 import { ChangeEvent, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function SettingsTab() {
+  // Translation hooks
+  const { t } = useTranslation('settings');
+  const { t: tCommon } = useTranslation('common');
+
   const { courses, renameCourse } = useCourses();
   const { weather, setWeatherApiKey, setWeatherLocation } = useWeather();
   const { soundtrack, setSoundtrackEmbed, setSoundtrackPosition } = useSoundtrack();
@@ -44,13 +49,13 @@ export default function SettingsTab() {
     <div className="grid md:grid-cols-2 gap-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle>Courses</CardTitle>
-          <CardDescription>Rename your 7 courses</CardDescription>
+          <CardTitle>{t('courses.title')}</CardTitle>
+          <CardDescription>{t('courses.description')}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           {courses.map((c, i) => (
             <div key={c + i} className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <Label>Course {i + 1}</Label>
+              <Label>{t('courses.courseLabel', { number: i + 1 })}</Label>
               <Input defaultValue={c} onBlur={e => renameCourse(i, e.target.value)} className="rounded-xl" />
             </div>
           ))}
@@ -59,19 +64,19 @@ export default function SettingsTab() {
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle>About</CardTitle>
-          <CardDescription>Local-first · Private · Cute af</CardDescription>
+          <CardTitle>{t('about.title')}</CardTitle>
+          <CardDescription>{t('about.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-zinc-600 dark:text-zinc-400">
           <div className="space-y-2">
-            <p>Everything saves to your browser (localStorage).</p>
-            <p>Built with Tailwind, shadcn/ui, lucide icons, framer‑motion, and Recharts.</p>
-            <p>Pro tip: pin this tab and live your best study life ✨</p>
+            <p>{t('about.localFirst')}</p>
+            <p>{t('about.builtWith')}</p>
+            <p>{t('about.proTip')}</p>
           </div>
           <div className="grid gap-2">
             <Button variant="outline" onClick={() => dataTransfer.exportData()} className="w-full rounded-xl">
               <Download className="w-4 h-4 mr-2" />
-              Export Data
+              {t('about.exportData')}
             </Button>
             <div className="space-y-2">
               <div className="space-y-2">
@@ -86,13 +91,13 @@ export default function SettingsTab() {
                           try {
                             const success = await dataTransfer.importData(file);
                             if (success) {
-                              alert('✨ Data imported successfully!');
+                              alert(t('about.importSuccess'));
                               window.location.reload(); // Refresh to ensure all components update
                             } else {
-                              alert('❌ Failed to import data. Please check if the file is valid.');
+                              alert(t('about.importError'));
                             }
                           } catch (error) {
-                            alert('❌ Error importing data. Make sure this is a valid StudyHub export file.');
+                            alert(t('about.importErrorGeneral'));
                           }
                           e.target.value = ''; // Reset input
                         }
@@ -101,7 +106,7 @@ export default function SettingsTab() {
                     />
                     <span className="flex items-center justify-center gap-2">
                       <Download className="w-4 h-4 rotate-180" />
-                      Import Data
+                      {t('about.importData')}
                     </span>
                   </label>
                 </Button>
@@ -113,27 +118,27 @@ export default function SettingsTab() {
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle>Soundtrack</CardTitle>
-          <CardDescription>Paste an embed URL (Spotify/YouTube)</CardDescription>
+          <CardTitle>{t('soundtrack.title')}</CardTitle>
+          <CardDescription>{t('soundtrack.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <Label htmlFor="soundtrack-position">Position</Label>
+            <Label htmlFor="soundtrack-position">{t('soundtrack.position')}</Label>
             <Select value={soundtrack.position} onValueChange={setSoundtrackPosition}>
               <SelectTrigger className="rounded-xl">
-                <SelectValue placeholder="Select position" />
+                <SelectValue placeholder={t('soundtrack.selectPosition')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="dashboard">Dashboard</SelectItem>
-                <SelectItem value="floating">Floating</SelectItem>
-                <SelectItem value="hidden">Hidden</SelectItem>
+                <SelectItem value="dashboard">{t('soundtrack.positions.dashboard')}</SelectItem>
+                <SelectItem value="floating">{t('soundtrack.positions.floating')}</SelectItem>
+                <SelectItem value="hidden">{t('soundtrack.positions.hidden')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Input
             value={soundtrack.embed}
             onChange={e => setSoundtrackEmbed(e.target.value)}
-            placeholder="https://open.spotify.com/embed/playlist/..."
+            placeholder={t('soundtrack.placeholder')}
             className="rounded-xl"
           />
           {soundtrack.embed && (
@@ -144,7 +149,7 @@ export default function SettingsTab() {
                   className="w-full h-full"
                   allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                   loading="lazy"
-                  title="Soundtrack preview"
+                  title={t('soundtrack.preview')}
                 />
               </div>
             </div>
@@ -154,8 +159,8 @@ export default function SettingsTab() {
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle>Background</CardTitle>
-          <CardDescription>Upload a custom wallpaper</CardDescription>
+          <CardTitle>{t('background.title')}</CardTitle>
+          <CardDescription>{t('background.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2">
@@ -177,25 +182,29 @@ export default function SettingsTab() {
               }}
             />
             <Button variant="outline" className="rounded-xl" onClick={() => setBgImage('')}>
-              Clear
+              {t('background.clear')}
             </Button>
           </div>
           {theme.bgImage && (
-            <img src={theme.bgImage} alt="Background preview" className="rounded-xl max-h-40 w-full object-cover" />
+            <img
+              src={theme.bgImage}
+              alt={t('background.preview')}
+              className="rounded-xl max-h-40 w-full object-cover"
+            />
           )}
         </CardContent>
       </Card>
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle>Accent Color</CardTitle>
-          <CardDescription>Customize the main theme color</CardDescription>
+          <CardTitle>{t('accentColor.title')}</CardTitle>
+          <CardDescription>{t('accentColor.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <ColorPicker
-            label={`Accent Color ${theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}`}
+            label={t('accentColor.mode', { mode: theme.darkMode ? t('accentColor.dark') : t('accentColor.light') })}
             value={theme.darkMode ? theme.accentColor.dark : theme.accentColor.light}
-            onChange={(color) => {
+            onChange={color => {
               const newAccentColor = {
                 ...theme.accentColor,
                 [theme.darkMode ? 'dark' : 'light']: color,
@@ -215,19 +224,19 @@ export default function SettingsTab() {
               setAccentColor(defaultAccentColor);
             }}
           >
-            Reset to Default
+            {t('accentColor.reset')}
           </Button>
         </CardContent>
       </Card>
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle>Card Opacity</CardTitle>
-          <CardDescription>Adjust card transparency for better visibility</CardDescription>
+          <CardTitle>{t('cardOpacity.title')}</CardTitle>
+          <CardDescription>{t('cardOpacity.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Light Mode Opacity: {theme.cardOpacity.light}%</Label>
+            <Label>{t('cardOpacity.lightMode', { value: theme.cardOpacity.light })}</Label>
             <input
               type="range"
               min="10"
@@ -244,7 +253,7 @@ export default function SettingsTab() {
             />
           </div>
           <div>
-            <Label>Dark Mode Opacity: {theme.cardOpacity.dark}%</Label>
+            <Label>{t('cardOpacity.darkMode', { value: theme.cardOpacity.dark })}</Label>
             <input
               type="range"
               min="5"
@@ -270,27 +279,29 @@ export default function SettingsTab() {
               });
             }}
           >
-            Reset to Default
+            {t('cardOpacity.reset')}
           </Button>
         </CardContent>
       </Card>
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle>Background Gradient</CardTitle>
-          <CardDescription>Customize the background colors</CardDescription>
+          <CardTitle>{t('backgroundGradient.title')}</CardTitle>
+          <CardDescription>{t('backgroundGradient.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2 pb-2">
             <Switch checked={theme.gradientEnabled} onCheckedChange={setGradientEnabled} />
-            <Label>Enable gradient background</Label>
+            <Label>{t('backgroundGradient.enable')}</Label>
           </div>
 
           <div className={theme.gradientEnabled ? '' : 'opacity-50 pointer-events-none'}>
             <ColorPicker
-              label={`Start Color ${theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}`}
+              label={t('backgroundGradient.startColor', {
+                mode: theme.darkMode ? t('accentColor.dark') : t('accentColor.light'),
+              })}
               value={theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light}
-              onChange={(color) => {
+              onChange={color => {
                 const newGradientStart = {
                   ...theme.gradientStart,
                   [theme.darkMode ? 'dark' : 'light']: color,
@@ -300,9 +311,11 @@ export default function SettingsTab() {
               htmlFor="gradient-start-color"
             />
             <ColorPicker
-              label={`Middle Color ${theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}`}
+              label={t('backgroundGradient.middleColor', {
+                mode: theme.darkMode ? t('accentColor.dark') : t('accentColor.light'),
+              })}
               value={theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light}
-              onChange={(color) => {
+              onChange={color => {
                 const newGradientMiddle = {
                   ...theme.gradientMiddle,
                   [theme.darkMode ? 'dark' : 'light']: color,
@@ -312,9 +325,11 @@ export default function SettingsTab() {
               htmlFor="gradient-middle-color"
             />
             <ColorPicker
-              label={`End Color ${theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}`}
+              label={t('backgroundGradient.endColor', {
+                mode: theme.darkMode ? t('accentColor.dark') : t('accentColor.light'),
+              })}
               value={theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light}
-              onChange={(color) => {
+              onChange={color => {
                 const newGradientEnd = {
                   ...theme.gradientEnd,
                   [theme.darkMode ? 'dark' : 'light']: color,
@@ -338,7 +353,7 @@ export default function SettingsTab() {
                 }
               }}
             >
-              Reset to Default
+              {t('backgroundGradient.reset')}
             </Button>
           </div>
         </CardContent>
@@ -346,58 +361,56 @@ export default function SettingsTab() {
 
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle>🌤️ Weather API</CardTitle>
-          <CardDescription>Get real weather data for your location</CardDescription>
+          <CardTitle>{t('weatherApi.title')}</CardTitle>
+          <CardDescription>{t('weatherApi.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="weather-api-key">OpenWeatherMap API Key</Label>
+            <Label htmlFor="weather-api-key">{t('weatherApi.apiKeyLabel')}</Label>
             <Input
               id="weather-api-key"
               type="password"
-              placeholder="Enter your API key here..."
+              placeholder={t('weatherApi.placeholder')}
               value={weather.apiKey}
               onChange={e => setWeatherApiKey(e.target.value)}
               className="mt-2"
             />
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-              Without an API key, weather will be simulated. Get a free key from{' '}
+              {t('weatherApi.note')}{' '}
               <a
                 href="https://openweathermap.org/api"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:text-blue-600 underline"
               >
-                OpenWeatherMap
+                {t('weatherApi.linkText')}
               </a>
             </p>
           </div>
           <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg text-sm">
-            <p className="font-medium text-blue-800 dark:text-blue-200 mb-1">📋 How to get an API key:</p>
+            <p className="font-medium text-blue-800 dark:text-blue-200 mb-1">{t('weatherApi.instructions.title')}</p>
             <ol className="text-blue-700 dark:text-blue-300 text-xs space-y-1 ml-4 list-decimal">
               <li>
-                Visit <span className="font-mono">openweathermap.org</span>
+                {t('weatherApi.instructions.step1')} <span className="font-mono">openweathermap.org</span>
               </li>
-              <li>Sign up for a free account</li>
-              <li>Go to "My API keys" in your account</li>
-              <li>Copy your key and paste it above</li>
+              <li>{t('weatherApi.instructions.step2')}</li>
+              <li>{t('weatherApi.instructions.step3')}</li>
+              <li>{t('weatherApi.instructions.step4')}</li>
               <li>
-                <strong>Important:</strong> New API keys may take 2-24 hours to activate!
+                <strong>{t('weatherApi.instructions.important')}</strong> {t('weatherApi.instructions.step5')}
               </li>
             </ol>
           </div>
           {weather.apiKey && (
             <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
-              <p className="text-green-800 dark:text-green-200 text-sm">
-                ✅ API key configured! Real weather data will be used.
-              </p>
+              <p className="text-green-800 dark:text-green-200 text-sm">{t('weatherApi.configured')}</p>
             </div>
           )}
 
           <div className="mt-6 border-t pt-4 border-zinc-200 dark:border-zinc-800">
-            <h3 className="text-md font-medium mb-2">Weather Location Settings</h3>
+            <h3 className="text-md font-medium mb-2">{t('weatherApi.location.title')}</h3>
             <div className="flex items-center justify-between mb-3">
-              <Label htmlFor="use-geolocation">Use device location</Label>
+              <Label htmlFor="use-geolocation">{t('weatherApi.location.useDevice')}</Label>
               <Switch
                 id="use-geolocation"
                 checked={weather.location.useGeolocation}
@@ -411,11 +424,11 @@ export default function SettingsTab() {
             </div>
 
             <div className={weather.location.useGeolocation ? 'opacity-50' : ''}>
-              <Label htmlFor="city-name">City name</Label>
+              <Label htmlFor="city-name">{t('weatherApi.location.cityLabel')}</Label>
               <Input
                 id="city-name"
                 type="text"
-                placeholder="Enter city name (e.g., London, Tokyo, New York)"
+                placeholder={t('weatherApi.location.cityPlaceholder')}
                 value={weather.location.city}
                 onChange={e =>
                   setWeatherLocation({
@@ -428,8 +441,8 @@ export default function SettingsTab() {
               />
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
                 {weather.location.useGeolocation
-                  ? 'Turn off device location to enter a city manually'
-                  : 'Enter a city name to get weather for that location'}
+                  ? t('weatherApi.location.deviceLocationNote')
+                  : t('weatherApi.location.manualLocationNote')}
               </p>
             </div>
           </div>

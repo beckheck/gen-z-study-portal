@@ -1,0 +1,91 @@
+{
+  "title": "Degree Plan",
+  "description": "Plan your academic journey",
+  "actions": {
+    "customize": "Customize Degree Plan",
+    "addCourse": "Add Course",
+    "updateCourse": "Update Course",
+    "editCourse": "Edit course",
+    "editSemester": "Edit semester",
+    "removeEmptySemester": "Remove empty semester",
+    "addNewSemester": "Add New Semester",
+    "clearDegreePlan": "Clear Degree Plan",
+    "resetPlan": "Reset Plan",
+    "finishSetup": "Finish Setup",
+    "cancelEditing": "Cancel Editing",
+    "markAsCompleted": "Click to mark as completed",
+    "markAsIncomplete": "Click to mark as incomplete",
+    "dragToMove": "Drag to move between semesters"
+  },
+  "setup": {
+    "title": "Setup Degree Plan",
+    "description": "Set up your degree plan by specifying the number of semesters.",
+    "numberOfSemesters": "Number of Semesters in Your Degree",
+    "semesterPlaceholder": "e.g., 8"
+  },
+  "semester": {
+    "title": "Semester {{number}}",
+    "courses": "Semester {{number}} Courses",
+    "coursesWithCount": "Semester {{number}} Courses ({{count}}/{{max}})",
+    "ofTotal": "Semester {{current}} of {{total}}",
+    "previousSemester": "Previous Semester",
+    "nextSemester": "Next Semester",
+    "backToSetup": "Back to Setup",
+    "noCourses": "No courses added",
+    "noCoursesYet": "No courses added yet"
+  },
+  "course": {
+    "acronym": "Course Acronym",
+    "name": "Course Name",
+    "credits": "Credits",
+    "prerequisites": "Prerequisites (separate with commas)",
+    "corequisites": "Co-requisites (separate with commas)",
+    "addCourse": "Add Course",
+    "editCourse": "Edit Course",
+    "creditsLabel": "credits",
+    "creditsShort": "{{count}} credits",
+    "prereq": "Prereq: {{prerequisites}}",
+    "coreq": "Co-req: {{corequisites}}",
+    "prerequisitesNotMet": "Prerequisites not met"
+  },
+  "placeholders": {
+    "courseAcronym": "e.g., MAT101",
+    "courseName": "e.g., Calculus I",
+    "credits": "e.g., 4",
+    "prerequisites": "e.g., MAT100, PHY101",
+    "corequisites": "e.g., LAB101"
+  },
+  "progress": {
+    "creditsProgress": "{{completed}}/{{total}} credits done ✨",
+    "percentComplete": "{{percent}}% complete",
+    "overallProgress": "Overall Progress: {{completed}} / {{total}} courses completed ({{percent}}%)",
+    "coursesProgress": "Progress: {{completed}} / {{total}} courses completed"
+  },
+  "tips": {
+    "dragAndDrop": "💡 <strong>Tip:</strong> Drag and drop courses between semesters to reorganize your degree plan. Click courses to mark as completed."
+  },
+  "view": {
+    "title": "Degree Plan Overview",
+    "description": "Review and manage your complete degree plan."
+  },
+  "dropZone": {
+    "dropHere": "Drop course here ({{count}}/8 courses)",
+    "semesterFull": "Semester full (8/8 courses)"
+  },
+  "confirmations": {
+    "reset": {
+      "title": "Reset Degree Plan",
+      "description": "Are you sure you want to reset your entire degree plan? This will delete all semesters, courses, and progress. This action cannot be undone."
+    },
+    "clear": {
+      "title": "Clear Degree Plan",
+      "description": "Are you sure you want to clear your entire degree plan? This will delete all semesters, courses, and progress. This action cannot be undone."
+    },
+    "resetEverything": "Reset Everything",
+    "clearEverything": "Clear Everything"
+  },
+  "editing": {
+    "title": "Semester {{number}} Courses - Editing",
+    "description": "Edit course \"{{acronym}}\" in semester {{number}}."
+  }
+}

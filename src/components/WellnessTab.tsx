@@ -6,12 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarView, MonthlyMood, MonthlyMoods, MoodEmoji, MoodEmojis, MoodPercentages } from '@/types';
+import { useWellness } from '@/hooks/useStore';
+import { CalendarView, MonthlyMood, MoodEmoji } from '@/types';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { useWellness } from '@/hooks/useStore';
+import { useTranslation } from 'react-i18next';
 
 export default function WellnessTab() {
+  // Translation hooks
+  const { t } = useTranslation('wellness');
+
   const {
     wellness,
     setWater,
@@ -297,8 +301,8 @@ export default function WellnessTab() {
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
           <CardHeader>
-            <CardTitle>Hydration</CardTitle>
-            <CardDescription>Goal: 8 cups / day</CardDescription>
+            <CardTitle>{t('hydration.title')}</CardTitle>
+            <CardDescription>{t('hydration.goal', { count: 8 })}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
@@ -316,23 +320,23 @@ export default function WellnessTab() {
 
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
           <CardHeader>
-            <CardTitle>Gratitude note</CardTitle>
-            <CardDescription>Protect your vibe 💖</CardDescription>
+            <CardTitle>{t('gratitude.note')}</CardTitle>
+            <CardDescription>{t('gratitude.protectVibe')}</CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
               value={gratitude}
               onChange={e => setGratitude(e.target.value)}
               className="rounded-xl"
-              placeholder="One thing you're grateful for today…"
+              placeholder={t('gratitude.placeholder')}
             />
           </CardContent>
         </Card>
 
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
           <CardHeader>
-            <CardTitle>Breathing box</CardTitle>
-            <CardDescription>4 in · 4 hold · 4 out · 4 hold</CardDescription>
+            <CardTitle>{t('breathing.title')}</CardTitle>
+            <CardDescription>{t('breathing.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             <motion.div
@@ -341,7 +345,7 @@ export default function WellnessTab() {
               className="w-28 h-28 mx-auto rounded-2xl bg-gradient-to-br from-fuchsia-500 to-sky-500"
             />
             <Button onClick={() => setBreathing(b => !b)} className="rounded-xl w-full mt-4">
-              {breathing ? 'Stop' : 'Start'}
+              {breathing ? t('breathing.stop') : t('breathing.start')}
             </Button>
           </CardContent>
         </Card>
@@ -352,23 +356,27 @@ export default function WellnessTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span>💭</span>
-            Mood Bubble
+            {t('mood.title')}
           </CardTitle>
-          <CardDescription>Track and visualize your daily emotions</CardDescription>
+          <CardDescription>{t('mood.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-8">
             {/* Left Column - Today's Mood Bubble */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-4">Today's Mood Bubble</h3>
+                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-4">
+                  {t('mood.todaysMoodBubble')}
+                </h3>
 
                 {/* Mood Circle with Percentage Display */}
                 <div className="flex items-center justify-center gap-6">
                   {/* Percentage Display */}
                   {hasInteracted && (
                     <div className="space-y-2 min-w-[100px]">
-                      <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">Breakdown</div>
+                      <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">
+                        {t('mood.breakdown')}
+                      </div>
                       {Object.entries(moodPercentages)
                         .filter(([_, percentage]) => percentage > 0)
                         .map(([moodKey, percentage]) => (
@@ -394,7 +402,7 @@ export default function WellnessTab() {
                       {totalMoodPercentage > 0 && (
                         <div className="border-t pt-2 mt-2">
                           <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                            Total: {totalMoodPercentage}%
+                            {t('mood.total', { percentage: totalMoodPercentage })}
                           </div>
                         </div>
                       )}
@@ -467,7 +475,7 @@ export default function WellnessTab() {
                             backgroundColor: mood.color,
                             boxShadow: isActive ? `0 0 15px ${mood.color}40` : 'none',
                           }}
-                          title={`${mood.emoji} ${showWords && mood.word ? mood.word : key} - Click to add 20%`}
+                          title={`${mood.emoji} ${showWords && mood.word ? mood.word : key} - ${t('mood.clickToAdd')}`}
                         >
                           {mood.emoji}
                           {/* Click indicator */}
@@ -505,7 +513,7 @@ export default function WellnessTab() {
                     className="rounded-xl"
                     disabled={totalMoodPercentage === 0}
                   >
-                    Reset
+                    {t('mood.reset')}
                   </Button>
                   <Button
                     variant="outline"
@@ -513,7 +521,7 @@ export default function WellnessTab() {
                     onClick={() => setCustomizeDialogOpen(true)}
                     className="rounded-xl"
                   >
-                    Customize
+                    {t('mood.customize')}
                   </Button>
                 </div>
               </div>
@@ -522,7 +530,7 @@ export default function WellnessTab() {
             {/* Right Column - Monthly Calendar */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200">This Month</h3>
+                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200">{t('mood.thisMonth')}</h3>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm" onClick={() => navigateMonth(-1)} className="rounded-xl p-2">
                     ‹
@@ -600,7 +608,7 @@ export default function WellnessTab() {
                                   <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                                     {dayMood.totalPercentage}%
                                   </div>
-                                  <div className="text-xs text-zinc-500">total mood</div>
+                                  <div className="text-xs text-zinc-500">{t('mood.totalMood')}</div>
                                 </div>
 
                                 {/* Mood Breakdown */}
@@ -652,7 +660,7 @@ export default function WellnessTab() {
                 <div className="flex items-center justify-center gap-2 mt-4 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
                   <span className="text-orange-600 text-sm">🔥</span>
                   <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
-                    {Object.keys(monthlyMoods).length} day{Object.keys(monthlyMoods).length !== 1 ? 's' : ''} tracked
+                    {t('mood.daysTracked', { count: Object.keys(monthlyMoods).length })}
                   </span>
                 </div>
               </div>
@@ -665,13 +673,13 @@ export default function WellnessTab() {
       <Dialog open={customizeDialogOpen} onOpenChange={setCustomizeDialogOpen}>
         <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
           <DialogHeader className="">
-            <DialogTitle>Customize Mood Emojis</DialogTitle>
-            <DialogDescription>Personalize your mood emojis and colors</DialogDescription>
+            <DialogTitle>{t('customize.title')}</DialogTitle>
+            <DialogDescription>{t('customize.description')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {/* Word Toggle */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800">
-              <Label className="font-medium">Show mood words</Label>
+              <Label className="font-medium">{t('customize.showMoodWords')}</Label>
               <Switch checked={showWords} onCheckedChange={setShowWords} className="data-[state=checked]:bg-blue-600" />
             </div>
 
@@ -713,7 +721,7 @@ export default function WellnessTab() {
                       value={mood.color}
                       onChange={e => updateMoodCustomization(key, 'color', e.target.value)}
                       className="w-8 h-8 rounded-full border-2 border-white cursor-pointer"
-                      title="Click to change color"
+                      title={t('customize.clickToChangeColor')}
                     />
                   </div>
 
@@ -739,7 +747,7 @@ export default function WellnessTab() {
               }}
               className="w-full rounded-xl mt-4"
             >
-              Save Changes
+              {t('customize.saveChanges')}
             </Button>
           </div>
         </DialogContent>

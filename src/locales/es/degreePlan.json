@@ -1,0 +1,91 @@
+{
+  "title": "Plan de Carrera",
+  "description": "Planifica tu trayecto académico",
+  "actions": {
+    "customize": "Personalizar Plan de Carrera",
+    "addCourse": "Agregar Materia",
+    "updateCourse": "Actualizar Materia",
+    "editCourse": "Editar materia",
+    "editSemester": "Editar semestre",
+    "removeEmptySemester": "Eliminar semestre vacío",
+    "addNewSemester": "Agregar Nuevo Semestre",
+    "clearDegreePlan": "Limpiar Plan de Carrera",
+    "resetPlan": "Reiniciar Plan",
+    "finishSetup": "Finalizar Configuración",
+    "cancelEditing": "Cancelar Edición",
+    "markAsCompleted": "Clic para marcar como completada",
+    "markAsIncomplete": "Clic para marcar como incompleta",
+    "dragToMove": "Arrastra para mover entre semestres"
+  },
+  "setup": {
+    "title": "Configurar Plan de Carrera",
+    "description": "Configura tu plan de carrera especificando el número de semestres.",
+    "numberOfSemesters": "Número de Semestres en Tu Carrera",
+    "semesterPlaceholder": "ej., 8"
+  },
+  "semester": {
+    "title": "{{number}}° Semestre",
+    "courses": "Materias del {{number}}° Semestre",
+    "coursesWithCount": "Materias del {{number}}° Semestre ({{count}}/{{max}})",
+    "ofTotal": "Semestre {{current}} de {{total}}",
+    "previousSemester": "Semestre Anterior",
+    "nextSemester": "Siguiente Semestre",
+    "backToSetup": "Volver a Configuración",
+    "noCourses": "No hay materias agregadas",
+    "noCoursesYet": "Aún no hay materias agregadas"
+  },
+  "course": {
+    "acronym": "Código de la Materia",
+    "name": "Nombre de la Materia",
+    "credits": "Créditos",
+    "prerequisites": "Prerrequisitos (separa con comas)",
+    "corequisites": "Corrrequisitos (separa con comas)",
+    "addCourse": "Agregar Materia",
+    "editCourse": "Editar Materia",
+    "creditsLabel": "créditos",
+    "creditsShort": "{{count}} créditos",
+    "prereq": "Prereq: {{prerequisites}}",
+    "coreq": "Correq: {{corequisites}}",
+    "prerequisitesNotMet": "Prerrequisitos no cumplidos"
+  },
+  "placeholders": {
+    "courseAcronym": "ej., MAT101",
+    "courseName": "ej., Cálculo I",
+    "credits": "ej., 4",
+    "prerequisites": "ej., MAT100, FIS101",
+    "corequisites": "ej., LAB101"
+  },
+  "progress": {
+    "creditsProgress": "{{completed}}/{{total}} créditos completados ✨",
+    "percentComplete": "{{percent}}% completado",
+    "overallProgress": "Progreso General: {{completed}} / {{total}} materias completadas ({{percent}}%)",
+    "coursesProgress": "Progreso: {{completed}} / {{total}} materias completadas"
+  },
+  "tips": {
+    "dragAndDrop": "💡 <strong>Consejo:</strong> Arrastra y suelta materias entre semestres para reorganizar tu plan de carrera. Haz clic en las materias para marcarlas como completadas."
+  },
+  "view": {
+    "title": "Resumen del Plan de Carrera",
+    "description": "Revisa y administra tu plan de carrera completo."
+  },
+  "dropZone": {
+    "dropHere": "Suelta la materia aquí ({{count}}/8 materias)",
+    "semesterFull": "Semestre lleno (8/8 materias)"
+  },
+  "confirmations": {
+    "reset": {
+      "title": "Reiniciar Plan de Carrera",
+      "description": "¿Estás seguro de que quieres reiniciar todo tu plan de carrera? Esto eliminará todos los semestres, materias y progreso. Esta acción no se puede deshacer."
+    },
+    "clear": {
+      "title": "Limpiar Plan de Carrera",
+      "description": "¿Estás seguro de que quieres limpiar todo tu plan de carrera? Esto eliminará todos los semestres, materias y progreso. Esta acción no se puede deshacer."
+    },
+    "resetEverything": "Reiniciar Todo",
+    "clearEverything": "Limpiar Todo"
+  },
+  "editing": {
+    "title": "Materias del {{number}}° Semestre - Editando",
+    "description": "Editar materia \"{{acronym}}\" en el semestre {{number}}."
+  }
+}

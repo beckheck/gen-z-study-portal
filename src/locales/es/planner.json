@@ -1,0 +1,83 @@
+{
+  "title": "Planificador",
+  "views": {
+    "week": "Semana",
+    "month": "Mes"
+  },
+  "events": {
+    "addEvent": "Agregar Evento",
+    "editEvent": "Editar Evento",
+    "deleteEvent": "Eliminar Evento",
+    "eventDetails": "Detalles del Evento",
+    "allDay": "Todo el día",
+    "recurring": "Recurrente"
+  },
+  "forms": {
+    "eventCategory": "Categoría de Evento",
+    "course": "Materia",
+    "courseOptional": "Materia (Opcional)",
+    "title": "Título",
+    "type": "Tipo",
+    "startDate": "Fecha de Inicio",
+    "endDate": "Fecha de Fin",
+    "day": "Día",
+    "startTime": "Hora de Inicio",
+    "endTime": "Hora de Fin",
+    "location": "Ubicación",
+    "weight": "Ponderación (%)",
+    "priority": "Prioridad",
+    "notes": "Notas",
+    "color": "Color"
+  },
+  "eventTypes": {
+    "regular": "Evento Regular",
+    "exam": "Examen",
+    "task": "Tarea",
+    "class": "Clase",
+    "lab": "Laboratorio",
+    "workshop": "Taller",
+    "assistantship": "Ayudantía"
+  },
+  "goals": {
+    "weeklyGoals": "Metas Semanales",
+    "weeklyFocusGoals": "Metas de enfoque semanales - ¡mantente en el camino!",
+    "addGoal": "Agregar Meta",
+    "goalPlaceholder": "Ingresa tu meta semanal...",
+    "remaining": "Restantes",
+    "congratulations": "¡Felicitaciones! ¡Todas las metas completadas! 🎉"
+  },
+  "filters": {
+    "filterByCourse": "Filtrar por Materia",
+    "showMultiDayEvents": "Mostrar eventos de varios días",
+    "allCourses": "Todas las Materias"
+  },
+  "messages": {
+    "noEvents": "Sin eventos programados",
+    "eventCreated": "Evento creado exitosamente",
+    "eventUpdated": "Evento actualizado exitosamente",
+    "eventDeleted": "Evento eliminado exitosamente",
+    "goalAdded": "Meta agregada exitosamente",
+    "goalCompleted": "Meta marcada como completada",
+    "allGoalsCompleted": "¡Increíble! ¡Todas las metas semanales completadas!",
+    "deleteScheduleEvent": "¿Eliminar este evento del horario?",
+    "clickToCreate": "Haz clic para crear un nuevo evento en esta fecha",
+    "clickToEdit": "Haz clic para editar o eliminar evento",
+    "upcoming": "Próximamente",
+    "noGoalsSet": "No hay metas establecidas para esta semana.\n¡Agrega una para comenzar! 🎯",
+    "goals": "metas",
+    "allGoalsCompletedStatus": "🎉 ¡Todas las metas completadas!",
+    "hiddenMultiDayEvents": "Eventos Multi-día Ocultos",
+    "eventDetailsAgenda": "Detalles del evento, agenda, etc.",
+    "examTopicsChapters": "Capítulos, temas, materiales permitidos...",
+    "taskDetails": "Detalles adicionales de la tarea...",
+    "modifyEventDetails": "Modificar los detalles del evento a continuación",
+    "createEventDescription": "Crear un evento regular, examen o tarea",
+    "moreEvents": "más..."
+  },
+  "placeholders": {
+    "locationExample": "ej., Auditorio Principal",
+    "regularEventTitle": "ej., Semana de Olimpiadas Matemáticas",
+    "examTitle": "ej., Examen Semestral",
+    "taskTitle": "ej., Entregar Tarea"
+  }
+}

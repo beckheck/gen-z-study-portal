@@ -1,0 +1,14 @@
+{
+  "microGoals": {
+    "title": "Micro-objetivos",
+    "tip": "Divide tareas grandes en sprints de 25–45 min. Recompensa pequeños logros."
+  },
+  "breakHygiene": {
+    "title": "Higiene de descansos",
+    "tip": "Descansos de 5–10 min sin pantalla cada hora. Hidratarse + estirarse."
+  },
+  "soundtrack": {
+    "title": "Banda Sonora",
+    "tip": "Los ritmos lo-fi o ruido marrón pueden mejorar la concentración."
+  }
+}

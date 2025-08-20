@@ -1,0 +1,71 @@
+{
+  "actions": {
+    "addTask": "Add task",
+    "addExam": "Add exam",
+    "updateExam": "Update exam",
+    "done": "Done",
+    "undo": "Undo",
+    "clearCourseData": "Clear Course Data",
+    "cancelEdit": "Cancel Edit"
+  },
+  "tasks": {
+    "title": "To‑Dos",
+    "description": "Add, complete, delete",
+    "form": {
+      "title": "Title",
+      "dueDate": "Due date",
+      "priority": "Priority"
+    },
+    "placeholders": {
+      "title": "Assignment, reading, project…",
+      "grade": "Grade"
+    },
+    "sections": {
+      "open": "Open"
+    },
+    "empty": {
+      "noPending": "Nothing pending. Go touch sky ☁️"
+    },
+    "due": "due {{date}}",
+    "taskProgress": "Task progress"
+  },
+  "exams": {
+    "title": "Exams / Evals",
+    "description": "Dates, weight, notes",
+    "upcoming": {
+      "title": "Upcoming Evals",
+      "description": "Your next evaluations",
+      "empty": "No upcoming exams yet."
+    },
+    "form": {
+      "title": "Title",
+      "date": "Date",
+      "weight": "Weight (%)",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "title": "Midterm, quiz, lab check…",
+      "notes": "Chapters, topics, allowed materials…"
+    },
+    "timing": {
+      "days": "{{count}} days"
+    }
+  },
+  "grades": {
+    "title": "Grade Calculator",
+    "description": "Track exam grades (1-7 scale)",
+    "examGrades": "Exam Grades",
+    "courseAverage": "Course Average",
+    "outOf": "out of 7.0",
+    "examsSummary": "{{graded}} of {{total}} exams graded",
+    "addExamsFirst": "Add exams first to track grades",
+    "weight": "{{weight}}% weight"
+  },
+  "confirmations": {
+    "clearData": {
+      "title": "Clear {{course}} Data",
+      "description": "This will permanently delete all tasks, exams, and timetable events associated with the {{course}} course. This action cannot be undone.",
+      "clearButton": "Clear Data"
+    }
+  }
+}

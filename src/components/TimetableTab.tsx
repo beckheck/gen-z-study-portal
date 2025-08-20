@@ -11,35 +11,66 @@ import { useCourses, useTimetable } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
 
-// Days of the week
-const weekDays: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const shortWeekDays: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-
-// Event types
-const eventTypes: string[] = ['Cátedra', 'Ayudantía', 'Taller', 'Laboratorio'];
-
-// Default timetable event input values to avoid redundancy
-const DEFAULT_TIMETABLE_EVENT_INPUT: TimetableEventInput = {
-  courseIndex: 0,
-  eventType: eventTypes[0],
-  classroom: '',
-  teacher: '',
-  day: 'Monday',
-  block: '1',
-  startTime: '8:20',
-  endTime: '9:30',
-  color: '#7c3aed',
-};
-
 export default function TimetableTab() {
+  const { t } = useTranslation('timetable');
   const { courses } = useCourses();
   const { timetableEvents, setTimetableEvents, deleteTimetableEvent } = useTimetable();
   const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const contextMenu = useContextMenu<TimetableEvent>();
+
+  // Days of the week - use English as keys, translate for display
+  const weekDays: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const shortWeekDays: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+
+  // Helper function to get translated day name
+  const getTranslatedDayName = (englishDay: string): string => {
+    const dayMap: { [key: string]: string } = {
+      Monday: t('days.monday'),
+      Tuesday: t('days.tuesday'),
+      Wednesday: t('days.wednesday'),
+      Thursday: t('days.thursday'),
+      Friday: t('days.friday'),
+    };
+    return dayMap[englishDay] || englishDay;
+  };
+
+  // Helper function to get translated short day name
+  const getTranslatedShortDayName = (englishDay: string): string => {
+    const shortDayMap: { [key: string]: string } = {
+      Monday: t('days.mon'),
+      Tuesday: t('days.tue'),
+      Wednesday: t('days.wed'),
+      Thursday: t('days.thu'),
+      Friday: t('days.fri'),
+    };
+    return shortDayMap[englishDay] || englishDay.slice(0, 3);
+  };
+
+  // Event types - get from translations
+  const eventTypes: string[] = [
+    t('eventTypes.catedra'),
+    t('eventTypes.ayudantia'),
+    t('eventTypes.taller'),
+    t('eventTypes.laboratorio'),
+  ];
+
+  // Default timetable event input values to avoid redundancy
+  const DEFAULT_TIMETABLE_EVENT_INPUT: TimetableEventInput = {
+    courseIndex: 0,
+    eventType: eventTypes[0],
+    classroom: '',
+    teacher: '',
+    day: weekDays[0], // Use English day name as key
+    block: '1',
+    startTime: '8:20',
+    endTime: '9:30',
+    color: '#7c3aed',
+  };
 
   // Reset event input to default values
   const resetEventInput = () => {
@@ -50,7 +81,7 @@ export default function TimetableTab() {
 
   // Helper function to get course name
   const getCourseTitle = (courseIndex: number): string => {
-    return courses[courseIndex] || 'Unknown Course';
+    return courses[courseIndex] || t('unknownCourse');
   };
 
   // Time blocks with their start and end times
@@ -146,9 +177,9 @@ export default function TimetableTab() {
       <ContextMenu show={contextMenu.showMenu} position={contextMenu.position} menuRef={contextMenu.menuRef}>
         {contextMenu.selectedItem && (
           <>
-            <ContextMenuItem onClick={() => editEvent(contextMenu.selectedItem)}>Edit Event</ContextMenuItem>
+            <ContextMenuItem onClick={() => editEvent(contextMenu.selectedItem)}>{t('editEvent')}</ContextMenuItem>
             <ContextMenuItem variant="destructive" onClick={() => deleteEvent(contextMenu.selectedItem.id)}>
-              Delete Event
+              {t('deleteEvent')}
             </ContextMenuItem>
           </>
         )}
@@ -158,9 +189,9 @@ export default function TimetableTab() {
         <CardHeader>
           <CardTitle className="text-2xl font-bold flex justify-between items-center">
             <div>
-              <span>My Timetable</span>
+              <span>{t('title')}</span>
               <CardDescription className="text-base font-normal mt-1 dark:text-zinc-100">
-                Weekly schedule of your classes and activities
+                {t('description')}
               </CardDescription>
             </div>
             <Button
@@ -176,7 +207,7 @@ export default function TimetableTab() {
               className="rounded-xl"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Event
+              {t('addEvent')}
             </Button>
           </CardTitle>
         </CardHeader>
@@ -185,8 +216,8 @@ export default function TimetableTab() {
             <div className="font-medium text-zinc-500 dark:text-zinc-100"></div>
             {weekDays.map((day, index) => (
               <div key={day} className="font-medium text-center text-zinc-800 dark:text-zinc-200">
-                <span className="hidden sm:inline">{day}</span>
-                <span className="sm:hidden">{shortWeekDays[index]}</span>
+                <span className="hidden sm:inline">{getTranslatedDayName(day)}</span>
+                <span className="sm:hidden">{getTranslatedShortDayName(day)}</span>
               </div>
             ))}
           </div>
@@ -194,7 +225,7 @@ export default function TimetableTab() {
           {timeBlocks.map(({ block, time }) => (
             <div key={block} className="grid grid-cols-6 gap-2 mb-3">
               <div className="text-xs font-medium text-zinc-500 dark:text-zinc-100 flex items-center">
-                Block {block}
+                {t('timeBlocks.block')} {block}
                 <br />
                 {time}
               </div>
@@ -243,16 +274,18 @@ export default function TimetableTab() {
                             </div>
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                            <span className="font-medium">Type:</span> {event.eventType}
+                            <span className="font-medium">{t('hover.type')}</span> {event.eventType}
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                            <span className="font-medium">Time:</span> {event.startTime} - {event.endTime}
+                            <span className="font-medium">{t('hover.time')}</span> {event.startTime} - {event.endTime}
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                            <span className="font-medium">Classroom:</span> {event.classroom}
+                            <span className="font-medium">{t('hover.classroom')}</span> {event.classroom}
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                            <span className="font-medium">{event.eventType === 'Cátedra' ? 'Teacher:' : 'TA:'}</span>{' '}
+                            <span className="font-medium">
+                              {event.eventType === t('eventTypes.catedra') ? t('hover.teacher') : t('hover.ta')}
+                            </span>{' '}
                             {event.teacher}
                           </div>
                         </div>
@@ -264,7 +297,7 @@ export default function TimetableTab() {
                       <div className="flex items-center justify-center h-full opacity-0 hover:opacity-50 transition-opacity duration-200">
                         <div className="text-center">
                           <div className="text-xl text-zinc-400 dark:text-zinc-600">+</div>
-                          <div className="text-xs text-zinc-400 dark:text-zinc-600">Add event</div>
+                          <div className="text-xs text-zinc-400 dark:text-zinc-600">{t('addEventHint')}</div>
                         </div>
                       </div>
                     )}
@@ -289,20 +322,20 @@ export default function TimetableTab() {
         <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
           <DialogHeader className="">
             <DialogTitle className="text-gray-900 dark:text-gray-100">
-              {isEditing ? 'Edit Event' : 'Add Event'}
+              {isEditing ? t('editEvent') : t('addEvent')}
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4">
             <div>
               <Label htmlFor="course" className="text-gray-700 dark:text-gray-300">
-                Course
+                {t('fields.course')}
               </Label>
               <Select
                 value={eventInput.courseIndex.toString()}
                 onValueChange={(value: string) => setEventInput({ ...eventInput, courseIndex: parseInt(value) })}
               >
                 <SelectTrigger id="course" className="mt-1 rounded-xl">
-                  <SelectValue placeholder="Select a course" />
+                  <SelectValue placeholder={t('placeholders.selectCourse')} />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((_, idx) => (
@@ -316,14 +349,14 @@ export default function TimetableTab() {
 
             <div>
               <Label htmlFor="eventType" className="text-gray-700 dark:text-gray-300">
-                Event Type
+                {t('fields.eventType')}
               </Label>
               <Select
                 value={eventInput.eventType}
                 onValueChange={(value: string) => setEventInput({ ...eventInput, eventType: value })}
               >
                 <SelectTrigger id="eventType" className="mt-1 rounded-xl">
-                  <SelectValue placeholder="Select event type" />
+                  <SelectValue placeholder={t('placeholders.selectEventType')} />
                 </SelectTrigger>
                 <SelectContent>
                   {eventTypes.map(type => (
@@ -337,19 +370,19 @@ export default function TimetableTab() {
 
             <div>
               <Label htmlFor="day" className="text-gray-700 dark:text-gray-300">
-                Day
+                {t('fields.day')}
               </Label>
               <Select
                 value={eventInput.day}
                 onValueChange={(value: string) => setEventInput({ ...eventInput, day: value })}
               >
                 <SelectTrigger id="day" className="mt-1 rounded-xl">
-                  <SelectValue placeholder="Select day" />
+                  <SelectValue placeholder={t('placeholders.selectDay')} />
                 </SelectTrigger>
                 <SelectContent>
                   {weekDays.map(day => (
                     <SelectItem key={day} value={day}>
-                      {day}
+                      {getTranslatedDayName(day)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -358,16 +391,16 @@ export default function TimetableTab() {
 
             <div>
               <Label htmlFor="block" className="text-gray-700 dark:text-gray-300">
-                Time Block
+                {t('fields.timeBlock')}
               </Label>
               <Select value={eventInput.block} onValueChange={handleBlockChange}>
                 <SelectTrigger id="block" className="mt-1 rounded-xl">
-                  <SelectValue placeholder="Select time block" />
+                  <SelectValue placeholder={t('placeholders.selectTimeBlock')} />
                 </SelectTrigger>
                 <SelectContent>
                   {timeBlocks.map(block => (
                     <SelectItem key={block.block} value={block.block}>
-                      Block {block.block}: {block.time}
+                      {t('timeBlocks.block')} {block.block}: {block.time}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -376,7 +409,7 @@ export default function TimetableTab() {
 
             <div>
               <Label htmlFor="classroom" className="text-gray-700 dark:text-gray-300">
-                Classroom
+                {t('fields.classroom')}
               </Label>
               <Input
                 id="classroom"
@@ -384,14 +417,14 @@ export default function TimetableTab() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setEventInput({ ...eventInput, classroom: e.target.value })
                 }
-                placeholder="e.g., A-101"
+                placeholder={t('placeholders.classroom')}
                 className="mt-1 rounded-xl"
               />
             </div>
 
             <div>
               <Label htmlFor="teacher" className="text-gray-700 dark:text-gray-300">
-                {eventInput.eventType === 'Cátedra' ? 'Teacher Name' : 'TA Name'}
+                {eventInput.eventType === t('eventTypes.catedra') ? t('fields.teacherName') : t('fields.taName')}
               </Label>
               <Input
                 id="teacher"
@@ -399,20 +432,24 @@ export default function TimetableTab() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setEventInput({ ...eventInput, teacher: e.target.value })
                 }
-                placeholder={eventInput.eventType === 'Cátedra' ? "Teacher's name" : "TA's name"}
+                placeholder={
+                  eventInput.eventType === t('eventTypes.catedra')
+                    ? t('placeholders.teacherName')
+                    : t('placeholders.taName')
+                }
                 className="mt-1 rounded-xl"
               />
             </div>
 
             <ColorPicker
-              label="Event Color"
+              label={t('fields.eventColor')}
               value={eventInput.color}
               onChange={color => setEventInput({ ...eventInput, color })}
               htmlFor="event-color"
             />
 
             <Button onClick={addEvent} className="w-full rounded-xl">
-              {isEditing ? 'Update Event' : 'Add to Timetable'}
+              {isEditing ? t('updateEvent') : t('addToTimetable')}
             </Button>
           </div>
         </DialogContent>

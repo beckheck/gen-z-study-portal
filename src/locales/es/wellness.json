@@ -1,0 +1,87 @@
+{
+  "title": "Bienestar",
+  "hydration": {
+    "title": "Hidratación",
+    "goal": "Meta: {{count}} vasos / día",
+    "cups": "vasos",
+    "cupsSingular": "vaso",
+    "progress": "{{current}} / {{target}} vasos hoy"
+  },
+  "mood": {
+    "title": "Burbuja de Ánimo",
+    "subtitle": "Rastrea y visualiza tus emociones diarias",
+    "todaysMoodBubble": "Burbuja de Ánimo de Hoy",
+    "breakdown": "Desglose",
+    "total": "Total: {{percentage}}%",
+    "totalMood": "ánimo total",
+    "moodEmojis": {
+      "happy": "feliz",
+      "sad": "triste", 
+      "angry": "enojado",
+      "excited": "emocionado",
+      "neutral": "neutral"
+    },
+    "clickToAdd": "Haz clic para agregar 20%",
+    "reset": "Restablecer",
+    "customize": "Personalizar",
+    "thisMonth": "Este Mes",
+    "daysTracked": "{{count}} día rastreado",
+    "daysTracked_plural": "{{count}} días rastreados"
+  },
+  "gratitude": {
+    "title": "Gratitud",
+    "note": "Nota de gratitud", 
+    "placeholder": "Una cosa por la que estás agradecido/a hoy…",
+    "protectVibe": "Protege tu energía 💖",
+    "dailyReflection": "Reflexión diaria"
+  },
+  "breathing": {
+    "title": "Caja de respiración",
+    "subtitle": "4 entrada · 4 mantener · 4 salida · 4 mantener",
+    "instructions": {
+      "inhale": "Inhalar",
+      "hold": "Mantener",
+      "exhale": "Exhalar",
+      "breatheIn": "Inhala por {{seconds}} segundos",
+      "holdBreath": "Mantén por {{seconds}} segundos",
+      "breatheOut": "Exhala por {{seconds}} segundos"
+    },
+    "duration": "Duración: {{minutes}} minutos",
+    "start": "Iniciar",
+    "stop": "Detener",
+    "startSession": "Iniciar Sesión de Respiración",
+    "endSession": "Terminar Sesión"
+  },
+  "activities": {
+    "meditation": "Meditación",
+    "exercise": "Ejercicio",
+    "reading": "Lectura",
+    "music": "Música",
+    "nature": "Naturaleza",
+    "socializing": "Socializar",
+    "cooking": "Cocinar",
+    "art": "Arte"
+  },
+  "stats": {
+    "todayStats": "Estadísticas de Hoy",
+    "weeklyProgress": "Progreso Semanal",
+    "streakCount": "Racha de {{count}} día",
+    "streakCount_plural": "Racha de {{count}} días",
+    "averageMood": "Ánimo promedio",
+    "waterIntake": "Ingesta de agua"
+  },
+  "messages": {
+    "wellDone": "¡Bien hecho!",
+    "keepItUp": "¡Sigue así!",
+    "greatProgress": "¡Gran progreso hoy!",
+    "stayHydrated": "Recuerda mantenerte hidratado/a",
+    "breathingComplete": "Sesión de respiración completada"
+  },
+  "customize": {
+    "title": "Personalizar Emojis de Ánimo",
+    "description": "Personaliza tus emojis y colores de ánimo",
+    "showMoodWords": "Mostrar palabras de ánimo",
+    "clickToChangeColor": "Haz clic para cambiar color",
+    "saveChanges": "Guardar Cambios"
+  }
+}

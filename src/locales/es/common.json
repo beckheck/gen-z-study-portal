@@ -1,0 +1,170 @@
+{
+  "actions": {
+    "add": "Agregar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "reset": "Reiniciar",
+    "start": "Iniciar",
+    "stop": "Parar",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "today": "Hoy",
+    "clear": "Limpiar",
+    "done": "Hecho"
+  },
+  "priorities": {
+    "low": "Baja",
+    "normal": "Normal",
+    "high": "Alta"
+  },
+  "status": {
+    "completed": "Completadas",
+    "pending": "Pendientes",
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "fields": {
+    "title": "Título",
+    "description": "Descripción",
+    "name": "Nombre",
+    "date": "Fecha",
+    "time": "Hora",
+    "today": "Hoy",
+    "tomorrow": "Mañana"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información",
+    "optional": "(Opcional)",
+    "required": "Requerido",
+    "untitled": "Sin título",
+    "none": "Ninguno",
+    "all": "Todos"
+  },
+  "time": {
+    "days": {
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "sunday": "Domingo",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mié",
+      "thu": "Jue",
+      "fri": "Vie",
+      "sat": "Sáb",
+      "sun": "Dom"
+    },
+    "months": {
+      "january": "Enero",
+      "february": "Febrero",
+      "march": "Marzo",
+      "april": "Abril",
+      "may": "Mayo",
+      "june": "Junio",
+      "july": "Julio",
+      "august": "Agosto",
+      "september": "Septiembre",
+      "october": "Octubre",
+      "november": "Noviembre",
+      "december": "Diciembre",
+      "jan": "Ene",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Abr",
+      "may_short": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Ago",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dic"
+    }
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "planner": "Planificador",
+    "timetable": "Horario",
+    "courses": "Cursos",
+    "degreePlan": "Plan de Estudios",
+    "study": "Seguimiento de Estudio",
+    "wellness": "Bienestar",
+    "settings": "Configuración",
+    "openNavigationMenu": "Abrir menú de navegación"
+  },
+  "app": {
+    "title": "StudyHub ✨",
+    "tagline": "Planifica mejor. Estudia más profundo. Protege tu energía.",
+    "subtitle": {
+      "genZ": "Gen Z",
+      "portal": "Portal"
+    }
+  },
+  "moodSlider": {
+    "low": "bajo",
+    "high": "alto"
+  },
+  "upcoming": {
+    "exams": "Exámenes",
+    "tasks": "Tareas",
+    "noExams": "No hay exámenes programados aún.",
+    "noTasks": "No hay tareas próximas. Qué bueno ✨",
+    "dDay": "DÍA-D"
+  },
+  "dashboard": {
+    "nextUp": "Próximamente",
+    "upcomingExamsAndTasks": "Próximos exámenes y tareas"
+  },
+  "weather": {
+    "loading": {
+      "location": "Obteniendo ubicación...",
+      "description": "Cargando...",
+      "temperature": "--"
+    },
+    "errors": {
+      "noApiKey": "No se proporcionó clave API",
+      "invalidApiKey": "Clave API inválida o aún no activada",
+      "cityNotFound": "Ciudad \"{{city}}\" no encontrada",
+      "apiError": "Error de API del clima: {{status}}",
+      "unknownError": "Ocurrió un error desconocido",
+      "locationDenied": "Acceso a ubicación denegado",
+      "geolocationNotSupported": "Geolocalización no soportada",
+      "simulated": "(simulado)"
+    },
+    "conditions": {
+      "clear": "Cielo Despejado",
+      "sunny": "Soleado",
+      "clouds": "Nublado",
+      "cloudy": "Nublado",
+      "rain": "Lluvioso",
+      "rainy": "Lluvioso",
+      "drizzle": "Llovizna",
+      "thunderstorm": "Tormentoso",
+      "snow": "Nevado",
+      "mist": "Brumoso",
+      "fog": "Neblinoso",
+      "partlyCloudy": "Parcialmente Nublado",
+      "brokenClouds": "Nubes Dispersas",
+      "loading": "Cargando..."
+    },
+    "simulated": {
+      "location": "Simulado",
+      "descriptions": {
+        "clearSky": "Cielo despejado",
+        "overcastClouds": "Nubes densas",
+        "lightRain": "Lluvia ligera",
+        "partlyCloudy": "Parcialmente nublado"
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { useCourses, useExams, useSoundtrack, useTasks, useWeather } from '@/hooks/useStore';
 import { CalendarDays, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import CurrentDateTime from './CurrentDateTime';
 import SoundtrackCard from './SoundtrackCard';
 import TipsRow from './TipsRow';
@@ -17,6 +18,7 @@ interface DashboardTabProps {
  * Dashboard Tab Component
  */
 export default function DashboardTab({ onTabChange }: DashboardTabProps) {
+  const { t } = useTranslation('common');
   const { setSelectedCourse } = useCourses();
   const { tasks, setTasks } = useTasks();
   const { exams } = useExams();
@@ -34,9 +36,9 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarDays className="w-5 h-5" />
-            Next Up
+            {t('dashboard.nextUp')}
           </CardTitle>
-          <CardDescription>Upcoming exams & tasks</CardDescription>
+          <CardDescription>{t('dashboard.upcomingExamsAndTasks')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Upcoming
@@ -99,7 +101,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         })()}
       </Card>
 
-      {soundtrack.position === 'dashboard' && soundtrack.embed && (
+      {soundtrack.position === 'dashboard' && (
         <SoundtrackCard embed={soundtrack.embed} position={'dashboard'} onPositionChange={setSoundtrackPosition} />
       )}
 

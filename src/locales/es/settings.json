@@ -1,0 +1,89 @@
+{
+  "title": "Configuración",
+  "courses": {
+    "title": "Cursos",
+    "description": "Renombra tus 7 cursos",
+    "courseLabel": "Curso {{number}}"
+  },
+  "about": {
+    "title": "Acerca de",
+    "description": "Local · Privado · Súper lindo",
+    "localFirst": "Todo se guarda en tu navegador (localStorage).",
+    "builtWith": "Construido con Tailwind, shadcn/ui, lucide icons, framer‑motion, y Recharts.",
+    "proTip": "Consejo pro: guarda esta pestaña y vive tu mejor vida de estudio ✨",
+    "exportData": "Exportar Datos",
+    "importData": "Importar Datos",
+    "importSuccess": "✨ ¡Datos importados exitosamente!",
+    "importError": "❌ Error al importar datos. Por favor verifica que el archivo sea válido.",
+    "importErrorGeneral": "❌ Error al importar datos. Asegúrate de que sea un archivo de exportación válido de StudyHub."
+  },
+  "soundtrack": {
+    "title": "Banda Sonora",
+    "description": "Pega una URL de inserción (Spotify/YouTube)",
+    "position": "Posición",
+    "selectPosition": "Seleccionar posición",
+    "positions": {
+      "dashboard": "Panel",
+      "floating": "Flotante",
+      "hidden": "Oculto"
+    },
+    "placeholder": "https://open.spotify.com/embed/playlist/...",
+    "preview": "Vista previa de banda sonora"
+  },
+  "background": {
+    "title": "Fondo",
+    "description": "Sube un fondo de pantalla personalizado",
+    "clear": "Limpiar",
+    "preview": "Vista previa del fondo"
+  },
+  "accentColor": {
+    "title": "Color de Acento",
+    "description": "Personaliza el color principal del tema",
+    "mode": "Color de Acento {{mode}}",
+    "light": "(Modo Claro)",
+    "dark": "(Modo Oscuro)",
+    "reset": "Restablecer por Defecto"
+  },
+  "cardOpacity": {
+    "title": "Opacidad de Tarjetas",
+    "description": "Ajusta la transparencia de las tarjetas para mejor visibilidad",
+    "lightMode": "Opacidad Modo Claro: {{value}}%",
+    "darkMode": "Opacidad Modo Oscuro: {{value}}%",
+    "reset": "Restablecer por Defecto"
+  },
+  "backgroundGradient": {
+    "title": "Gradiente de Fondo",
+    "description": "Personaliza los colores del fondo",
+    "enable": "Habilitar fondo degradado",
+    "startColor": "Color Inicial {{mode}}",
+    "middleColor": "Color Medio {{mode}}",
+    "endColor": "Color Final {{mode}}",
+    "reset": "Restablecer por Defecto"
+  },
+  "weatherApi": {
+    "title": "🌤️ API del Clima",
+    "description": "Obtén datos meteorológicos reales para tu ubicación",
+    "apiKeyLabel": "Clave de API de OpenWeatherMap",
+    "placeholder": "Ingresa tu clave de API aquí...",
+    "note": "Sin una clave de API, el clima será simulado. Obtén una clave gratuita de",
+    "linkText": "OpenWeatherMap",
+    "instructions": {
+      "title": "📋 Cómo obtener una clave de API:",
+      "step1": "Visita",
+      "step2": "Regístrate para obtener una cuenta gratuita",
+      "step3": "Ve a \"Mis claves de API\" en tu cuenta",
+      "step4": "Copia tu clave y pégala arriba",
+      "important": "Importante:",
+      "step5": "¡Las nuevas claves de API pueden tardar de 2 a 24 horas en activarse!"
+    },
+    "configured": "✅ ¡Clave de API configurada! Se usarán datos meteorológicos reales.",
+    "location": {
+      "title": "Configuración de Ubicación del Clima",
+      "useDevice": "Usar ubicación del dispositivo",
+      "cityLabel": "Nombre de la ciudad",
+      "cityPlaceholder": "Ingresa el nombre de la ciudad (ej. Londres, Tokio, Nueva York)",
+      "deviceLocationNote": "Desactiva la ubicación del dispositivo para ingresar una ciudad manualmente",
+      "manualLocationNote": "Ingresa el nombre de una ciudad para obtener el clima de esa ubicación"
+    }
+  }
+}

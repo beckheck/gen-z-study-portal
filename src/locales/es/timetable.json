@@ -1,0 +1,58 @@
+{
+  "title": "Mi Horario",
+  "description": "Horario semanal de tus clases y actividades",
+  "addEvent": "Agregar Evento",
+  "editEvent": "Editar Evento",
+  "deleteEvent": "Eliminar Evento",
+  "addToTimetable": "Agregar al Horario",
+  "updateEvent": "Actualizar Evento",
+  "days": {
+    "monday": "Lunes",
+    "tuesday": "Martes",
+    "wednesday": "Miércoles",
+    "thursday": "Jueves",
+    "friday": "Viernes",
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mié",
+    "thu": "Jue",
+    "fri": "Vie"
+  },
+  "eventTypes": {
+    "catedra": "Cátedra",
+    "ayudantia": "Ayudantía",
+    "taller": "Taller",
+    "laboratorio": "Laboratorio"
+  },
+  "fields": {
+    "course": "Curso",
+    "eventType": "Tipo de Evento",
+    "day": "Día",
+    "timeBlock": "Bloque de Tiempo",
+    "classroom": "Aula",
+    "teacherName": "Nombre del Profesor",
+    "taName": "Nombre del Ayudante",
+    "eventColor": "Color del Evento"
+  },
+  "placeholders": {
+    "selectCourse": "Seleccionar un curso",
+    "selectEventType": "Seleccionar tipo de evento",
+    "selectDay": "Seleccionar día",
+    "selectTimeBlock": "Seleccionar bloque de tiempo",
+    "classroom": "ej., A-101",
+    "teacherName": "Nombre del profesor",
+    "taName": "Nombre del ayudante"
+  },
+  "timeBlocks": {
+    "block": "Bloque"
+  },
+  "hover": {
+    "type": "Tipo:",
+    "time": "Hora:",
+    "classroom": "Aula:",
+    "teacher": "Profesor:",
+    "ta": "Ayudante:"
+  },
+  "unknownCourse": "Curso Desconocido",
+  "addEventHint": "Agregar evento"
+}

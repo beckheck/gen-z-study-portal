@@ -12,8 +12,11 @@ import { motion } from 'framer-motion';
 import { CalendarDays, GraduationCap, ListTodo, NotebookPen, Plus, Trash2, Undo } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
+import { useTranslation } from 'react-i18next';
 
 export default function CourseManagerTab() {
+  const { t: tCourse } = useTranslation('courseManager');
+  const { t: tCommon } = useTranslation('common');
   const { courses, selectedCourse, setSelectedCourse, clearCourseData } = useCourses();
   const { tasks, addTask, toggleTask, deleteTask } = useTasks();
   const { exams, examGrades, addExam, updateExam, setExamGrades } = useExams();
@@ -117,10 +120,10 @@ export default function CourseManagerTab() {
             onClick={() => setClearConfirmOpen(true)}
           >
             <Trash2 className="w-4 h-4 mr-1" />
-            Clear Course Data
+            {tCourse('actions.clearCourseData')}
           </Button>
         </div>
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Task progress</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">{tCourse('tasks.taskProgress')}</div>
       </div>
       <Progress value={progress} className="h-3 rounded-xl" />
 
@@ -130,22 +133,22 @@ export default function CourseManagerTab() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ListTodo className="w-5 h-5" />
-              To‑Dos
+              {tCourse('tasks.title')}
             </CardTitle>
-            <CardDescription>Add, complete, delete</CardDescription>
+            <CardDescription>{tCourse('tasks.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3">
-              <Label>Title</Label>
+              <Label>{tCourse('tasks.form.title')}</Label>
               <Input
                 value={taskForm.title}
                 onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
                 className="rounded-xl"
-                placeholder="Assignment, reading, project…"
+                placeholder={tCourse('tasks.placeholders.title')}
               />
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Due date</Label>
+                  <Label>{tCourse('tasks.form.dueDate')}</Label>
                   <Input
                     type="date"
                     value={taskForm.due}
@@ -154,15 +157,15 @@ export default function CourseManagerTab() {
                   />
                 </div>
                 <div>
-                  <Label>Priority</Label>
+                  <Label>{tCourse('tasks.form.priority')}</Label>
                   <Select value={taskForm.priority} onValueChange={v => setTaskForm({ ...taskForm, priority: v })}>
                     <SelectTrigger className="rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="low">{tCommon('priorities.low')}</SelectItem>
+                      <SelectItem value="normal">{tCommon('priorities.normal')}</SelectItem>
+                      <SelectItem value="high">{tCommon('priorities.high')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -177,14 +180,14 @@ export default function CourseManagerTab() {
                 variant="default"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add task
+                {tCourse('actions.addTask')}
               </Button>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-wide text-zinc-500">Open</div>
+              <div className="text-xs uppercase tracking-wide text-zinc-500">{tCourse('tasks.sections.open')}</div>
               {courseTasks.filter(t => !t.done).length === 0 && (
-                <div className="text-sm text-zinc-500">Nothing pending. Go touch sky ☁️</div>
+                <div className="text-sm text-zinc-500">{tCourse('tasks.empty.noPending')}</div>
               )}
               {courseTasks
                 .filter(t => !t.done)
@@ -196,7 +199,7 @@ export default function CourseManagerTab() {
                     <div>
                       <div className="font-medium">{t.title}</div>
                       <div className="text-xs text-zinc-500">
-                        due {t.due || '—'} · {t.priority}
+                        {t.due || '—'} · {t.priority}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -213,7 +216,7 @@ export default function CourseManagerTab() {
                           }
                         }}
                       >
-                        Done
+                        {tCourse('actions.done')}
                       </Button>
                       <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteTask(t.id)}>
                         <Trash2 className="w-4 h-4" />
@@ -224,7 +227,9 @@ export default function CourseManagerTab() {
 
               {courseTasks.filter(t => t.done).length > 0 && (
                 <>
-                  <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">Completed</div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">
+                    {tCommon('status.completed')}
+                  </div>
                   <div className="space-y-2">
                     {courseTasks
                       .filter(t => t.done)
@@ -249,7 +254,7 @@ export default function CourseManagerTab() {
                               variant="ghost"
                               className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => toggleTask(t.id)}
-                              title="Undo"
+                              title={tCourse('actions.undo')}
                             >
                               <Undo className="w-4 h-4" />
                             </Button>
@@ -276,12 +281,12 @@ export default function CourseManagerTab() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="w-5 h-5" />
-              Upcoming Evals
+              {tCourse('exams.upcoming.title')}
             </CardTitle>
-            <CardDescription>Your next evaluations</CardDescription>
+            <CardDescription>{tCourse('exams.upcoming.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {courseExams.length === 0 && <div className="text-sm text-zinc-500">No upcoming exams yet.</div>}
+            {courseExams.length === 0 && <div className="text-sm text-zinc-500">{tCourse('exams.upcoming.empty')}</div>}
             <div className="space-y-2 max-h-[420px] overflow-auto">
               {courseExams
                 .sort((a, b) => a.date.localeCompare(b.date))
@@ -302,7 +307,11 @@ export default function CourseManagerTab() {
                         const today = new Date();
                         const diffTime = examDate.getTime() - today.getTime();
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        return diffDays <= 0 ? 'Today' : diffDays === 1 ? 'Tomorrow' : `${diffDays} days`;
+                        return diffDays <= 0
+                          ? tCommon('fields.today')
+                          : diffDays === 1
+                          ? tCommon('fields.tomorrow')
+                          : tCourse('exams.timing.days', { count: diffDays });
                       })()}
                     </Badge>
                   </div>
@@ -316,22 +325,22 @@ export default function CourseManagerTab() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <NotebookPen className="w-5 h-5" />
-              Exams / Evals
+              {tCourse('exams.title')}
             </CardTitle>
-            <CardDescription>Dates, weight, notes</CardDescription>
+            <CardDescription>{tCourse('exams.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3">
-              <Label>Title</Label>
+              <Label>{tCourse('exams.form.title')}</Label>
               <Input
                 value={examForm.title}
                 onChange={e => setExamForm({ ...examForm, title: e.target.value })}
                 className="rounded-xl"
-                placeholder="Midterm, quiz, lab check…"
+                placeholder={tCourse('exams.placeholders.title')}
               />
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Date</Label>
+                  <Label>{tCourse('exams.form.date')}</Label>
                   <Input
                     type="date"
                     value={examForm.date}
@@ -340,7 +349,7 @@ export default function CourseManagerTab() {
                   />
                 </div>
                 <div>
-                  <Label>Weight (%)</Label>
+                  <Label>{tCourse('exams.form.weight')}</Label>
                   <Input
                     type="number"
                     value={examForm.weight}
@@ -349,12 +358,12 @@ export default function CourseManagerTab() {
                   />
                 </div>
               </div>
-              <Label>Notes</Label>
+              <Label>{tCourse('exams.form.notes')}</Label>
               <Textarea
                 value={examForm.notes}
                 onChange={e => setExamForm({ ...examForm, notes: e.target.value })}
                 className="rounded-xl"
-                placeholder="Chapters, topics, allowed materials…"
+                placeholder={tCourse('exams.placeholders.notes')}
               />
               <Button
                 onClick={() => {
@@ -374,7 +383,7 @@ export default function CourseManagerTab() {
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                {editingExam ? 'Update' : 'Add'} exam
+                {editingExam ? tCourse('actions.updateExam') : tCourse('actions.addExam')}
               </Button>
               {editingExam && (
                 <Button
@@ -385,7 +394,7 @@ export default function CourseManagerTab() {
                   }}
                   className="rounded-xl mt-2 w-full"
                 >
-                  Cancel Edit
+                  {tCourse('actions.cancelEdit')}
                 </Button>
               )}
             </div>
@@ -405,18 +414,20 @@ export default function CourseManagerTab() {
                 d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 002 2z"
               />
             </svg>
-            Grade Calculator
+            {tCourse('grades.title')}
           </CardTitle>
-          <CardDescription>Track exam grades (1-7 scale)</CardDescription>
+          <CardDescription>{tCourse('grades.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {courseExams.length === 0 ? (
-            <div className="text-sm text-zinc-500 text-center py-6">Add exams first to track grades</div>
+            <div className="text-sm text-zinc-500 text-center py-6">{tCourse('grades.addExamsFirst')}</div>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {/* Left Column - Exam Grades Input */}
               <div className="space-y-3">
-                <h4 className="font-medium text-sm text-zinc-700 dark:text-zinc-300 mb-3">Exam Grades</h4>
+                <h4 className="font-medium text-sm text-zinc-700 dark:text-zinc-300 mb-3">
+                  {tCourse('grades.examGrades')}
+                </h4>
                 {courseExams.map(exam => {
                   const currentGrade = courseGrades.find(g => g.examId === exam.id);
                   return (
@@ -426,7 +437,7 @@ export default function CourseManagerTab() {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{exam.title}</div>
-                        <div className="text-xs text-zinc-500">{exam.weight}% weight</div>
+                        <div className="text-xs text-zinc-500">{tCourse('grades.weight', { weight: exam.weight })}</div>
                       </div>
                       <div className="ml-3">
                         <Input
@@ -434,7 +445,7 @@ export default function CourseManagerTab() {
                           min="1"
                           max="7"
                           step="0.1"
-                          placeholder="Grade"
+                          placeholder={tCourse('tasks.placeholders.grade')}
                           value={currentGrade?.grade || ''}
                           onChange={e => updateExamGrade(exam.id, e.target.value)}
                           className="w-20 h-8 text-center rounded-lg"
@@ -447,7 +458,9 @@ export default function CourseManagerTab() {
 
               {/* Right Column - Course Average Display */}
               <div className="flex flex-col justify-center items-center bg-white/40 dark:bg-white/5 p-6 rounded-xl">
-                <h4 className="font-medium text-sm text-zinc-700 dark:text-zinc-300 mb-4">Course Average</h4>
+                <h4 className="font-medium text-sm text-zinc-700 dark:text-zinc-300 mb-4">
+                  {tCourse('grades.courseAverage')}
+                </h4>
                 <div className="text-center">
                   {calculateCourseAverage() ? (
                     <div
@@ -464,11 +477,11 @@ export default function CourseManagerTab() {
                   ) : (
                     <div className="text-4xl font-bold text-zinc-400 mb-2">--</div>
                   )}
-                  <div className="text-sm text-zinc-500 mb-3">out of 7.0</div>
+                  <div className="text-sm text-zinc-500 mb-3">{tCourse('grades.outOf')}</div>
 
                   {calculateCourseAverage() && (
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                      {courseGrades.length} of {courseExams.length} exams graded
+                      {tCourse('grades.examsSummary', { graded: courseGrades.length, total: courseExams.length })}
                     </div>
                   )}
                 </div>
@@ -482,15 +495,14 @@ export default function CourseManagerTab() {
       <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
         <DialogContent className="rounded-xl bg-white dark:bg-zinc-950 border-none shadow-xl backdrop-blur">
           <DialogHeader className="">
-            <DialogTitle>Clear {courses[selectedCourse]} Data</DialogTitle>
+            <DialogTitle>{tCourse('confirmations.clearData.title', { course: courses[selectedCourse] })}</DialogTitle>
             <DialogDescription>
-              This will permanently delete all tasks, exams, and timetable events associated with the{' '}
-              {courses[selectedCourse]} course. This action cannot be undone.
+              {tCourse('confirmations.clearData.description', { course: courses[selectedCourse] })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setClearConfirmOpen(false)}>
-              Cancel
+              {tCommon('actions.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -499,7 +511,7 @@ export default function CourseManagerTab() {
                 setClearConfirmOpen(false);
               }}
             >
-              <Trash2 className="w-4 h-4 mr-1" /> Clear Data
+              <Trash2 className="w-4 h-4 mr-1" /> {tCourse('confirmations.clearData.clearButton')}
             </Button>
           </div>
         </DialogContent>
