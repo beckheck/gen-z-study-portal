@@ -130,12 +130,11 @@ export function useTasks() {
  * Hook to access and modify exams
  */
 export function useExams() {
-  const exams = useSnapshot(store.exams);
-  const examGrades = useSnapshot(store.examGrades);
+  const state = useSnapshot(store);
 
   return {
-    exams,
-    examGrades,
+    exams: state.exams,
+    examGrades: state.examGrades,
     addExam: (exam: ExamInput) => {
       store.exams.unshift({ ...exam, id: uid() });
     },

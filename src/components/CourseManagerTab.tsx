@@ -63,14 +63,23 @@ export default function CourseManagerTab() {
   };
 
   const updateExamGrade = (examId: string, grade: string): void => {
-    const gradeValue = parseFloat(grade);
-    if (gradeValue < 1 || gradeValue > 7) return;
+    // Allow empty string to clear the grade
+    if (grade === '') {
+      const filtered = examGrades.filter(g => g.examId !== examId);
+      setExamGrades(filtered);
+      return;
+    }
 
-    const existing = examGrades.find(g => g.examId === examId);
-    if (existing) {
-      setExamGrades(examGrades.map(g => (g.examId === examId ? { ...g, grade: gradeValue } : g)));
-    } else {
-      setExamGrades([...examGrades, { examId, grade: gradeValue }]);
+    const gradeValue = parseFloat(grade);
+
+    // Always allow numeric input for better UX, but validate before saving
+    if (!isNaN(gradeValue) && gradeValue >= 1 && gradeValue <= 7) {
+      const existing = examGrades.find(g => g.examId === examId);
+      if (existing) {
+        setExamGrades(examGrades.map(g => (g.examId === examId ? { ...g, grade: gradeValue } : g)));
+      } else {
+        setExamGrades([...examGrades, { examId, grade: gradeValue }]);
+      }
     }
   };
 
@@ -446,7 +455,7 @@ export default function CourseManagerTab() {
                           max="7"
                           step="0.1"
                           placeholder={tCourse('tasks.placeholders.grade')}
-                          value={currentGrade?.grade || ''}
+                          value={currentGrade?.grade?.toString() || ''}
                           onChange={e => updateExamGrade(exam.id, e.target.value)}
                           className="w-20 h-8 text-center rounded-lg"
                         />
