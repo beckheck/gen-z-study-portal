@@ -14,8 +14,8 @@
   },
   "forms": {
     "eventCategory": "Categoría de Evento",
-    "course": "Materia",
-    "courseOptional": "Materia (Opcional)",
+    "course": "Curso",
+    "courseOptional": "Curso (Opcional)",
     "title": "Título",
     "type": "Tipo",
     "startDate": "Fecha de Inicio",
@@ -47,9 +47,9 @@
     "congratulations": "¡Felicitaciones! ¡Todas las metas completadas! 🎉"
   },
   "filters": {
-    "filterByCourse": "Filtrar por Materia",
+    "filterByCourse": "Filtrar por Curso",
     "showMultiDayEvents": "Mostrar eventos de varios días",
-    "allCourses": "Todas las Materias"
+    "allCourses": "Todas los Cursos"
   },
   "messages": {
     "noEvents": "Sin eventos programados",

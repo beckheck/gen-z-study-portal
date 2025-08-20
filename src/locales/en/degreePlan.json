@@ -3,9 +3,6 @@
   "description": "Plan your academic journey",
   "actions": {
     "customize": "Customize Degree Plan",
-    "addCourse": "Add Course",
-    "updateCourse": "Update Course",
-    "editCourse": "Edit course",
     "editSemester": "Edit semester",
     "removeEmptySemester": "Remove empty semester",
     "addNewSemester": "Add New Semester",
@@ -42,6 +39,7 @@
     "corequisites": "Co-requisites (separate with commas)",
     "addCourse": "Add Course",
     "editCourse": "Edit Course",
+    "updateCourse": "Update Course",
     "creditsLabel": "credits",
     "creditsShort": "{{count}} credits",
     "prereq": "Prereq: {{prerequisites}}",

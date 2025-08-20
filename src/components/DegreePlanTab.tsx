@@ -374,7 +374,7 @@ export default function DegreePlanTab() {
                                   setDegreePlanDialog(true);
                                 }}
                                 className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                                title={t('actions.editCourse')}
+                                title={t('course.editCourse')}
                               >
                                 <Edit className="w-3 h-3" />
                               </Button>
@@ -624,7 +624,7 @@ export default function DegreePlanTab() {
                       className="rounded-xl w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      {editingCourse ? t('actions.updateCourse') : t('actions.addCourse')}
+                      {editingCourse ? t('course.updateCourse') : t('course.addCourse')}
                     </Button>
                   </div>
                 </div>

@@ -1,15 +1,12 @@
 {
-  "title": "Plan de Carrera",
+  "title": "Malla Interactiva",
   "description": "Planifica tu trayecto académico",
   "actions": {
-    "customize": "Personalizar Plan de Carrera",
-    "addCourse": "Agregar Materia",
-    "updateCourse": "Actualizar Materia",
-    "editCourse": "Editar materia",
+    "customize": "Personalizar Malla Interactiva",
     "editSemester": "Editar semestre",
     "removeEmptySemester": "Eliminar semestre vacío",
     "addNewSemester": "Agregar Nuevo Semestre",
-    "clearDegreePlan": "Limpiar Plan de Carrera",
+    "clearDegreePlan": "Limpiar Malla Interactiva",
     "resetPlan": "Reiniciar Plan",
     "finishSetup": "Finalizar Configuración",
     "cancelEditing": "Cancelar Edición",
@@ -18,30 +15,31 @@
     "dragToMove": "Arrastra para mover entre semestres"
   },
   "setup": {
-    "title": "Configurar Plan de Carrera",
-    "description": "Configura tu plan de carrera especificando el número de semestres.",
+    "title": "Configurar Malla Interactiva",
+    "description": "Configura tu malla interactiva especificando el número de semestres.",
     "numberOfSemesters": "Número de Semestres en Tu Carrera",
     "semesterPlaceholder": "ej., 8"
   },
   "semester": {
     "title": "{{number}}° Semestre",
-    "courses": "Materias del {{number}}° Semestre",
-    "coursesWithCount": "Materias del {{number}}° Semestre ({{count}}/{{max}})",
+    "courses": "Cursos del {{number}}° Semestre",
+    "coursesWithCount": "Cursos del {{number}}° Semestre ({{count}}/{{max}})",
     "ofTotal": "Semestre {{current}} de {{total}}",
     "previousSemester": "Semestre Anterior",
     "nextSemester": "Siguiente Semestre",
     "backToSetup": "Volver a Configuración",
-    "noCourses": "No hay materias agregadas",
-    "noCoursesYet": "Aún no hay materias agregadas"
+    "noCourses": "No hay cursos agregadas",
+    "noCoursesYet": "Aún no hay cursos agregadas"
   },
   "course": {
-    "acronym": "Código de la Materia",
-    "name": "Nombre de la Materia",
+    "acronym": "Código del Curso",
+    "name": "Nombre del Curso",
     "credits": "Créditos",
     "prerequisites": "Prerrequisitos (separa con comas)",
     "corequisites": "Corrrequisitos (separa con comas)",
-    "addCourse": "Agregar Materia",
-    "editCourse": "Editar Materia",
+    "addCourse": "Agregar Curso",
+    "editCourse": "Editar Curso",
+    "updateCourse": "Actualizar Curso",
     "creditsLabel": "créditos",
     "creditsShort": "{{count}} créditos",
     "prereq": "Prereq: {{prerequisites}}",
@@ -58,34 +56,34 @@
   "progress": {
     "creditsProgress": "{{completed}}/{{total}} créditos completados ✨",
     "percentComplete": "{{percent}}% completado",
-    "overallProgress": "Progreso General: {{completed}} / {{total}} materias completadas ({{percent}}%)",
-    "coursesProgress": "Progreso: {{completed}} / {{total}} materias completadas"
+    "overallProgress": "Progreso General: {{completed}} / {{total}} cursos completadas ({{percent}}%)",
+    "coursesProgress": "Progreso: {{completed}} / {{total}} cursos completadas"
   },
   "tips": {
-    "dragAndDrop": "💡 <strong>Consejo:</strong> Arrastra y suelta materias entre semestres para reorganizar tu plan de carrera. Haz clic en las materias para marcarlas como completadas."
+    "dragAndDrop": "💡 <strong>Consejo:</strong> Arrastra y suelta cursos entre semestres para reorganizar tu malla interactiva. Haz clic en los cursos para marcarlas como completadas."
   },
   "view": {
-    "title": "Resumen del Plan de Carrera",
-    "description": "Revisa y administra tu plan de carrera completo."
+    "title": "Resumen de la Malla Interactiva",
+    "description": "Revisa y administra tu malla interactiva completo."
   },
   "dropZone": {
-    "dropHere": "Suelta la materia aquí ({{count}}/8 materias)",
-    "semesterFull": "Semestre lleno (8/8 materias)"
+    "dropHere": "Suelta el curso aquí ({{count}}/8 cursos)",
+    "semesterFull": "Semestre lleno (8/8 cursos)"
   },
   "confirmations": {
     "reset": {
-      "title": "Reiniciar Plan de Carrera",
-      "description": "¿Estás seguro de que quieres reiniciar todo tu plan de carrera? Esto eliminará todos los semestres, materias y progreso. Esta acción no se puede deshacer."
+      "title": "Reiniciar Malla Interactiva",
+      "description": "¿Estás seguro de que quieres reiniciar todo tu malla interactiva? Esto eliminará todos los semestres, cursos y progreso. Esta acción no se puede deshacer."
     },
     "clear": {
-      "title": "Limpiar Plan de Carrera",
-      "description": "¿Estás seguro de que quieres limpiar todo tu plan de carrera? Esto eliminará todos los semestres, materias y progreso. Esta acción no se puede deshacer."
+      "title": "Limpiar Malla Interactiva",
+      "description": "¿Estás seguro de que quieres limpiar todo tu malla interactiva? Esto eliminará todos los semestres, cursos y progreso. Esta acción no se puede deshacer."
     },
     "resetEverything": "Reiniciar Todo",
     "clearEverything": "Limpiar Todo"
   },
   "editing": {
-    "title": "Materias del {{number}}° Semestre - Editando",
-    "description": "Editar materia \"{{acronym}}\" en el semestre {{number}}."
+    "title": "Cursos del {{number}}° Semestre - Editando",
+    "description": "Editar curso \"{{acronym}}\" en el semestre {{number}}."
   }
 }
