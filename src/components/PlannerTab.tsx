@@ -711,7 +711,9 @@ export default function PlannerTab() {
             </DialogTrigger>
             <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
               <DialogHeader className="">
-                <DialogTitle className="text-gray-900 dark:text-gray-100">{editingEvent ? 'Edit Event' : 'Add Event'}</DialogTitle>
+                <DialogTitle className="text-gray-900 dark:text-gray-100">
+                  {editingEvent ? 'Edit Event' : 'Add Event'}
+                </DialogTitle>
                 <DialogDescription className="text-gray-600 dark:text-gray-300">
                   {editingEvent ? 'Modify the event details below' : 'Create a regular event, exam, or task'}
                 </DialogDescription>
@@ -833,12 +835,14 @@ export default function PlannerTab() {
                           '#3b82f6',
                           '#6366f1',
                           '#8b5cf6',
-                        ].map(color => (
-                          <button
-                            key={color}
-                            type="button"
-                            className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform"
-                            style={{ backgroundColor: color }}
+                        ].map((color, i) => (
+                          <div
+                            key={i}
+                            className="w-6 h-6 rounded-full shadow-sm hover:scale-110 transition-transform cursor-pointer"
+                            style={{
+                              backgroundColor: color,
+                              border: '2px solid white',
+                            }}
                             onClick={() => setForm({ ...form, color })}
                           />
                         ))}
@@ -1053,7 +1057,9 @@ export default function PlannerTab() {
                       </div>
                     </div>
                   ))}
-                  {eventsForWeekdayName(d).length === 0 && <div className="text-sm text-zinc-500 dark:text-zinc-400">No events.</div>}
+                  {eventsForWeekdayName(d).length === 0 && (
+                    <div className="text-sm text-zinc-500 dark:text-zinc-400">No events.</div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -1074,7 +1080,9 @@ export default function PlannerTab() {
                 <div className="space-y-4">
                   {/* Add Goal Form */}
                   <div className="space-y-2">
-                    <Label htmlFor="goalTitle" className="text-gray-700 dark:text-gray-300">Add New Goal</Label>
+                    <Label htmlFor="goalTitle" className="text-gray-700 dark:text-gray-300">
+                      Add New Goal
+                    </Label>
                     <div className="flex gap-2">
                       <Input
                         id="goalTitle"
@@ -1129,7 +1137,11 @@ export default function PlannerTab() {
                             {goal.completed && <span className="text-xs">✓</span>}
                           </Button>
 
-                          <span className={`flex-1 ${goal.completed ? 'line-through text-zinc-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                          <span
+                            className={`flex-1 ${
+                              goal.completed ? 'line-through text-zinc-500' : 'text-zinc-900 dark:text-zinc-100'
+                            }`}
+                          >
                             {goal.title}
                           </span>
 
@@ -1225,7 +1237,7 @@ export default function PlannerTab() {
               return (
                 <div
                   key={i}
-                  className={`group relative rounded-xl p-3 min-h-[120px] bg-white/70 dark:bg-white/5 backdrop-blur border-2 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer ${
+                  className={`group relative rounded-xl p-2 sm:p-3 min-h-[80px] sm:min-h-[120px] bg-white/70 dark:bg-white/5 backdrop-blur border-2 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer ${
                     isToday
                       ? 'border-violet-500 bg-violet-50/50 dark:bg-violet-900/20'
                       : 'border-transparent hover:border-violet-200 dark:hover:border-violet-700'
@@ -1236,22 +1248,37 @@ export default function PlannerTab() {
                   onClick={() => handleDayClick(date)}
                   title="Click to create new event on this date"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1 sm:mb-2">
                     <div
-                      className={`text-lg font-bold ${
+                      className={`text-base sm:text-lg font-bold ${
                         isToday ? 'text-violet-700 dark:text-violet-300' : 'text-zinc-800 dark:text-zinc-200'
                       }`}
                     >
                       {date.getDate()}
                     </div>
                     {dayEvents.length > 0 && (
-                      <Badge variant="secondary" className="text-xs rounded-full">
+                      <Badge variant="secondary" className="text-xs rounded-full hidden sm:block">
                         {dayEvents.length}
                       </Badge>
                     )}
                   </div>
 
-                  <div className="space-y-1">
+                  {/* Events counter positioned at 75% height on mobile */}
+                  {dayEvents.length > 0 && (
+                    <div className="absolute inset-x-0 bottom-0 top-1/2 flex items-center justify-center sm:hidden">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs rounded-full cursor-pointer"
+                        onClick={event => {
+                          event.stopPropagation(); // Prevent opening the add event dialog
+                        }}
+                      >
+                        {dayEvents.length}
+                      </Badge>
+                    </div>
+                  )}
+
+                  <div className="space-y-1 hidden sm:block">
                     {dayEvents.slice(0, 4).map((e, idx) => (
                       <div
                         key={idx}
@@ -1281,7 +1308,9 @@ export default function PlannerTab() {
                       </div>
                     ))}
                     {dayEvents.length > 4 && (
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1">+{dayEvents.length - 4} more...</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1">
+                        +{dayEvents.length - 4} more...
+                      </div>
                     )}
                   </div>
 

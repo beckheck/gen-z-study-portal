@@ -265,17 +265,7 @@ export default function DegreePlanTab() {
                   courses to mark as completed.
                 </p>
               </div>
-              <div
-                className="grid gap-4 lg:gap-6"
-                style={{
-                  gridTemplateColumns:
-                    degreePlan.semesters.length <= 2
-                      ? `repeat(${degreePlan.semesters.length}, 1fr)`
-                      : degreePlan.semesters.length <= 4
-                      ? `repeat(${Math.min(degreePlan.semesters.length, 2)}, 1fr)`
-                      : `repeat(3, 1fr)`,
-                }}
-              >
+              <div className="grid gap-4 lg:gap-6 grid-cols-2 md:grid-cols-3">
                 {degreePlan.semesters.map(semester => (
                   <div key={semester.id} className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -756,17 +746,7 @@ export default function DegreePlanTab() {
 
           {degreePlanStep === 'view' && (
             <div className="space-y-6">
-              <div
-                className="grid gap-4 lg:gap-6"
-                style={{
-                  gridTemplateColumns:
-                    degreePlan.semesters.length <= 2
-                      ? `repeat(${degreePlan.semesters.length}, 1fr)`
-                      : degreePlan.semesters.length <= 4
-                      ? `repeat(2, 1fr)`
-                      : `repeat(3, 1fr)`,
-                }}
-              >
+              <div className="grid gap-4 lg:gap-6 grid-cols-2 md:grid-cols-3">
                 {degreePlan.semesters.map(semester => (
                   <div
                     key={semester.id}

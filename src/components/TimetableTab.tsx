@@ -74,6 +74,7 @@ function TimetableTab() {
 
   // Days of the week
   const weekDays: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const shortWeekDays: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
   // Event types
   const eventTypes: string[] = ['Cátedra', 'Ayudantía', 'Taller', 'Laboratorio'];
@@ -190,9 +191,10 @@ function TimetableTab() {
         <CardContent>
           <div className="grid grid-cols-6 gap-2 mb-4">
             <div className="font-medium text-zinc-500 dark:text-zinc-400"></div>
-            {weekDays.map(day => (
+            {weekDays.map((day, index) => (
               <div key={day} className="font-medium text-center text-zinc-800 dark:text-zinc-200">
-                {day}
+                <span className="hidden sm:inline">{day}</span>
+                <span className="sm:hidden">{shortWeekDays[index]}</span>
               </div>
             ))}
           </div>
@@ -218,10 +220,10 @@ function TimetableTab() {
                       }}
                       onClick={e => handleEventClick(event, e)}
                     >
-                      <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                      <div className="text-xs sm:text-sm font-medium text-zinc-800 dark:text-zinc-200">
                         {getCourseTitle(event.courseIndex)}
                       </div>
-                      <div className="text-xs text-zinc-600 dark:text-zinc-400">{event.eventType}</div>
+                      <div className="text-xs sm:text-xs text-zinc-600 dark:text-zinc-400">{event.eventType}</div>
 
                       {/* Hover details popup */}
                       <div className="absolute left-0 bottom-full mb-2 w-56 bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">

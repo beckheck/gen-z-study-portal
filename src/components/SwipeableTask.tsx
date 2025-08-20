@@ -15,14 +15,10 @@ interface SwipeableTaskProps {
   onClick?: () => void;
 }
 
-export default function SwipeableTask({
-  task,
-  index,
-  expanded,
-  calculateDDay,
-  onComplete,
-  onClick,
-}: SwipeableTaskProps) {
+const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(function SwipeableTask(
+  { task, index, expanded, calculateDDay, onComplete, onClick },
+  ref
+) {
   const { courses } = useCourses();
   const [dragX, setDragX] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -94,6 +90,7 @@ export default function SwipeableTask({
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, height: 0, y: -10 }}
       animate={{ opacity: 1, height: 'auto', y: 0 }}
       exit={{ opacity: 0, height: 0, y: -10 }}
@@ -177,4 +174,6 @@ export default function SwipeableTask({
       </div>
     </motion.div>
   );
-}
+});
+
+export default SwipeableTask;
