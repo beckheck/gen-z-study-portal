@@ -185,7 +185,7 @@ export default function TimetableTab() {
         )}
       </ContextMenu>
 
-      <Card className="rounded-2xl border-none shadow-xl bg-white/70 dark:bg-white/5 backdrop-blur">
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
           <CardTitle className="text-2xl font-bold flex justify-between items-center">
             <div>
@@ -213,7 +213,7 @@ export default function TimetableTab() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-6 gap-2 mb-4">
-            <div className="font-medium text-zinc-500 dark:text-zinc-100"></div>
+            <div className="font-medium text-zinc-500 dark:text-zinc-400"></div>
             {weekDays.map((day, index) => (
               <div key={day} className="font-medium text-center text-zinc-800 dark:text-zinc-200">
                 <span className="hidden sm:inline">{getTranslatedDayName(day)}</span>
@@ -224,7 +224,7 @@ export default function TimetableTab() {
 
           {timeBlocks.map(({ block, time }) => (
             <div key={block} className="grid grid-cols-6 gap-2 mb-3">
-              <div className="text-xs font-medium text-zinc-500 dark:text-zinc-100 flex items-center">
+              <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 flex items-center">
                 {t('timeBlocks.block')} {block}
                 <br />
                 {time}
@@ -249,16 +249,16 @@ export default function TimetableTab() {
                         key={event.id}
                         className="relative group cursor-pointer rounded-md shadow-sm p-2 h-full"
                         style={{
-                          backgroundColor: event.color ? `${event.color}C0` : 'rgba(255, 255, 255, 0.9)',
+                          backgroundColor: event.color ? `${event.color}20` : 'rgba(255, 255, 255, 0.9)',
                           borderLeft: `4px solid ${event.color || '#7c3aed'}`,
                           color: event.color ? undefined : undefined,
                         }}
                         onClick={e => contextMenu.showContextMenu(event, e)}
                       >
-                        <div className="text-xs sm:text-sm font-medium text-zinc-800 dark:text-zinc-900">
+                        <div className="text-xs sm:text-sm font-medium text-zinc-800 dark:text-zinc-200">
                           {getCourseTitle(event.courseIndex)}
                         </div>
-                        <div className="text-xs sm:text-xs text-zinc-800 dark:text-zinc-900 font-medium">
+                        <div className="text-xs sm:text-xs text-zinc-600 dark:text-zinc-400 font-medium">
                           {event.eventType}
                         </div>
 
