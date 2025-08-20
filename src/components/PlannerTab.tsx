@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ColorPicker from '@/components/ui/color-picker';
 import {
   Dialog,
   DialogContent,
@@ -812,43 +813,11 @@ export default function PlannerTab() {
                 )}
 
                 {form.eventCategory === 'regular' && (
-                  <div>
-                    <Label className="text-gray-700 dark:text-gray-300">Color</Label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={form.color}
-                        onChange={e => setForm({ ...form, color: e.target.value })}
-                        className="w-12 h-10 rounded-xl border border-gray-300 cursor-pointer"
-                      />
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          '#6366f1',
-                          '#8b5cf6',
-                          '#ec4899',
-                          '#ef4444',
-                          '#f97316',
-                          '#f59e0b',
-                          '#84cc16',
-                          '#10b981',
-                          '#06b6d4',
-                          '#3b82f6',
-                          '#6366f1',
-                          '#8b5cf6',
-                        ].map((color, i) => (
-                          <div
-                            key={i}
-                            className="w-6 h-6 rounded-full shadow-sm hover:scale-110 transition-transform cursor-pointer"
-                            style={{
-                              backgroundColor: color,
-                              border: '2px solid white',
-                            }}
-                            onClick={() => setForm({ ...form, color })}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  <ColorPicker
+                    label="Color"
+                    value={form.color}
+                    onChange={(color) => setForm({ ...form, color })}
+                  />
                 )}
 
                 {form.eventCategory === 'exam' && (

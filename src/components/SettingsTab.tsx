@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ColorPicker from '@/components/ui/color-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -191,46 +192,18 @@ export default function SettingsTab() {
           <CardDescription>Customize the main theme color</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label>Accent Color {theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
-            <div className="w-24 h-24 relative mt-2">
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: `conic-gradient(
-                    from 0deg,
-                    hsl(0, 100%, 50%),
-                    hsl(60, 100%, 50%),
-                    hsl(120, 100%, 50%),
-                    hsl(180, 100%, 50%),
-                    hsl(240, 100%, 50%),
-                    hsl(300, 100%, 50%),
-                    hsl(360, 100%, 50%)
-                  )`,
-                }}
-              />
-              <div
-                className="absolute inset-1 rounded-full border-4 border-white dark:border-zinc-800"
-                style={{
-                  backgroundColor: theme.darkMode ? theme.accentColor.dark : theme.accentColor.light,
-                }}
-              />
-              <label className="block absolute inset-0 rounded-full cursor-pointer">
-                <input
-                  type="color"
-                  value={theme.darkMode ? theme.accentColor.dark : theme.accentColor.light}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    const newAccentColor = {
-                      ...theme.accentColor,
-                      [theme.darkMode ? 'dark' : 'light']: e.target.value,
-                    };
-                    setAccentColor(newAccentColor);
-                  }}
-                  className="sr-only"
-                />
-              </label>
-            </div>
-          </div>
+          <ColorPicker
+            label={`Accent Color ${theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}`}
+            value={theme.darkMode ? theme.accentColor.dark : theme.accentColor.light}
+            onChange={(color) => {
+              const newAccentColor = {
+                ...theme.accentColor,
+                [theme.darkMode ? 'dark' : 'light']: color,
+              };
+              setAccentColor(newAccentColor);
+            }}
+            htmlFor="accent-color"
+          />
           <Button
             variant="outline"
             className="rounded-xl w-full"
@@ -314,75 +287,42 @@ export default function SettingsTab() {
           </div>
 
           <div className={theme.gradientEnabled ? '' : 'opacity-50 pointer-events-none'}>
-            <div>
-              <Label>Start Color {theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
-              <div className="flex items-center gap-2 mt-1.5">
-                <div
-                  className="w-10 h-10 rounded-lg shadow-inner"
-                  style={{
-                    backgroundColor: theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light,
-                  }}
-                ></div>
-                <Input
-                  type="color"
-                  value={theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    const newGradientStart = {
-                      ...theme.gradientStart,
-                      [theme.darkMode ? 'dark' : 'light']: e.target.value,
-                    };
-                    setGradientStart(newGradientStart);
-                  }}
-                  className="h-10 rounded-xl w-full"
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Middle Color {theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
-              <div className="flex items-center gap-2 mt-1.5">
-                <div
-                  className="w-10 h-10 rounded-lg shadow-inner"
-                  style={{
-                    backgroundColor: theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light,
-                  }}
-                ></div>
-                <Input
-                  type="color"
-                  value={theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    const newGradientMiddle = {
-                      ...theme.gradientMiddle,
-                      [theme.darkMode ? 'dark' : 'light']: e.target.value,
-                    };
-                    setGradientMiddle(newGradientMiddle);
-                  }}
-                  className="h-10 rounded-xl w-full"
-                />
-              </div>
-            </div>
-            <div>
-              <Label>End Color {theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}</Label>
-              <div className="flex items-center gap-2 mt-1.5">
-                <div
-                  className="w-10 h-10 rounded-lg shadow-inner"
-                  style={{
-                    backgroundColor: theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light,
-                  }}
-                ></div>
-                <Input
-                  type="color"
-                  value={theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    const newGradientEnd = {
-                      ...theme.gradientEnd,
-                      [theme.darkMode ? 'dark' : 'light']: e.target.value,
-                    };
-                    setGradientEnd(newGradientEnd);
-                  }}
-                  className="h-10 rounded-xl w-full"
-                />
-              </div>
-            </div>
+            <ColorPicker
+              label={`Start Color ${theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}`}
+              value={theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light}
+              onChange={(color) => {
+                const newGradientStart = {
+                  ...theme.gradientStart,
+                  [theme.darkMode ? 'dark' : 'light']: color,
+                };
+                setGradientStart(newGradientStart);
+              }}
+              htmlFor="gradient-start-color"
+            />
+            <ColorPicker
+              label={`Middle Color ${theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}`}
+              value={theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light}
+              onChange={(color) => {
+                const newGradientMiddle = {
+                  ...theme.gradientMiddle,
+                  [theme.darkMode ? 'dark' : 'light']: color,
+                };
+                setGradientMiddle(newGradientMiddle);
+              }}
+              htmlFor="gradient-middle-color"
+            />
+            <ColorPicker
+              label={`End Color ${theme.darkMode ? '(Dark Mode)' : '(Light Mode)'}`}
+              value={theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light}
+              onChange={(color) => {
+                const newGradientEnd = {
+                  ...theme.gradientEnd,
+                  [theme.darkMode ? 'dark' : 'light']: color,
+                };
+                setGradientEnd(newGradientEnd);
+              }}
+              htmlFor="gradient-end-color"
+            />
             <Button
               variant="outline"
               className="rounded-xl w-full mt-4"

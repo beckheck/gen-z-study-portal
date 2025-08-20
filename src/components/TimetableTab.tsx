@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ColorPicker from '@/components/ui/color-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -451,57 +452,12 @@ function TimetableTab() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="event-color">Event Color</Label>
-                <div className="flex items-center gap-3 mt-1">
-                  <div className="w-8 h-8 rounded-lg shadow-sm" style={{ backgroundColor: eventInput.color }}></div>
-                  <Input
-                    id="event-color"
-                    type="color"
-                    value={eventInput.color}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setEventInput({ ...eventInput, color: e.target.value })
-                    }
-                    className="h-10 w-full"
-                  />
-                </div>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="hex-color"
-                    value={eventInput.color}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      // Validate hex color format
-                      const hexValue = e.target.value;
-                      // Only update if it's a valid hex color or empty
-                      if (hexValue === '' || /^#([A-Fa-f0-9]{3}){1,2}$/.test(hexValue)) {
-                        setEventInput({ ...eventInput, color: hexValue });
-                      }
-                    }}
-                    placeholder="#7c3aed"
-                    className="font-mono text-sm"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      // Generate a random color
-                      const randomColor =
-                        '#' +
-                        Math.floor(Math.random() * 16777215)
-                          .toString(16)
-                          .padStart(6, '0');
-                      setEventInput({ ...eventInput, color: randomColor });
-                    }}
-                    className="whitespace-nowrap"
-                  >
-                    Random
-                  </Button>
-                </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                  Choose a color or enter a HEX code to identify this event
-                </p>
-              </div>
+              <ColorPicker
+                label="Event Color"
+                value={eventInput.color}
+                onChange={(color) => setEventInput({ ...eventInput, color })}
+                htmlFor="event-color"
+              />
             </div>
 
             <Button onClick={addEvent} className="mt-6 w-full rounded-xl">
