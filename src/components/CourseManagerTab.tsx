@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useEventDialog } from '@/hooks/useEventDialog';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
-import { CalendarDays, ListTodo, Plus, Trash2, Undo } from 'lucide-react';
+import { CalendarDays, ListTodo, Plus, Trash2, Undo, Edit } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
 import { useTranslation } from 'react-i18next';
@@ -19,14 +19,9 @@ export default function CourseManagerTab() {
   const { t: tCourse } = useTranslation('courseManager');
   const { t: tCommon } = useTranslation('common');
   const { courses, selectedCourseId, getCourseTitle, setSelectedCourse, clearCourseData } = useCourses();
-  const { tasks, addTask, toggleTask, deleteTask } = useTasks();
+  const { tasks, toggleTask, deleteTask } = useTasks();
   const { exams, examGrades, addExam, updateExam, setExamGrades } = useExams();
   const eventDialog = useEventDialog();
-  const [taskForm, setTaskForm] = useState<{
-    title: string;
-    due: string;
-    priority: string;
-  }>({ title: '', due: '', priority: 'normal' });
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const courseTasks = tasks.filter(t => t.courseId === selectedCourseId);
@@ -131,59 +126,34 @@ export default function CourseManagerTab() {
         {/* Tasks */}
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ListTodo className="w-5 h-5" />
-              {tCourse('tasks.title')}
-            </CardTitle>
-            <CardDescription>{tCourse('tasks.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3">
-              <Label>{tCourse('tasks.form.title')}</Label>
-              <Input
-                value={taskForm.title}
-                onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
-                className="rounded-xl"
-                placeholder={tCourse('tasks.placeholders.title')}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>{tCourse('tasks.form.dueDate')}</Label>
-                  <Input
-                    type="date"
-                    value={taskForm.due}
-                    onChange={e => setTaskForm({ ...taskForm, due: e.target.value })}
-                    className="rounded-xl"
-                  />
-                </div>
-                <div>
-                  <Label>{tCourse('tasks.form.priority')}</Label>
-                  <Select value={taskForm.priority} onValueChange={v => setTaskForm({ ...taskForm, priority: v })}>
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">{tCommon('priorities.low')}</SelectItem>
-                      <SelectItem value="normal">{tCommon('priorities.normal')}</SelectItem>
-                      <SelectItem value="high">{tCommon('priorities.high')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ListTodo className="w-5 h-5" />
+                  {tCourse('tasks.title')}
+                </CardTitle>
+                <CardDescription>{tCourse('tasks.description')}</CardDescription>
               </div>
               <Button
-                onClick={() => {
-                  if (!taskForm.title) return;
-                  addTask({ ...taskForm, courseId: selectedCourseId });
-                  setTaskForm({ title: '', due: '', priority: 'normal' });
+                onClick={() =>
+                  eventDialog.openDialog({
+                    eventCategory: 'task',
+                    courseId: selectedCourseId,
+                  })
+                }
+                size="sm"
+                className="rounded-xl"
+                style={{
+                  backgroundColor: `hsl(var(--accent-h) var(--accent-s) var(--accent-l))`,
+                  color: 'white',
                 }}
-                className="rounded-xl w-full"
-                variant="default"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 {tCourse('actions.addTask')}
               </Button>
             </div>
-
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="text-xs uppercase tracking-wide text-zinc-500">{tCourse('tasks.sections.open')}</div>
               {courseTasks.filter(t => !t.done).length === 0 && (
@@ -194,15 +164,41 @@ export default function CourseManagerTab() {
                 .map(t => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl"
+                    className="flex items-center justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl group"
                   >
-                    <div>
+                    <div
+                      className="flex-1 cursor-pointer"
+                      onClick={() => {
+                        // Create task event with proper format for editing
+                        const taskEvent = {
+                          ...t,
+                          eventType: 'task',
+                        };
+                        eventDialog.openEditDialog(taskEvent);
+                      }}
+                    >
                       <div className="font-medium">{t.title}</div>
                       <div className="text-xs text-zinc-500">
                         {t.due || '—'} · {t.priority}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const taskEvent = {
+                            ...t,
+                            eventType: 'task',
+                          };
+                          eventDialog.openEditDialog(taskEvent);
+                        }}
+                        title={tCourse('actions.edit')}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
                       <Button
                         size="sm"
                         variant="default"
@@ -240,7 +236,17 @@ export default function CourseManagerTab() {
                           key={t.id}
                           className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group"
                         >
-                          <div className="flex-1">
+                          <div
+                            className="flex-1 cursor-pointer"
+                            onClick={() => {
+                              // Create task event with proper format for editing
+                              const taskEvent = {
+                                ...t,
+                                eventType: 'task',
+                              };
+                              eventDialog.openEditDialog(taskEvent);
+                            }}
+                          >
                             <div className="line-through group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                               {t.title}
                             </div>
@@ -249,6 +255,22 @@ export default function CourseManagerTab() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const taskEvent = {
+                                  ...t,
+                                  eventType: 'task',
+                                };
+                                eventDialog.openEditDialog(taskEvent);
+                              }}
+                              title={tCourse('actions.edit')}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
                             <Button
                               size="icon"
                               variant="ghost"
@@ -487,7 +509,7 @@ export default function CourseManagerTab() {
         setForm={eventDialog.setForm}
         onSave={eventDialog.handleSave}
         onDelete={eventDialog.handleDelete}
-        namespace="planner"
+        namespace={eventDialog.form.eventCategory === 'task' ? 'courseManager' : 'planner'}
         disableEventCategory={true}
         disableCourse={true}
       />
