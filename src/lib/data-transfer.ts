@@ -95,12 +95,12 @@ export class DataTransfer {
           middle: state.theme.gradientMiddle,
           end: state.theme.gradientEnd,
         },
-        bgImage: state.theme.bgImage,
         soundtrackEmbed: state.soundtrack.embed,
         accentColor: state.theme.accentColor,
         cardOpacity: state.theme.cardOpacity,
         weatherApiKey: state.weather.apiKey,
         weatherLocation: state.weather.location,
+        bgImage: state.theme.bgImage,
       },
     };
 

@@ -83,8 +83,6 @@ const DEFAULT_PLANNER_FORM: PlannerForm = {
   color: '#6366f1',
 };
 
-const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 // -----------------------------
 // Planner (Week + Month views)
 // -----------------------------
@@ -222,11 +220,6 @@ export default function PlannerTab() {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
     return d.getDate();
-  }
-
-  // Format date for display
-  function formatDate(date: Date): string {
-    return `${MONTHS_SHORT[date.getMonth()]} ${date.getDate()}`;
   }
 
   // Weekly Goals Management
@@ -610,7 +603,7 @@ export default function PlannerTab() {
                 {tCommon('actions.previous')}
               </Button>
               <div className="font-medium">
-                {formatDate(startOfWeek)} - {formatDate(new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000))}
+                {localizedFormatDate(startOfWeek, { month: 'short', day: 'numeric' })} - {localizedFormatDate(new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000), { month: 'short', day: 'numeric' })}
               </div>
               <Button variant="outline" onClick={() => setWeekOffset(offset => offset + 1)} className="rounded-xl">
                 {tCommon('actions.next')}
