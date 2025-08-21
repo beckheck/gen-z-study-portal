@@ -15,6 +15,7 @@ import type {
   TimetableEvent,
   TimetableEventInput,
   WeatherLocation,
+  WeeklyGoal,
 } from '../types';
 
 /**
@@ -427,6 +428,84 @@ export function useWellness() {
     },
     setMoodEmojis: (moodEmojis: typeof wellness.moodEmojis) => {
       store.wellness.moodEmojis = moodEmojis;
+    },
+  };
+}
+
+/**
+ * Hook to access and modify weekly goals
+ */
+export function useWeeklyGoals() {
+  const weeklyGoals = useSnapshot(store.weeklyGoals);
+
+  return {
+    weeklyGoals,
+    addGoal: (title: string) => {
+      if (!title.trim()) return;
+      const newGoal: WeeklyGoal = {
+        id: uid(),
+        title: title.trim(),
+        completed: false,
+        createdAt: Date.now(),
+      };
+      store.weeklyGoals.push(newGoal);
+    },
+    toggleGoal: (id: string) => {
+      const goalIndex = store.weeklyGoals.findIndex(goal => goal.id === id);
+      if (goalIndex !== -1) {
+        const goal = store.weeklyGoals[goalIndex];
+        const isBeingCompleted = !goal.completed;
+
+        // Generate random color when completing (but keep existing color if uncompleting)
+        const colors = [
+          '#ff6b6b',
+          '#4ecdc4',
+          '#45b7d1',
+          '#96ceb4',
+          '#ffeaa7',
+          '#dda0dd',
+          '#98d8c8',
+          '#f7dc6f',
+          '#bb8fce',
+          '#85c1e9',
+          '#f8c471',
+          '#82e0aa',
+          '#f1948a',
+          '#85c1e9',
+          '#d7bde2',
+          '#ff9ff3',
+          '#54a0ff',
+          '#5f27cd',
+          '#00d2d3',
+          '#ff9f43',
+          '#10ac84',
+          '#ee5a24',
+          '#0984e3',
+          '#6c5ce7',
+          '#a29bfe',
+        ];
+
+        store.weeklyGoals[goalIndex] = {
+          ...goal,
+          completed: isBeingCompleted,
+          color: isBeingCompleted ? goal.color || colors[Math.floor(Math.random() * colors.length)] : goal.color,
+        };
+
+        // Check if all goals are completed and return status
+        return {
+          allCompleted: store.weeklyGoals.every(g => g.completed) && store.weeklyGoals.length > 0,
+        };
+      }
+      return { allCompleted: false };
+    },
+    deleteGoal: (id: string) => {
+      const goalIndex = store.weeklyGoals.findIndex(goal => goal.id === id);
+      if (goalIndex !== -1) {
+        store.weeklyGoals.splice(goalIndex, 1);
+      }
+    },
+    clearAllGoals: () => {
+      store.weeklyGoals.length = 0;
     },
   };
 }

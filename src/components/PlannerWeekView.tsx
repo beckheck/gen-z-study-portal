@@ -5,8 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useSchedule } from '@/hooks/useStore';
-import { uid } from '@/lib/utils';
+import { useCourses, useSchedule, useWeeklyGoals } from '@/hooks/useStore';
 import { Plus, Target, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import ReactConfetti from 'react-confetti';
@@ -14,14 +13,6 @@ import { useTranslation } from 'react-i18next';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 type DayName = (typeof DAYS)[number];
-
-interface WeeklyGoal {
-  id: string;
-  title: string;
-  completed: boolean;
-  createdAt: number;
-  color?: string;
-}
 
 interface PlannerWeekViewProps {
   startOfWeek: Date;
@@ -38,10 +29,10 @@ export function PlannerWeekView({
 }: PlannerWeekViewProps) {
   const { courses } = useCourses();
   const { removeSchedule } = useSchedule();
+  const { weeklyGoals, addGoal, toggleGoal, deleteGoal, clearAllGoals } = useWeeklyGoals();
   const { t } = useTranslation('planner');
   const { getShortDayNames } = useLocalization();
 
-  const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
   const [goalForm, setGoalForm] = useState<{ title: string }>({ title: '' });
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
 
@@ -49,38 +40,6 @@ export function PlannerWeekView({
   const completedGoals = weeklyGoals.filter(goal => goal.completed).length;
   const totalGoals = weeklyGoals.length;
   const fillPercentage = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
-
-  // Generate random color for each completed task
-  const generateRandomColor = (): string => {
-    const colors = [
-      '#ff6b6b',
-      '#4ecdc4',
-      '#45b7d1',
-      '#96ceb4',
-      '#ffeaa7',
-      '#dda0dd',
-      '#98d8c8',
-      '#f7dc6f',
-      '#bb8fce',
-      '#85c1e9',
-      '#f8c471',
-      '#82e0aa',
-      '#f1948a',
-      '#85c1e9',
-      '#d7bde2',
-      '#ff9ff3',
-      '#54a0ff',
-      '#5f27cd',
-      '#00d2d3',
-      '#ff9f43',
-      '#10ac84',
-      '#ee5a24',
-      '#0984e3',
-      '#6c5ce7',
-      '#a29bfe',
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
 
   // Build gradient from completed tasks colors
   const buildGradientFromCompletedTasks = (): string => {
@@ -91,12 +50,12 @@ export function PlannerWeekView({
     }
 
     if (completedTasks.length === 1) {
-      // Single color for first completed task
-      return completedTasks[0].color || generateRandomColor();
+      // Single color for first completed task - use existing color or a default
+      return completedTasks[0].color || '#7c3aed';
     }
 
-    // Multiple colors - create gradient
-    const colors = completedTasks.map(task => task.color || generateRandomColor());
+    // Multiple colors - create gradient using existing colors or defaults
+    const colors = completedTasks.map(task => task.color || '#7c3aed');
     const step = 100 / (colors.length - 1);
     const gradientStops = colors.map((color, index) => `${color} ${Math.round(index * step)}%`).join(', ');
 
@@ -129,51 +88,29 @@ export function PlannerWeekView({
   }
 
   // Weekly Goals Management
-  function addGoal(): void {
+  function handleAddGoal(): void {
     if (!goalForm.title.trim()) return;
-    const newGoal = {
-      id: uid(),
-      title: goalForm.title.trim(),
-      completed: false,
-      createdAt: Date.now(),
-    };
-    setWeeklyGoals(prev => [...prev, newGoal]);
+    addGoal(goalForm.title);
     setGoalForm({ title: '' });
   }
 
-  function toggleGoal(id: string): void {
-    setWeeklyGoals(prev => {
-      const updated = prev.map(goal => {
-        if (goal.id === id) {
-          const isBeingCompleted = !goal.completed;
-          return {
-            ...goal,
-            completed: isBeingCompleted,
-            // Assign random color when completing (but keep existing color if uncompleting)
-            color: isBeingCompleted ? goal.color || generateRandomColor() : goal.color,
-          };
-        }
-        return goal;
-      });
+  function handleToggleGoal(id: string): void {
+    const result = toggleGoal(id);
 
-      // Check if all goals are completed
-      const allCompleted = updated.every(goal => goal.completed);
-      if (allCompleted && updated.length > 0) {
-        // Trigger confetti
-        setShowConfetti(true);
-        // Reset all goals after a short delay
-        setTimeout(() => {
-          setWeeklyGoals([]);
-          setShowConfetti(false);
-        }, 3000);
-      }
-
-      return updated;
-    });
+    // Check if all goals are completed
+    if (result?.allCompleted) {
+      // Trigger confetti
+      setShowConfetti(true);
+      // Reset all goals after a short delay
+      setTimeout(() => {
+        clearAllGoals();
+        setShowConfetti(false);
+      }, 3000);
+    }
   }
 
-  function deleteGoal(id: string): void {
-    setWeeklyGoals(prev => prev.filter(goal => goal.id !== id));
+  function handleDeleteGoal(id: string): void {
+    deleteGoal(id);
   }
 
   return (
@@ -375,9 +312,9 @@ export function PlannerWeekView({
                     onChange={e => setGoalForm({ title: e.target.value })}
                     placeholder={t('goals.goalPlaceholder')}
                     className="rounded-xl"
-                    onKeyPress={e => e.key === 'Enter' && addGoal()}
+                    onKeyPress={e => e.key === 'Enter' && handleAddGoal()}
                   />
-                  <Button onClick={addGoal} size="sm" className="rounded-xl px-4">
+                  <Button onClick={handleAddGoal} size="sm" className="rounded-xl px-4">
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
@@ -402,7 +339,7 @@ export function PlannerWeekView({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => toggleGoal(goal.id)}
+                        onClick={() => handleToggleGoal(goal.id)}
                         className={`w-6 h-6 rounded-full border-2 p-0 ${
                           goal.completed
                             ? 'text-white hover:opacity-80'
@@ -431,7 +368,7 @@ export function PlannerWeekView({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => deleteGoal(goal.id)}
+                        onClick={() => handleDeleteGoal(goal.id)}
                         className="w-6 h-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         <Trash2 className="w-3 h-3" />

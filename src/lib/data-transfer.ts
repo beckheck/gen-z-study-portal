@@ -83,6 +83,7 @@ export class DataTransfer {
         color: o.color,
       })),
       sessionTasks: state.sessionTasks,
+      weeklyGoals: state.weeklyGoals,
       degreePlan: state.degreePlan,
       wellness: state.wellness,
       settings: {
@@ -141,7 +142,7 @@ export class DataTransfer {
         accentColor: data.settings.accentColor,
         cardOpacity: data.settings.cardOpacity,
       });
-      
+
       const newState = {
         courses: data.settings.courses,
         selectedCourse: data.settings.selectedCourse,
@@ -165,7 +166,7 @@ export class DataTransfer {
         },
         degreePlan: data.settings.degreePlan || { semesters: [], completedCourses: [] },
       };
-      
+
       console.log('DataTransfer - calling setState with:', newState);
       this.setState(newState);
     }
@@ -295,6 +296,18 @@ export class DataTransfer {
         id: o.id ?? uid(),
       }));
       this.setState({ sessionTasks });
+    }
+
+    // Import weekly goals data
+    if (data.weeklyGoals) {
+      const weeklyGoals = data.weeklyGoals.map((o: any) => ({
+        id: o.id ?? uid(),
+        title: o.title,
+        completed: o.completed,
+        createdAt: o.createdAt,
+        color: o.color,
+      }));
+      this.setState({ weeklyGoals });
     }
 
     // Import wellness data
@@ -456,6 +469,13 @@ interface ExchangeFormatV1 {
       }
     >;
   };
+  weeklyGoals?: Array<{
+    id: string;
+    title: string;
+    completed: boolean;
+    createdAt: number;
+    color?: string;
+  }>;
   settings?: {
     courses: string[];
     selectedCourse: number;

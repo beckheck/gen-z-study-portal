@@ -376,6 +376,17 @@ export interface MoodEmojis {
 }
 
 /**
+ * Weekly goal object for planner week view
+ */
+export interface WeeklyGoal {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: number;
+  color?: string;
+}
+
+/**
  * Wellness data object for tracking user wellness metrics
  */
 export interface Wellness {
@@ -436,6 +447,7 @@ export interface AppState {
   timetableEvents: TimetableEvent[];
   regularEvents: RegularEvent[];
   sessionTasks: SessionTask[];
+  weeklyGoals: WeeklyGoal[];
   courses: string[];
   selectedCourse: number;
   theme: ThemeState;
