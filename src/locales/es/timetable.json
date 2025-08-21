@@ -3,7 +3,6 @@
   "description": "Horario semanal de tus clases y actividades",
   "addEvent": "Agregar Evento",
   "editEvent": "Editar Evento",
-  "deleteEvent": "Eliminar Evento",
   "addToTimetable": "Agregar al Horario",
   "updateEvent": "Actualizar Evento",
   "days": {

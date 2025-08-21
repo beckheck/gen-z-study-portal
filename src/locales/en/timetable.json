@@ -3,7 +3,6 @@
   "description": "Weekly schedule of your classes and activities",
   "addEvent": "Add Event",
   "editEvent": "Edit Event",
-  "deleteEvent": "Delete Event",
   "addToTimetable": "Add to Timetable",
   "updateEvent": "Update Event",
   "days": {

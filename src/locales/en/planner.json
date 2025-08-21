@@ -7,7 +7,6 @@
   "events": {
     "addEvent": "Add Event",
     "editEvent": "Edit Event",
-    "deleteEvent": "Delete Event",
     "eventDetails": "Event Details",
     "allDay": "All day",
     "recurring": "Recurring"
@@ -61,7 +60,7 @@
     "allGoalsCompleted": "Amazing! All weekly goals completed!",
     "deleteScheduleEvent": "Delete this schedule event?",
     "clickToCreate": "Click to create new event on this date",
-    "clickToEdit": "Click to edit or delete event",
+    "clickToEdit": "Click to edit event",
     "upcoming": "Upcoming",
     "noGoalsSet": "No goals set for this week.\nAdd one to get started! 🎯",
     "goals": "goals",

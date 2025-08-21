@@ -7,7 +7,6 @@
   "events": {
     "addEvent": "Agregar Evento",
     "editEvent": "Editar Evento",
-    "deleteEvent": "Eliminar Evento",
     "eventDetails": "Detalles del Evento",
     "allDay": "Todo el día",
     "recurring": "Recurrente"
@@ -61,7 +60,7 @@
     "allGoalsCompleted": "¡Increíble! ¡Todas las metas semanales completadas!",
     "deleteScheduleEvent": "¿Eliminar este evento del horario?",
     "clickToCreate": "Haz clic para crear un nuevo evento en esta fecha",
-    "clickToEdit": "Haz clic para editar o eliminar evento",
+    "clickToEdit": "Haz clic para editar evento",
     "upcoming": "Próximamente",
     "noGoalsSet": "No hay metas establecidas para esta semana.\n¡Agrega una para comenzar! 🎯",
     "goals": "metas",

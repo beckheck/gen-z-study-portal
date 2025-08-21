@@ -2,7 +2,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ColorPicker from '@/components/ui/color-picker';
-import { ContextMenu, ContextMenuItem } from '@/components/ui/context-menu';
 import {
   Dialog,
   DialogContent,
@@ -16,9 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { useContextMenu } from '@/hooks/useContextMenu';
-import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
 import { useLocalization } from '@/hooks/useLocalization';
+import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
 import { CalendarDays, Plus, Target, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -100,7 +98,6 @@ export default function PlannerTab() {
   const { getShortDayNames, getShortMonthNames, getMonthNames, formatDate: localizedFormatDate } = useLocalization();
 
   const [open, setOpen] = useState<boolean>(false);
-  const contextMenu = useContextMenu<any>();
   const [showMultiDayEvents, setShowMultiDayEvents] = useState<boolean>(false);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
@@ -135,17 +132,6 @@ export default function PlannerTab() {
     d.setHours(0, 0, 0, 0);
     return d;
   }, [weekOffset]);
-
-  // Event handlers that work with the new context menu
-  const editEvent = (event: any): void => {
-    handleEditEvent(event);
-    contextMenu.hideMenu();
-  };
-
-  const deleteEvent = (event: any): void => {
-    handleDeleteEvent(event);
-    contextMenu.hideMenu();
-  };
 
   // Calculate goal progress
   const completedGoals = weeklyGoals.filter(goal => goal.completed).length;
@@ -603,7 +589,11 @@ export default function PlannerTab() {
                 {tCommon('actions.previous')}
               </Button>
               <div className="font-medium">
-                {localizedFormatDate(startOfWeek, { month: 'short', day: 'numeric' })} - {localizedFormatDate(new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000), { month: 'short', day: 'numeric' })}
+                {localizedFormatDate(startOfWeek, { month: 'short', day: 'numeric' })} -{' '}
+                {localizedFormatDate(new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000), {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </div>
               <Button variant="outline" onClick={() => setWeekOffset(offset => offset + 1)} className="rounded-xl">
                 {tCommon('actions.next')}
@@ -815,31 +805,31 @@ export default function PlannerTab() {
                   />
                 </div>
 
-                <Button onClick={handleAddEvent} className="rounded-xl mt-2">
-                  {editingEvent ? tCommon('actions.edit') : tCommon('actions.add')}{' '}
-                  {form.eventCategory === 'regular'
-                    ? t('eventTypes.regular')
-                    : form.eventCategory === 'exam'
-                    ? t('eventTypes.exam')
-                    : t('eventTypes.task')}
-                </Button>
+                <div className="flex gap-2 mt-2">
+                  <Button onClick={handleAddEvent} className="rounded-xl flex-1">
+                    {editingEvent ? tCommon('actions.edit') : tCommon('actions.add')}{' '}
+                    {form.eventCategory === 'regular'
+                      ? t('eventTypes.regular')
+                      : form.eventCategory === 'exam'
+                      ? t('eventTypes.exam')
+                      : t('eventTypes.task')}
+                  </Button>
+                  {editingEvent && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        handleDeleteEvent(editingEvent);
+                        setOpen(false);
+                      }}
+                      className="rounded-xl px-4"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </DialogContent>
           </Dialog>
-
-          {/* Event Options Context Menu */}
-          <ContextMenu show={contextMenu.showMenu} position={contextMenu.position} menuRef={contextMenu.menuRef}>
-            {contextMenu.selectedItem && (
-              <>
-                <ContextMenuItem onClick={() => editEvent(contextMenu.selectedItem)}>
-                  {t('events.editEvent')}
-                </ContextMenuItem>
-                <ContextMenuItem variant="destructive" onClick={() => deleteEvent(contextMenu.selectedItem)}>
-                  {t('events.deleteEvent')}
-                </ContextMenuItem>
-              </>
-            )}
-          </ContextMenu>
         </div>
       </div>
 
@@ -936,14 +926,15 @@ export default function PlannerTab() {
                               <div
                                 className="flex-1 group relative bg-white/70 dark:bg-white/5 p-2.5 rounded-xl cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                                 onClick={event => {
+                                  event.stopPropagation();
                                   if (e.eventType === 'schedule') {
                                     // For schedule events, show delete confirmation directly
                                     if (confirm(t('messages.deleteScheduleEvent'))) {
                                       removeSchedule(e.id);
                                     }
                                   } else {
-                                    // For other events, show the options menu
-                                    contextMenu.showContextMenu(e, event);
+                                    // For other events, directly open edit dialog
+                                    handleEditEvent(e);
                                   }
                                 }}
                               >
@@ -977,14 +968,15 @@ export default function PlannerTab() {
                           key={e.id}
                           className="group relative flex flex-row items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl mb-2 cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                           onClick={event => {
+                            event.stopPropagation();
                             if (e.eventType === 'schedule') {
                               // For schedule events, show delete confirmation directly
                               if (confirm(t('messages.deleteScheduleEvent'))) {
                                 removeSchedule(e.id);
                               }
                             } else {
-                              // For other events, show the options menu
-                              contextMenu.showContextMenu(e, event);
+                              // For other events, directly open edit dialog
+                              handleEditEvent(e);
                             }
                           }}
                         >
@@ -1233,7 +1225,16 @@ export default function PlannerTab() {
                         key={idx}
                         className="text-xs truncate flex items-center gap-1.5 p-1 rounded bg-white/50 dark:bg-white/10 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                         onClick={event => {
-                          contextMenu.showContextMenu(e, event);
+                          event.stopPropagation();
+                          if (e.eventType === 'schedule') {
+                            // For schedule events, show delete confirmation directly
+                            if (confirm(t('messages.deleteScheduleEvent'))) {
+                              removeSchedule(e.id);
+                            }
+                          } else {
+                            // For other events, directly open edit dialog
+                            handleEditEvent(e);
+                          }
                         }}
                         title={t('messages.clickToEdit')}
                       >
@@ -1316,7 +1317,8 @@ export default function PlannerTab() {
                         className="bg-white/90 dark:bg-white/10 rounded-xl p-4 border-t-4 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                         style={{ borderTopColor: event.color || '#6366f1' }}
                         onClick={e => {
-                          contextMenu.showContextMenu({ ...event, eventType: 'regular' }, e);
+                          e.stopPropagation();
+                          handleEditEvent({ ...event, eventType: 'regular' });
                         }}
                         title={t('messages.clickToEdit')}
                       >
@@ -1393,38 +1395,40 @@ const EventTypeIndicator = ({ event, size = 'sm' }: { event: any; size?: 'sm' | 
 // Shared event tooltip component
 const EventTooltip = ({ event }: { event: any }) => {
   const { courses } = useCourses();
-  <div
-    style={{
-      backgroundColor: 'var(--background, white)',
-      zIndex: 99999,
-      position: 'fixed',
-      transform: 'translateY(-100%)',
-      marginBottom: '8px',
-      left: '50%',
-      marginLeft: '-8rem', // half of w-64 (16rem)
-    }}
-    className="opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-64 p-3 rounded-xl shadow-xl border border-white/20 dark:border-white/10"
-  >
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <EventTypeIndicator event={event} />
-        <span className="font-medium text-zinc-900 dark:text-zinc-100">{event.title || event.type}</span>
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--background, white)',
+        zIndex: 99999,
+        position: 'fixed',
+        transform: 'translateY(-100%)',
+        marginBottom: '8px',
+        left: '50%',
+        marginLeft: '-8rem', // half of w-64 (16rem)
+      }}
+      className="opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-64 p-3 rounded-xl shadow-xl border border-white/20 dark:border-white/10"
+    >
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <EventTypeIndicator event={event} />
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{event.title || event.type}</span>
+        </div>
+        <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <div>{courses[event.courseIndex]}</div>
+          {event.displayTime && <div>{event.displayTime}</div>}
+          {event.location && <div>{event.location}</div>}
+          {event.weight && <div>Weight: {event.weight}%</div>}
+          {event.priority && <div>Priority: {event.priority}</div>}
+          {event.notes && <div className="italic mt-2">{event.notes}</div>}
+        </div>
       </div>
-      <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-        <div>{courses[event.courseIndex]}</div>
-        {event.displayTime && <div>{event.displayTime}</div>}
-        {event.location && <div>{event.location}</div>}
-        {event.weight && <div>Weight: {event.weight}%</div>}
-        {event.priority && <div>Priority: {event.priority}</div>}
-        {event.notes && <div className="italic mt-2">{event.notes}</div>}
+      {/* Arrow */}
+      <div className="absolute bottom-0 left-4 transform translate-y-full">
+        <div
+          style={{ backgroundColor: 'var(--background, white)' }}
+          className="w-2 h-2 rotate-45 transform -translate-y-1 border-r border-b border-white/20 dark:border-white/10"
+        ></div>
       </div>
     </div>
-    {/* Arrow */}
-    <div className="absolute bottom-0 left-4 transform translate-y-full">
-      <div
-        style={{ backgroundColor: 'var(--background, white)' }}
-        className="w-2 h-2 rotate-45 transform -translate-y-1 border-r border-b border-white/20 dark:border-white/10"
-      ></div>
-    </div>
-  </div>;
+  );
 };

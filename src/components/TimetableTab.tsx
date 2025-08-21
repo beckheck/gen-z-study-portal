@@ -1,15 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ColorPicker from '@/components/ui/color-picker';
-import { ContextMenu, ContextMenuItem } from '@/components/ui/context-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useContextMenu } from '@/hooks/useContextMenu';
 import { useCourses, useTimetable } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
@@ -21,11 +19,9 @@ export default function TimetableTab() {
   const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const contextMenu = useContextMenu<TimetableEvent>();
 
   // Days of the week - use English as keys, translate for display
   const weekDays: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const shortWeekDays: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
   // Helper function to get translated day name
   const getTranslatedDayName = (englishDay: string): string => {
@@ -128,7 +124,6 @@ export default function TimetableTab() {
     // Reset editing state and show the form
     setIsEditing(false);
     setShowAddEvent(true);
-    contextMenu.hideMenu();
   };
 
   // Add a new event or update existing one
@@ -157,13 +152,11 @@ export default function TimetableTab() {
     setIsEditing(true);
     setEditingEventId(id);
     setShowAddEvent(true);
-    contextMenu.hideMenu();
   };
 
   // Delete an event
   const deleteEvent = (id: string): void => {
     deleteTimetableEvent(id);
-    contextMenu.hideMenu();
   };
 
   // Filter events for a specific day and block
@@ -173,18 +166,6 @@ export default function TimetableTab() {
 
   return (
     <div className="space-y-6">
-      {/* Event Options Context Menu */}
-      <ContextMenu show={contextMenu.showMenu} position={contextMenu.position} menuRef={contextMenu.menuRef}>
-        {contextMenu.selectedItem && (
-          <>
-            <ContextMenuItem onClick={() => editEvent(contextMenu.selectedItem)}>{t('editEvent')}</ContextMenuItem>
-            <ContextMenuItem variant="destructive" onClick={() => deleteEvent(contextMenu.selectedItem.id)}>
-              {t('deleteEvent')}
-            </ContextMenuItem>
-          </>
-        )}
-      </ContextMenu>
-
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
           <CardTitle className="text-2xl font-bold flex justify-between items-center">
@@ -200,7 +181,6 @@ export default function TimetableTab() {
                 if (!showAddEvent) {
                   setIsEditing(false);
                   setEditingEventId(null);
-                  contextMenu.hideMenu();
                   resetEventInput();
                 }
               }}
@@ -253,7 +233,10 @@ export default function TimetableTab() {
                           borderLeft: `4px solid ${event.color || '#7c3aed'}`,
                           color: event.color ? undefined : undefined,
                         }}
-                        onClick={e => contextMenu.showContextMenu(event, e)}
+                        onClick={e => {
+                          e.stopPropagation();
+                          editEvent(event);
+                        }}
                       >
                         <div className="text-xs sm:text-sm font-medium text-zinc-800 dark:text-zinc-200">
                           {getCourseTitle(event.courseIndex)}
@@ -316,6 +299,7 @@ export default function TimetableTab() {
           setShowAddEvent(open);
           if (!open) {
             setIsEditing(false);
+            setEditingEventId(null);
           }
         }}
       >
@@ -448,9 +432,25 @@ export default function TimetableTab() {
               htmlFor="event-color"
             />
 
-            <Button onClick={addEvent} className="w-full rounded-xl">
-              {isEditing ? t('updateEvent') : t('addToTimetable')}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={addEvent} className="flex-1 rounded-xl">
+                {isEditing ? t('updateEvent') : t('addToTimetable')}
+              </Button>
+              {isEditing && editingEventId && (
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    deleteEvent(editingEventId);
+                    setShowAddEvent(false);
+                    setIsEditing(false);
+                    setEditingEventId(null);
+                  }}
+                  className="rounded-xl px-4"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
