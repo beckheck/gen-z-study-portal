@@ -5,11 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useAppState, useCourses, useSoundtrack, useTheme, useWeather } from '@/hooks/useStore';
-import { DataTransfer } from '@/lib/data-transfer';
-import { patchStoreState } from '@/store';
+import { useCourses, useSoundtrack, useTheme, useWeather } from '@/hooks/useStore';
+import { dataTransfer } from '@/store';
 import { Download } from 'lucide-react';
-import { ChangeEvent, useMemo } from 'react';
+import { ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function SettingsTab() {
@@ -30,21 +29,7 @@ export default function SettingsTab() {
     setGradientMiddle,
     setGradientStart,
   } = useTheme();
-  const state = useAppState();
 
-  // Data transfer instance for import/export
-  const dataTransfer = useMemo(
-    () =>
-      new DataTransfer(
-        // Get state callback - return the current state snapshot
-        () => state as any,
-        // Set state callback - update the entire store state
-        newState => {
-          patchStoreState(newState);
-        }
-      ),
-    [state]
-  );
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
@@ -74,7 +59,7 @@ export default function SettingsTab() {
             <p>{t('about.proTip')}</p>
           </div>
           <div className="grid gap-2">
-            <Button variant="outline" onClick={() => dataTransfer.exportData()} className="w-full rounded-xl">
+            <Button variant="outline" onClick={() => dataTransfer.exportFile()} className="w-full rounded-xl">
               <Download className="w-4 h-4 mr-2" />
               {t('about.exportData')}
             </Button>
@@ -89,7 +74,7 @@ export default function SettingsTab() {
                         const file = e.target.files?.[0];
                         if (file) {
                           try {
-                            const success = await dataTransfer.importData(file);
+                            const success = await dataTransfer.importFile(file);
                             if (success) {
                               alert(t('about.importSuccess'));
                               window.location.reload(); // Refresh to ensure all components update

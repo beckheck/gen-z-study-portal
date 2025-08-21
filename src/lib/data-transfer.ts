@@ -17,7 +17,7 @@ export class DataTransfer {
     this.setState = setState;
   }
 
-  exportData(): void {
+  exportData() {
     const state = this.getState();
     const data: ExchangeFormatV1 = {
       // Core data
@@ -104,7 +104,11 @@ export class DataTransfer {
         bgImage: state.theme.bgImage,
       },
     };
+    return data;
+  }
 
+  exportFile(): void {
+    const data = this.exportData();
     try {
       const jsonString = JSON.stringify(data, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
@@ -119,15 +123,22 @@ export class DataTransfer {
     }
   }
 
-  async importData(file: File): Promise<boolean> {
+  async importFile(file: File): Promise<boolean> {
     try {
       const text = await file.text();
       const data: ExchangeFormatV1 = JSON.parse(text);
+      return this.importData(data);
+    } catch (error) {
+      console.error('Error importing data:', error);
+      return false;
+    }
+  }
 
+  importData(data: any): boolean {
+    try {
       if (data.version == null) {
         this.importDataV1(data);
       }
-
       return true;
     } catch (error) {
       console.error('Error importing data:', error);

@@ -1,4 +1,5 @@
-import { proxy, subscribe } from 'valtio';
+import { proxy, snapshot, subscribe } from 'valtio';
+import { DataTransfer } from '../lib/data-transfer';
 import type { AppState, DegreePlan, MoodEmojis, WeatherLocation } from '../types';
 
 // Default values
@@ -163,6 +164,20 @@ function migrateFromLocalStorage(): Partial<AppState> {
 // Load state from localStorage or create initial state
 function loadState(): AppState {
   try {
+    const appStateExchange = localStorage.getItem('sp:appStateExchange');
+    if (appStateExchange) {
+      const parsed = JSON.parse(appStateExchange);
+      let state = createInitialState();
+      const dataTransfer: DataTransfer = new DataTransfer(
+        () => state,
+        newState => {
+          state = { ...state, ...newState };
+        }
+      );
+      dataTransfer.importData(parsed);
+      return state;
+    }
+
     // First, try to load from the new centralized key
     const centralizedRaw = localStorage.getItem('sp:appState');
     if (centralizedRaw) {
@@ -211,12 +226,8 @@ function loadState(): AppState {
 
     // If we migrated data, save it to the new centralized key and clean up old keys
     if (Object.keys(migratedState).length > 0) {
+      removeDeprecatedLocalStorageItems();
       localStorage.setItem('sp:appState', JSON.stringify(mergedState));
-
-      // Clean up old localStorage keys
-      Object.keys(MIGRATION_MAP).forEach(key => {
-        localStorage.removeItem(key);
-      });
     }
 
     return mergedState;
@@ -237,6 +248,16 @@ export const patchStoreState = (newState: Partial<AppState>) => {
   updateProxyFromState(store, newState, true);
 };
 
+// Data transfer instance for import/export
+export const dataTransfer: DataTransfer = new DataTransfer(
+  // Get state callback - return the current state snapshot
+  () => snapshot(store) as any,
+  // Set state callback - update the entire store state
+  newState => {
+    patchStoreState(newState);
+  }
+);
+
 // Flag to track if we're currently applying changes from storage
 let isApplyingFromStorage = false;
 
@@ -248,14 +269,9 @@ subscribe(store, () => {
   }
 
   try {
-    localStorage.setItem('sp:appState', JSON.stringify(store));
-
-    // Also clean up any old localStorage keys that might still exist
-    Object.keys(MIGRATION_MAP).forEach(oldKey => {
-      if (localStorage.getItem(oldKey) !== null) {
-        localStorage.removeItem(oldKey);
-      }
-    });
+    const exportData = dataTransfer.exportData();
+    removeDeprecatedLocalStorageItems();
+    localStorage.setItem('sp:appStateExchange', JSON.stringify(exportData));
 
     // Note: Browser's native storage events will notify other tabs automatically
   } catch (error) {
@@ -263,16 +279,22 @@ subscribe(store, () => {
   }
 });
 
+function removeDeprecatedLocalStorageItems() {
+  Object.keys(MIGRATION_MAP).forEach(oldKey => {
+    if (localStorage.getItem(oldKey) !== null) {
+      localStorage.removeItem(oldKey);
+    }
+  });
+  localStorage.removeItem('sp:appState');
+}
+
 // Listen for storage changes from other tabs (browser's native storage events only)
 window.addEventListener('storage', e => {
-  if (e.key === 'sp:appState' && e.newValue) {
+  if (e.key === 'sp:appStateExchange' && e.newValue) {
     try {
       isApplyingFromStorage = true;
       const newState = JSON.parse(e.newValue);
-
-      // Properly update the proxy by mutating individual properties
-      // This is how Valtio expects updates to work
-      updateProxyFromState(store, newState);
+      dataTransfer.importData(newState);
     } catch (error) {
       console.error('Failed to sync state from storage event:', error);
     } finally {
