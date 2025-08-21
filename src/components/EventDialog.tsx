@@ -5,11 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { EventForm } from '@/hooks/useEventDialog';
 import { useCourses } from '@/hooks/useStore';
 import { Trash2 } from 'lucide-react';
 import { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
-import { EventForm } from '@/hooks/useEventDialog';
 
 interface EventDialogProps {
   open: boolean;
@@ -21,6 +21,7 @@ interface EventDialogProps {
   onDelete: () => void;
   namespace?: string; // Translation namespace (e.g., 'planner', 'tracker')
   disableEventCategory?: boolean; // Make event category readonly
+  disableCourse?: boolean; // Make course selection readonly
 }
 
 export function EventDialog({
@@ -33,6 +34,7 @@ export function EventDialog({
   onDelete,
   namespace = 'planner',
   disableEventCategory = false,
+  disableCourse = false,
 }: EventDialogProps) {
   const { t } = useTranslation(namespace);
   const { t: tCommon } = useTranslation('common');
@@ -56,8 +58,8 @@ export function EventDialog({
         <div className="grid gap-4">
           <div>
             <Label className="text-gray-700 dark:text-gray-300">{t('forms.eventCategory')}</Label>
-            <Select 
-              value={form.eventCategory} 
+            <Select
+              value={form.eventCategory}
               onValueChange={v => handleFormChange('eventCategory', v)}
               disabled={disableEventCategory}
             >
@@ -74,7 +76,11 @@ export function EventDialog({
 
           <div>
             <Label className="text-gray-700 dark:text-gray-300">{t('forms.courseOptional')}</Label>
-            <Select value={String(form.courseIndex)} onValueChange={v => handleFormChange('courseIndex', Number(v))}>
+            <Select
+              value={String(form.courseIndex)}
+              onValueChange={v => handleFormChange('courseIndex', Number(v))}
+              disabled={disableCourse}
+            >
               <SelectTrigger className="rounded-xl">
                 <SelectValue placeholder={t('forms.courseOptional')} />
               </SelectTrigger>

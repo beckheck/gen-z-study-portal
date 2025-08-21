@@ -1,3 +1,4 @@
+import { EventDialog } from '@/components/EventDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,12 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { EventDialog } from '@/components/EventDialog';
-import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { useEventDialog } from '@/hooks/useEventDialog';
+import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
-import { CalendarDays, GraduationCap, ListTodo, NotebookPen, Plus, Trash2, Undo } from 'lucide-react';
+import { CalendarDays, ListTodo, Plus, Trash2, Undo } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
 import { useTranslation } from 'react-i18next';
@@ -28,13 +27,6 @@ export default function CourseManagerTab() {
     due: string;
     priority: string;
   }>({ title: '', due: '', priority: 'normal' });
-  const [examForm, setExamForm] = useState<{
-    title: string;
-    date: string;
-    weight: number;
-    notes: string;
-  }>({ title: '', date: '', weight: 20, notes: '' });
-  const [editingExam, setEditingExam] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const courseTasks = tasks.filter(t => t.courseIndex === selectedCourse);
@@ -121,10 +113,6 @@ export default function CourseManagerTab() {
               ))}
             </SelectContent>
           </Select>
-          <Badge variant="secondary" className="rounded-full">
-            <GraduationCap className="w-3 h-3 mr-1" />
-            {courses[selectedCourse]}
-          </Badge>
           <Button
             variant="outline"
             size="sm"
@@ -139,7 +127,7 @@ export default function CourseManagerTab() {
       </div>
       <Progress value={progress} className="h-3 rounded-xl" />
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 gap-6">
         {/* Tasks */}
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
           <CardHeader>
@@ -291,11 +279,32 @@ export default function CourseManagerTab() {
         {/* Upcoming Evaluations */}
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="w-5 h-5" />
-              {tCourse('exams.upcoming.title')}
-            </CardTitle>
-            <CardDescription>{tCourse('exams.upcoming.description')}</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="w-5 h-5" />
+                  {tCourse('exams.upcoming.title')}
+                </CardTitle>
+                <CardDescription>{tCourse('exams.upcoming.description')}</CardDescription>
+              </div>
+              <Button
+                onClick={() =>
+                  eventDialog.openDialog({
+                    eventCategory: 'exam',
+                    courseIndex: selectedCourse,
+                  })
+                }
+                size="sm"
+                className="rounded-xl"
+                style={{
+                  backgroundColor: `hsl(var(--accent-h) var(--accent-s) var(--accent-l))`,
+                  color: 'white',
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {tCourse('actions.addExam')}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {courseExams.length === 0 && <div className="text-sm text-zinc-500">{tCourse('exams.upcoming.empty')}</div>}
@@ -337,87 +346,6 @@ export default function CourseManagerTab() {
                     </Badge>
                   </div>
                 ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Exams */}
-        <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <NotebookPen className="w-5 h-5" />
-              {tCourse('exams.title')}
-            </CardTitle>
-            <CardDescription>{tCourse('exams.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3">
-              <Label>{tCourse('exams.form.title')}</Label>
-              <Input
-                value={examForm.title}
-                onChange={e => setExamForm({ ...examForm, title: e.target.value })}
-                className="rounded-xl"
-                placeholder={tCourse('exams.placeholders.title')}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>{tCourse('exams.form.date')}</Label>
-                  <Input
-                    type="date"
-                    value={examForm.date}
-                    onChange={e => setExamForm({ ...examForm, date: e.target.value })}
-                    className="rounded-xl"
-                  />
-                </div>
-                <div>
-                  <Label>{tCourse('exams.form.weight')}</Label>
-                  <Input
-                    type="number"
-                    value={examForm.weight}
-                    onChange={e => setExamForm({ ...examForm, weight: Number(e.target.value) })}
-                    className="rounded-xl"
-                  />
-                </div>
-              </div>
-              <Label>{tCourse('exams.form.notes')}</Label>
-              <Textarea
-                value={examForm.notes}
-                onChange={e => setExamForm({ ...examForm, notes: e.target.value })}
-                className="rounded-xl"
-                placeholder={tCourse('exams.placeholders.notes')}
-              />
-              <Button
-                onClick={() => {
-                  if (!examForm.title || !examForm.date) return;
-                  if (editingExam) {
-                    updateExam(editingExam, { ...examForm, courseIndex: selectedCourse });
-                    setEditingExam(null);
-                  } else {
-                    addExam({ ...examForm, courseIndex: selectedCourse });
-                  }
-                  setExamForm({ title: '', date: '', weight: 20, notes: '' });
-                }}
-                className="rounded-xl w-full"
-                style={{
-                  backgroundColor: `hsl(var(--accent-h) var(--accent-s) var(--accent-l))`,
-                  color: 'white',
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {editingExam ? tCourse('actions.updateExam') : tCourse('actions.addExam')}
-              </Button>
-              {editingExam && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setEditingExam(null);
-                    setExamForm({ title: '', date: '', weight: 20, notes: '' });
-                  }}
-                  className="rounded-xl mt-2 w-full"
-                >
-                  {tCourse('actions.cancelEdit')}
-                </Button>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -559,6 +487,7 @@ export default function CourseManagerTab() {
         onDelete={eventDialog.handleDelete}
         namespace="planner"
         disableEventCategory={true}
+        disableCourse={true}
       />
     </div>
   );
