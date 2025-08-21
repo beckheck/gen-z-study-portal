@@ -20,6 +20,7 @@ interface EventDialogProps {
   onSave: () => void;
   onDelete: () => void;
   namespace?: string; // Translation namespace (e.g., 'planner', 'tracker')
+  disableEventCategory?: boolean; // Make event category readonly
 }
 
 export function EventDialog({
@@ -31,6 +32,7 @@ export function EventDialog({
   onSave,
   onDelete,
   namespace = 'planner',
+  disableEventCategory = false,
 }: EventDialogProps) {
   const { t } = useTranslation(namespace);
   const { t: tCommon } = useTranslation('common');
@@ -54,7 +56,11 @@ export function EventDialog({
         <div className="grid gap-4">
           <div>
             <Label className="text-gray-700 dark:text-gray-300">{t('forms.eventCategory')}</Label>
-            <Select value={form.eventCategory} onValueChange={v => handleFormChange('eventCategory', v)}>
+            <Select 
+              value={form.eventCategory} 
+              onValueChange={v => handleFormChange('eventCategory', v)}
+              disabled={disableEventCategory}
+            >
               <SelectTrigger className="rounded-xl">
                 <SelectValue />
               </SelectTrigger>
@@ -204,12 +210,7 @@ export function EventDialog({
 
           <div className="flex gap-2 mt-2">
             <Button onClick={onSave} className="rounded-xl flex-1">
-              {editingEvent ? tCommon('actions.edit') : tCommon('actions.add')}{' '}
-              {form.eventCategory === 'regular'
-                ? t('eventTypes.regular')
-                : form.eventCategory === 'exam'
-                ? t('eventTypes.exam')
-                : t('eventTypes.task')}
+              {tCommon('actions.save')}
             </Button>
             {editingEvent && (
               <Button variant="destructive" onClick={onDelete} className="rounded-xl px-4">

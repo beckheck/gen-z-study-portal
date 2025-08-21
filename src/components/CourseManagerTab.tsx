@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { EventDialog } from '@/components/EventDialog';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
+import { useEventDialog } from '@/hooks/useEventDialog';
 import { motion } from 'framer-motion';
 import { CalendarDays, GraduationCap, ListTodo, NotebookPen, Plus, Trash2, Undo } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -20,6 +22,7 @@ export default function CourseManagerTab() {
   const { courses, selectedCourse, setSelectedCourse, clearCourseData } = useCourses();
   const { tasks, addTask, toggleTask, deleteTask } = useTasks();
   const { exams, examGrades, addExam, updateExam, setExamGrades } = useExams();
+  const eventDialog = useEventDialog();
   const [taskForm, setTaskForm] = useState<{
     title: string;
     due: string;
@@ -302,7 +305,16 @@ export default function CourseManagerTab() {
                 .map(e => (
                   <div
                     key={e.id}
-                    className="flex items-start justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl"
+                    className="flex items-start justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors"
+                    onClick={() => {
+                      // Create exam event with proper format
+                      const examEvent = {
+                        ...e,
+                        eventType: 'exam',
+                        date: e.date, // Keep the exam date format
+                      };
+                      eventDialog.openEditDialog(examEvent);
+                    }}
                   >
                     <div>
                       <div className="font-medium">{e.title}</div>
@@ -442,7 +454,16 @@ export default function CourseManagerTab() {
                   return (
                     <div
                       key={exam.id}
-                      className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl"
+                      className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
+                      onClick={() => {
+                        // Create exam event with proper format
+                        const examEvent = {
+                          ...exam,
+                          eventType: 'exam',
+                          date: exam.date, // Keep the exam date format
+                        };
+                        eventDialog.openEditDialog(examEvent);
+                      }}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{exam.title}</div>
@@ -457,6 +478,7 @@ export default function CourseManagerTab() {
                           placeholder={tCourse('tasks.placeholders.grade')}
                           value={currentGrade?.grade?.toString() || ''}
                           onChange={e => updateExamGrade(exam.id, e.target.value)}
+                          onClick={e => e.stopPropagation()} // Prevent opening dialog when clicking input
                           className="w-20 h-8 text-center rounded-lg"
                         />
                       </div>
@@ -525,6 +547,19 @@ export default function CourseManagerTab() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Event Dialog for editing exams */}
+      <EventDialog
+        open={eventDialog.open}
+        onOpenChange={eventDialog.closeDialog}
+        editingEvent={eventDialog.editingEvent}
+        form={eventDialog.form}
+        setForm={eventDialog.setForm}
+        onSave={eventDialog.handleSave}
+        onDelete={eventDialog.handleDelete}
+        namespace="planner"
+        disableEventCategory={true}
+      />
     </div>
   );
 }

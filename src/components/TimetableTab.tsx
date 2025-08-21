@@ -14,6 +14,7 @@ import type { TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
 
 export default function TimetableTab() {
   const { t } = useTranslation('timetable');
+  const { t: tCommon } = useTranslation('common');
   const { courses } = useCourses();
   const { timetableEvents, setTimetableEvents, deleteTimetableEvent } = useTimetable();
   const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
@@ -434,7 +435,7 @@ export default function TimetableTab() {
 
             <div className="flex gap-2">
               <Button onClick={addEvent} className="flex-1 rounded-xl">
-                {isEditing ? t('updateEvent') : t('addToTimetable')}
+                {tCommon('actions.save')}
               </Button>
               {isEditing && editingEventId && (
                 <Button
