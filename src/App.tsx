@@ -16,6 +16,7 @@ import useAccentColorStyles from '@/hooks/useAccentColorStyles';
 import useBaseStyles from '@/hooks/useBaseStyles';
 import useCardOpacityStyles from '@/hooks/useCardOpacityStyles';
 import useDarkModeStyles from '@/hooks/useDarkModeStyles';
+import useHashNavigation from '@/hooks/useHashNavigation';
 import { useSoundtrack, useTheme } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import {
@@ -63,10 +64,6 @@ export default function StudyPortal(): React.JSX.Element {
   const { theme, setDarkMode } = useTheme();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
 
-  // Local UI state (not persisted)
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-
   // Localized tabs array
   const tabs: AppTab[] = [
     { value: 'dashboard', label: t('navigation.dashboard'), icon: Home },
@@ -78,6 +75,18 @@ export default function StudyPortal(): React.JSX.Element {
     { value: 'wellness', label: t('navigation.wellness'), icon: HeartPulse },
     { value: 'settings', label: t('navigation.settings'), icon: SettingsIcon },
   ];
+
+  const navigationValues = tabs.map(tab => tab.value);
+
+  // Hash-based navigation for tabs
+  const { currentValue: activeTab, setValue: setActiveTab } = useHashNavigation({
+    validValues: navigationValues,
+    defaultValue: navigationValues[0],
+    useHistory: true,
+  });
+
+  // Local UI state (not persisted)
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
 
   // Style hooks
   useDarkModeStyles();
