@@ -79,7 +79,7 @@ export default function PlannerTab() {
 
     // Regular schedule events
     const scheduleEvents = eventsForDay(dayName)
-      .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
+      .filter(e => filterCourse === 'all' || e.courseId === filterCourse)
       .map(e => ({
         ...e,
         eventType: 'schedule',
@@ -102,7 +102,7 @@ export default function PlannerTab() {
         // Include if: within range AND (single-day event OR multi-day event with toggle on)
         return (
           isInRange &&
-          (filterCourse === 'all' || String(e.courseIndex) === filterCourse) &&
+          (filterCourse === 'all' || e.courseId === filterCourse) &&
           (!isMultiDay || showMultiDayEvents)
         );
       })
@@ -117,7 +117,7 @@ export default function PlannerTab() {
 
     // Exams for this date
     const dayExams = exams
-      .filter(e => e.date === dateStr && (filterCourse === 'all' || String(e.courseIndex) === filterCourse))
+      .filter(e => e.date === dateStr && (filterCourse === 'all' || e.courseId === filterCourse))
       .map(e => ({
         ...e,
         eventType: 'exam',
@@ -129,7 +129,7 @@ export default function PlannerTab() {
 
     // Tasks due on this date
     const dayTasks = tasks
-      .filter(t => t.due === dateStr && !t.done && (filterCourse === 'all' || String(t.courseIndex) === filterCourse))
+      .filter(t => t.due === dateStr && !t.done && (filterCourse === 'all' || t.courseId === filterCourse))
       .map(t => ({
         ...t,
         eventType: 'task',
@@ -150,7 +150,7 @@ export default function PlannerTab() {
 
     // Regular schedule events
     const scheduleEvents = eventsForDay(dayName)
-      .filter(e => filterCourse === 'all' || String(e.courseIndex) === filterCourse)
+      .filter(e => filterCourse === 'all' || e.courseId === filterCourse)
       .map(e => ({
         ...e,
         eventType: 'schedule',
@@ -168,7 +168,7 @@ export default function PlannerTab() {
         return (
           currentDate >= startDate &&
           currentDate <= endDate &&
-          (filterCourse === 'all' || String(e.courseIndex) === filterCourse)
+          (filterCourse === 'all' || e.courseId === filterCourse)
         );
       })
       .map(e => ({
@@ -182,7 +182,7 @@ export default function PlannerTab() {
 
     // Exams for this date
     const dayExams = exams
-      .filter(e => e.date === dateStr && (filterCourse === 'all' || String(e.courseIndex) === filterCourse))
+      .filter(e => e.date === dateStr && (filterCourse === 'all' || e.courseId === filterCourse))
       .map(e => ({
         ...e,
         eventType: 'exam',
@@ -194,7 +194,7 @@ export default function PlannerTab() {
 
     // Tasks due on this date
     const dayTasks = tasks
-      .filter(t => t.due === dateStr && !t.done && (filterCourse === 'all' || String(t.courseIndex) === filterCourse))
+      .filter(t => t.due === dateStr && !t.done && (filterCourse === 'all' || t.courseId === filterCourse))
       .map(t => ({
         ...t,
         eventType: 'task',
@@ -217,9 +217,9 @@ export default function PlannerTab() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('filters.allCourses')}</SelectItem>
-              {courses.map((c, i) => (
-                <SelectItem key={i} value={String(i)}>
-                  {c}
+              {courses.map(c => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.title}
                 </SelectItem>
               ))}
             </SelectContent>

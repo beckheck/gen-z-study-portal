@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 export default function CourseManagerTab() {
   const { t: tCourse } = useTranslation('courseManager');
   const { t: tCommon } = useTranslation('common');
-  const { courses, selectedCourse, setSelectedCourse, clearCourseData } = useCourses();
+  const { courses, selectedCourseId, getCourseTitle, setSelectedCourse, clearCourseData } = useCourses();
   const { tasks, addTask, toggleTask, deleteTask } = useTasks();
   const { exams, examGrades, addExam, updateExam, setExamGrades } = useExams();
   const eventDialog = useEventDialog();
@@ -29,13 +29,13 @@ export default function CourseManagerTab() {
   }>({ title: '', due: '', priority: 'normal' });
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
-  const courseTasks = tasks.filter(t => t.courseIndex === selectedCourse);
-  const courseExams = exams.filter(e => e.courseIndex === selectedCourse);
+  const courseTasks = tasks.filter(t => t.courseId === selectedCourseId);
+  const courseExams = exams.filter(e => e.courseId === selectedCourseId);
 
   // Grade calculation logic
   const courseGrades = examGrades.filter(g => {
     const exam = exams.find(e => e.id === g.examId);
-    return exam && exam.courseIndex === selectedCourse;
+    return exam && exam.courseId === selectedCourseId;
   });
 
   const calculateCourseAverage = (): string | null => {
@@ -101,14 +101,14 @@ export default function CourseManagerTab() {
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Select value={String(selectedCourse)} onValueChange={v => setSelectedCourse(Number(v))}>
+          <Select value={selectedCourseId} onValueChange={v => setSelectedCourse(v)}>
             <SelectTrigger className="w-56 rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {courses.map((c, i) => (
-                <SelectItem key={i} value={String(i)}>
-                  {c}
+              {courses.map(c => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -173,7 +173,7 @@ export default function CourseManagerTab() {
               <Button
                 onClick={() => {
                   if (!taskForm.title) return;
-                  addTask({ ...taskForm, courseIndex: selectedCourse });
+                  addTask({ ...taskForm, courseId: selectedCourseId });
                   setTaskForm({ title: '', due: '', priority: 'normal' });
                 }}
                 className="rounded-xl w-full"
@@ -291,7 +291,7 @@ export default function CourseManagerTab() {
                 onClick={() =>
                   eventDialog.openDialog({
                     eventCategory: 'exam',
-                    courseIndex: selectedCourse,
+                    courseId: selectedCourseId,
                   })
                 }
                 size="sm"
@@ -454,9 +454,11 @@ export default function CourseManagerTab() {
       <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
         <DialogContent className="rounded-xl bg-white dark:bg-zinc-950 border-none shadow-xl backdrop-blur">
           <DialogHeader className="">
-            <DialogTitle>{tCourse('confirmations.clearData.title', { course: courses[selectedCourse] })}</DialogTitle>
+            <DialogTitle>
+              {tCourse('confirmations.clearData.title', { course: getCourseTitle(selectedCourseId) })}
+            </DialogTitle>
             <DialogDescription>
-              {tCourse('confirmations.clearData.description', { course: courses[selectedCourse] })}
+              {tCourse('confirmations.clearData.description', { course: getCourseTitle(selectedCourseId) })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2">
@@ -466,7 +468,7 @@ export default function CourseManagerTab() {
             <Button
               variant="destructive"
               onClick={() => {
-                clearCourseData(selectedCourse);
+                clearCourseData(selectedCourseId);
                 setClearConfirmOpen(false);
               }}
             >

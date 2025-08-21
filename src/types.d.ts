@@ -27,7 +27,7 @@ export interface StudyTimer {
   /** Function to start the timer */
   startTimer: () => void;
   /** Function to stop the timer with course index */
-  stopTimer: (courseIndex: number) => void;
+  stopTimer: (courseId: string) => void;
   /** Function to reset the timer */
   resetTimer: () => void;
 }
@@ -38,8 +38,8 @@ export interface StudyTimer {
 export interface Session {
   /** Unique identifier for the session */
   id: string;
-  /** Index of the course in the courses array */
-  courseIndex: number;
+  /** Id of the course in the courses array */
+  courseId: string;
   /** Duration of the session in minutes */
   durationMin: number;
   /** Study technique used */
@@ -78,8 +78,8 @@ export interface Task {
   due: string;
   /** Priority level ('low', 'normal', 'high') */
   priority: string;
-  /** Index of the course this task belongs to */
-  courseIndex: number;
+  /** Id of the course this task belongs to */
+  courseId: string;
   /** Whether the task is completed */
   done: boolean;
   /** Additional notes about the task */
@@ -100,8 +100,8 @@ export interface Exam {
   weight: number;
   /** Additional notes about the exam */
   notes: string;
-  /** Index of the course this exam belongs to */
-  courseIndex: number;
+  /** Id of the course this exam belongs to */
+  courseId: string;
 }
 
 /**
@@ -181,8 +181,8 @@ export type SoundtrackPosition = 'dashboard' | 'floating' | 'hidden';
 export interface RegularEvent {
   /** Unique identifier for the event */
   id: string;
-  /** Index of the course this event belongs to */
-  courseIndex: number;
+  /** Id of the course this event belongs to */
+  courseId: string;
   /** Title of the event */
   title: string;
   /** Start date of the event */
@@ -245,8 +245,8 @@ export interface TimeBlock {
 export interface TimetableEvent {
   /** Unique identifier for the timetable event */
   id: string;
-  /** Index of the course this event belongs to */
-  courseIndex: number;
+  /** Id of the course this event belongs to */
+  courseId: string;
   /** Type of the event (e.g., 'Cátedra', 'Ayudantía', 'Taller', 'Laboratorio') */
   eventType: string;
   /** Classroom location */
@@ -262,7 +262,7 @@ export interface TimetableEvent {
   /** End time */
   endTime: string;
   /** Color for the event display */
-  color: string;
+  color?: string;
 }
 
 /**
@@ -281,7 +281,10 @@ export interface DegreeCourse {
 /**
  * Course can be either a string or an object with a title
  */
-export type Course = string | { title: string };
+export interface Course {
+  id: string;
+  title: string;
+}
 
 /**
  * Color theme for light and dark modes
@@ -326,13 +329,13 @@ export interface DataTransfer {
  */
 export interface ScheduleEvent {
   id: string;
-  courseIndex: number;
+  courseId: string;
   title: string;
   day: string;
   start: string;
   end: string;
   location: string;
-  color: string;
+  color?: string;
 }
 
 /**
@@ -449,8 +452,8 @@ export interface AppState {
   regularEvents: RegularEvent[];
   sessionTasks: SessionTask[];
   weeklyGoals: WeeklyGoal[];
-  courses: string[];
-  selectedCourse: number;
+  courses: Course[];
+  selectedCourseId: string;
   theme: ThemeState;
   soundtrack: Soundtrack;
   weather: WeatherConfig;

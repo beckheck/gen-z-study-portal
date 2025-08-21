@@ -27,7 +27,7 @@ export function PlannerWeekView({
   handleDayClick,
   eventDialog,
 }: PlannerWeekViewProps) {
-  const { courses } = useCourses();
+  const { getCourseTitle } = useCourses();
   const { removeSchedule } = useSchedule();
   const { weeklyGoals, addGoal, toggleGoal, deleteGoal, clearAllGoals } = useWeeklyGoals();
   const { t } = useTranslation('planner');
@@ -225,7 +225,7 @@ export function PlannerWeekView({
                                 </div>
                                 <div className="text-xs text-zinc-500 truncate">
                                   {e.displayTime && `${e.displayTime} · `}
-                                  {courses[e.courseIndex]}
+                                  {getCourseTitle(e.courseId)}
                                   {e.location && ` · ${e.location}`}
                                   {e.weight && ` · ${e.weight}%`}
                                   {e.priority && ` · ${e.priority} priority`}
@@ -266,7 +266,7 @@ export function PlannerWeekView({
                         </div>
                         <div className="text-xs text-zinc-500 truncate mt-0">
                           {e.displayTime && `${e.displayTime} · `}
-                          {courses[e.courseIndex]}
+                          {getCourseTitle(e.courseId)}
                           <span className="inline">
                             {e.location && ` · ${e.location}`}
                             {e.weight && ` · ${e.weight}%`}

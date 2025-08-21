@@ -33,20 +33,26 @@ export function useCourses() {
 
   return {
     courses: state.courses,
-    selectedCourse: state.selectedCourse,
-    setSelectedCourse: (courseIndex: number) => {
-      store.selectedCourse = courseIndex;
+    selectedCourseId: state.selectedCourseId,
+    getCourseById: (courseId: string) => {
+      return store.courses.find(c => c.id === courseId);
     },
-    renameCourse: (courseIndex: number, name: string) => {
-      store.courses[courseIndex] = name || `Course ${courseIndex + 1}`;
+    getCourseTitle: (courseId: string) => {
+      return store.courses.find(c => c.id === courseId)?.title || '';
+    },
+    setSelectedCourse: (courseId: string) => {
+      store.selectedCourseId = courseId;
+    },
+    renameCourse: (courseId: string, title: string) => {
+      store.courses.find(c => c.id === courseId).title = title;
     },
     /**
      * Clear all data related to a specific course
      */
-    clearCourseData: (courseIndex: number) => {
+    clearCourseData: (courseId: string) => {
       // Clear tasks
       for (let i = store.tasks.length - 1; i >= 0; i--) {
-        if (store.tasks[i].courseIndex === courseIndex) {
+        if (store.tasks[i].courseId === courseId) {
           store.tasks.splice(i, 1);
         }
       }
@@ -54,7 +60,7 @@ export function useCourses() {
       // Clear exams and their grades
       const examIdsToDelete: string[] = [];
       for (let i = store.exams.length - 1; i >= 0; i--) {
-        if (store.exams[i].courseIndex === courseIndex) {
+        if (store.exams[i].courseId === courseId) {
           examIdsToDelete.push(store.exams[i].id);
           store.exams.splice(i, 1);
         }
@@ -69,28 +75,28 @@ export function useCourses() {
 
       // Clear timetable events
       for (let i = store.timetableEvents.length - 1; i >= 0; i--) {
-        if (store.timetableEvents[i].courseIndex === courseIndex) {
+        if (store.timetableEvents[i].courseId === courseId) {
           store.timetableEvents.splice(i, 1);
         }
       }
 
       // Clear regular events
       for (let i = store.regularEvents.length - 1; i >= 0; i--) {
-        if (store.regularEvents[i].courseIndex === courseIndex) {
+        if (store.regularEvents[i].courseId === courseId) {
           store.regularEvents.splice(i, 1);
         }
       }
 
       // Clear schedule entries
       for (let i = store.schedule.length - 1; i >= 0; i--) {
-        if (store.schedule[i].courseIndex === courseIndex) {
+        if (store.schedule[i].courseId === courseId) {
           store.schedule.splice(i, 1);
         }
       }
 
       // Clear study sessions
       for (let i = store.sessions.length - 1; i >= 0; i--) {
-        if (store.sessions[i].courseIndex === courseIndex) {
+        if (store.sessions[i].courseId === courseId) {
           store.sessions.splice(i, 1);
         }
       }

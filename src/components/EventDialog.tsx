@@ -77,18 +77,18 @@ export function EventDialog({
           <div>
             <Label className="text-gray-700 dark:text-gray-300">{t('forms.courseOptional')}</Label>
             <Select
-              value={String(form.courseIndex)}
-              onValueChange={v => handleFormChange('courseIndex', Number(v))}
+              value={form.courseId}
+              onValueChange={v => handleFormChange('courseId', v)}
               disabled={disableCourse}
             >
               <SelectTrigger className="rounded-xl">
-                <SelectValue placeholder={t('forms.courseOptional')} />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="-1">{tCommon('common.none')}</SelectItem>
-                {courses.map((c, i) => (
-                  <SelectItem key={i} value={String(i)}>
-                    {c}
+                <SelectItem value={undefined}>{tCommon('common.none')}</SelectItem>
+                {courses.map(c => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.title}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -28,7 +28,7 @@ export function PlannerMonthView({
   handleDayClick,
   eventDialog,
 }: PlannerMonthViewProps) {
-  const { courses } = useCourses();
+  const { getCourseTitle } = useCourses();
   const { regularEvents } = useRegularEvents();
   const { removeSchedule } = useSchedule();
   const { t } = useTranslation('planner');
@@ -156,7 +156,7 @@ export function PlannerMonthView({
                         </div>
 
                         <div className="text-sm text-zinc-600 dark:text-zinc-300 ml-4">
-                          <div className="font-medium">{courses[e.courseIndex]}</div>
+                          <div className="font-medium">{getCourseTitle(e.courseId)}</div>
                           {e.displayTime && <div>{e.displayTime}</div>}
                           {e.location && <div>📍 {e.location}</div>}
                           {e.weight && <div>⚖️ Weight: {e.weight}%</div>}
@@ -189,7 +189,7 @@ export function PlannerMonthView({
               {regularEvents
                 .filter(
                   e =>
-                    (filterCourse === 'all' || String(e.courseIndex) === filterCourse) &&
+                    (filterCourse === 'all' || e.courseId === filterCourse) &&
                     e.isMultiDay !== false &&
                     e.endDate &&
                     e.endDate !== e.startDate
@@ -210,7 +210,7 @@ export function PlannerMonthView({
                       <div className="flex-1">
                         <div className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">{event.title}</div>
                         <div className="text-sm text-zinc-600 dark:text-zinc-300 space-y-1">
-                          {event.courseIndex >= 0 && <div>📚 {courses[event.courseIndex]}</div>}
+                          {event.courseId && <div>📚 {getCourseTitle(event.courseId)}</div>}
                           <div>
                             📅{' '}
                             {event.isMultiDay

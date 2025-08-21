@@ -1,6 +1,7 @@
 import { proxy, snapshot, subscribe } from 'valtio';
 import { DataTransfer } from '../lib/data-transfer';
 import type { AppState, DegreePlan, MoodEmojis, WeatherLocation } from '../types';
+import { uid } from '@/lib/utils';
 
 // Default values
 const DEFAULT_COURSES = [
@@ -11,7 +12,10 @@ const DEFAULT_COURSES = [
   'Programming',
   'Elective',
   'Optional Course',
-];
+].map(c => ({
+  id: uid(),
+  title: c,
+}));
 
 const DEFAULT_MOOD_EMOJIS: MoodEmojis = {
   angry: { emoji: '😠', color: '#ff6b6b', word: 'Angry' },
@@ -50,7 +54,7 @@ function createInitialState(): AppState {
     sessionTasks: [],
     weeklyGoals: [],
     courses: [...DEFAULT_COURSES],
-    selectedCourse: 0,
+    selectedCourseId: DEFAULT_COURSES[0]?.id,
 
     // Theme configuration
     theme: {
@@ -258,6 +262,8 @@ export const dataTransfer: DataTransfer = new DataTransfer(
   }
 );
 
+persistStore(); // the first time to migrate data if needed
+
 // Flag to track if we're currently applying changes from storage
 let isApplyingFromStorage = false;
 
@@ -267,7 +273,10 @@ subscribe(store, () => {
   if (isApplyingFromStorage) {
     return;
   }
+  persistStore();
+});
 
+function persistStore() {
   try {
     const exportData = dataTransfer.exportData();
     removeDeprecatedLocalStorageItems();
@@ -277,7 +286,7 @@ subscribe(store, () => {
   } catch (error) {
     console.error('Failed to persist state to localStorage:', error);
   }
-});
+}
 
 function removeDeprecatedLocalStorageItems() {
   Object.keys(MIGRATION_MAP).forEach(oldKey => {

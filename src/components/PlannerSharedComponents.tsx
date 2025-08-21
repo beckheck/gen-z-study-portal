@@ -37,7 +37,7 @@ export const EventTypeIndicator = ({ event, size = 'sm' }: { event: any; size?: 
 
 // Shared event tooltip component
 export const EventTooltip = ({ event }: { event: any }) => {
-  const { courses } = useCourses();
+  const { getCourseTitle } = useCourses();
   return (
     <div
       style={{
@@ -57,7 +57,7 @@ export const EventTooltip = ({ event }: { event: any }) => {
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{event.title || event.type}</span>
         </div>
         <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-          <div>{courses[event.courseIndex]}</div>
+          <div>{getCourseTitle(event.courseId)}</div>
           {event.displayTime && <div>{event.displayTime}</div>}
           {event.location && <div>{event.location}</div>}
           {event.weight && <div>Weight: {event.weight}%</div>}

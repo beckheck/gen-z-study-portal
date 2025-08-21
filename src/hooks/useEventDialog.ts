@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 export interface EventForm {
   eventCategory: 'regular' | 'exam' | 'task';
-  courseIndex: number;
+  courseId?: string;
   type: string;
   title: string;
   startDate: string;
@@ -20,7 +20,7 @@ export interface EventForm {
 
 export const DEFAULT_EVENT_FORM: EventForm = {
   eventCategory: 'regular',
-  courseIndex: -1,
+  courseId: undefined,
   type: 'class',
   title: '',
   startDate: '',
@@ -61,7 +61,7 @@ export function useEventDialog() {
     if (event.eventType === 'regular') {
       setForm({
         eventCategory: 'regular',
-        courseIndex: event.courseIndex ?? -1,
+        courseId: event.courseId,
         title: event.title || '',
         startDate: event.startDate ? new Date(event.startDate).toISOString().split('T')[0] : '',
         endDate: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : '',
@@ -78,7 +78,7 @@ export function useEventDialog() {
     } else if (event.eventType === 'exam') {
       setForm({
         eventCategory: 'exam',
-        courseIndex: event.courseIndex ?? -1,
+        courseId: event.courseId,
         title: event.title || '',
         startDate: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
         weight: event.weight || 20,
@@ -95,7 +95,7 @@ export function useEventDialog() {
     } else if (event.eventType === 'task') {
       setForm({
         eventCategory: 'task',
-        courseIndex: event.courseIndex ?? -1,
+        courseId: event.courseId,
         title: event.title || '',
         startDate: event.due ? new Date(event.due).toISOString().split('T')[0] : '',
         priority: event.priority || 'normal',
@@ -137,7 +137,7 @@ export function useEventDialog() {
 
     if (formData.eventCategory === 'regular') {
       const eventData: any = {
-        courseIndex: formData.courseIndex,
+        courseId: formData.courseId,
         title: formData.title,
         startDate: formData.startDate,
         location: formData.location,
@@ -161,7 +161,7 @@ export function useEventDialog() {
       addRegularEvent(eventData);
     } else if (formData.eventCategory === 'exam') {
       const examData = {
-        courseIndex: formData.courseIndex,
+        courseId: formData.courseId,
         title: formData.title,
         date: formData.startDate,
         weight: formData.weight,
@@ -177,7 +177,7 @@ export function useEventDialog() {
       }
     } else if (formData.eventCategory === 'task') {
       const taskData = {
-        courseIndex: formData.courseIndex,
+        courseId: formData.courseId,
         title: formData.title,
         due: formData.startDate,
         priority: formData.priority,

@@ -50,7 +50,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
             onTabChange={onTabChange}
             onCourseSelect={setSelectedCourse}
             onTaskClick={task => {
-              setSelectedCourse(task.courseIndex);
+              setSelectedCourse(task.courseId);
             }}
           />
         </CardContent>

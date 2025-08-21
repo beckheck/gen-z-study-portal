@@ -39,9 +39,9 @@ export default function SettingsTab() {
         </CardHeader>
         <CardContent className="grid gap-3">
           {courses.map((c, i) => (
-            <div key={c + i} className="grid grid-cols-[100px_1fr] items-center gap-3">
+            <div key={c.id} className="grid grid-cols-[100px_1fr] items-center gap-3">
               <Label>{t('courses.courseLabel', { number: i + 1 })}</Label>
-              <Input defaultValue={c} onBlur={e => renameCourse(i, e.target.value)} className="rounded-xl" />
+              <Input defaultValue={c.title} onBlur={e => renameCourse(c.id, e.target.value)} className="rounded-xl" />
             </div>
           ))}
         </CardContent>

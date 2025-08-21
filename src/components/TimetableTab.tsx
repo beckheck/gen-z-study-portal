@@ -15,7 +15,7 @@ import type { TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
 export default function TimetableTab() {
   const { t } = useTranslation('timetable');
   const { t: tCommon } = useTranslation('common');
-  const { courses } = useCourses();
+  const { courses, getCourseTitle } = useCourses();
   const { timetableEvents, setTimetableEvents, deleteTimetableEvent } = useTimetable();
   const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -58,7 +58,7 @@ export default function TimetableTab() {
 
   // Default timetable event input values to avoid redundancy
   const DEFAULT_TIMETABLE_EVENT_INPUT: TimetableEventInput = {
-    courseIndex: 0,
+    courseId: courses[0].id,
     eventType: eventTypes[0],
     classroom: '',
     teacher: '',
@@ -75,11 +75,6 @@ export default function TimetableTab() {
   };
 
   const [eventInput, setEventInput] = useState<TimetableEventInput>(DEFAULT_TIMETABLE_EVENT_INPUT);
-
-  // Helper function to get course name
-  const getCourseTitle = (courseIndex: number): string => {
-    return courses[courseIndex] || t('unknownCourse');
-  };
 
   // Time blocks with their start and end times
   const timeBlocks: TimeBlock[] = [
@@ -240,7 +235,7 @@ export default function TimetableTab() {
                         }}
                       >
                         <div className="text-xs sm:text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                          {getCourseTitle(event.courseIndex)}
+                          {getCourseTitle(event.courseId)}
                         </div>
                         <div className="text-xs sm:text-xs text-zinc-600 dark:text-zinc-400 font-medium">
                           {event.eventType}
@@ -254,7 +249,7 @@ export default function TimetableTab() {
                               style={{ backgroundColor: event.color || '#7c3aed' }}
                             ></div>
                             <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
-                              {getCourseTitle(event.courseIndex)}
+                              {getCourseTitle(event.courseId)}
                             </div>
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
@@ -316,16 +311,16 @@ export default function TimetableTab() {
                 {t('fields.course')}
               </Label>
               <Select
-                value={eventInput.courseIndex.toString()}
-                onValueChange={(value: string) => setEventInput({ ...eventInput, courseIndex: parseInt(value) })}
+                value={eventInput.courseId}
+                onValueChange={(value: string) => setEventInput({ ...eventInput, courseId: value })}
               >
                 <SelectTrigger id="course" className="mt-1 rounded-xl">
                   <SelectValue placeholder={t('placeholders.selectCourse')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {courses.map((_, idx) => (
-                    <SelectItem key={idx} value={idx.toString()}>
-                      {getCourseTitle(idx)}
+                  {courses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {getCourseTitle(c.id)}
                     </SelectItem>
                   ))}
                 </SelectContent>

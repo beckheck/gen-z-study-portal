@@ -15,7 +15,7 @@ export default function StudyTrackerTab() {
   // Translation hooks
   const { t } = useTranslation('tracker');
   const { t: tCommon } = useTranslation('common');
-  const { courses, selectedCourse, setSelectedCourse } = useCourses();
+  const { courses, selectedCourseId, getCourseTitle, setSelectedCourse } = useCourses();
   const {
     sessions,
     sessionTasks,
@@ -65,14 +65,14 @@ export default function StudyTrackerTab() {
           <div className="grid md:grid-cols-2 gap-3">
             <div>
               <Label>{t('focusTimer.course')}</Label>
-              <Select value={String(selectedCourse)} onValueChange={v => setSelectedCourse(Number(v))}>
+              <Select value={selectedCourseId} onValueChange={v => setSelectedCourse(v)}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {courses.map((c, i) => (
-                    <SelectItem key={i} value={String(i)}>
-                      {c}
+                  {courses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -118,7 +118,7 @@ export default function StudyTrackerTab() {
               ) : (
                 <>
                   <Button
-                    onClick={() => studyTimer.stopTimer(selectedCourse)}
+                    onClick={() => studyTimer.stopTimer(selectedCourseId)}
                     variant="secondary"
                     className="rounded-xl"
                   >
@@ -247,7 +247,7 @@ export default function StudyTrackerTab() {
                 <div className="flex-1">
                   <div className="font-medium">
                     {t('sessionLog.sessionInfo', {
-                      course: courses[session.courseIndex],
+                      course: getCourseTitle(session.courseId),
                       duration: session.durationMin,
                       technique: session.technique,
                     })}

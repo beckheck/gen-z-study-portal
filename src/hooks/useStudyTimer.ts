@@ -36,7 +36,7 @@ export default function useStudyTimer(onSessionComplete: (session: Session) => v
     startRef.current = Date.now();
   }
 
-  function stopTimer(selectedCourse: number): void {
+  function stopTimer(selectedCourseId: string): void {
     if (!running) return;
 
     const endTs = Date.now();
@@ -50,7 +50,7 @@ export default function useStudyTimer(onSessionComplete: (session: Session) => v
     // Create session object
     const session: Session = {
       id: uid(),
-      courseIndex: selectedCourse,
+      courseId: selectedCourseId,
       startTs: startTime,
       endTs,
       durationMin,

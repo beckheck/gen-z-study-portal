@@ -12,7 +12,7 @@ interface UpcomingProps {
   onTaskComplete?: (taskId: string) => void;
   onTaskClick?: (task: any) => void;
   onTabChange?: (tab: string) => void;
-  onCourseSelect?: (courseIndex: number) => void;
+  onCourseSelect?: (courseId: string) => void;
 }
 
 export default function Upcoming({
@@ -23,7 +23,7 @@ export default function Upcoming({
   onCourseSelect,
 }: UpcomingProps) {
   const { t } = useTranslation('common');
-  const { courses } = useCourses();
+  const { getCourseTitle } = useCourses();
   const { tasks, toggleTask } = useTasks();
   const { exams } = useExams();
 
@@ -89,13 +89,13 @@ export default function Upcoming({
                 className="flex items-center justify-between bg-white/70 dark:bg-white/5 rounded-xl p-3 overflow-hidden cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors"
                 onClick={() => {
                   onTabChange?.('courses');
-                  onCourseSelect?.(e.courseIndex);
+                  onCourseSelect?.(e.courseId);
                 }}
               >
                 <div className="flex flex-col">
                   <span className="font-medium">{e.title}</span>
                   <span className="text-xs text-zinc-500">
-                    {courses[e.courseIndex]} · {e.weight || 0}%
+                    {getCourseTitle(e.courseId)} · {e.weight || 0}%
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

@@ -19,7 +19,7 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
   { task, index, expanded, calculateDDay, onComplete, onClick },
   ref
 ) {
-  const { courses } = useCourses();
+  const { getCourseTitle } = useCourses();
   const [dragX, setDragX] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [startX, setStartX] = useState<number>(0);
@@ -151,7 +151,7 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
           <div className="flex flex-col">
             <span className="font-medium">{task.title}</span>
             <span className="text-xs text-zinc-500">
-              {courses[task.courseIndex]} · {task.priority}
+              {getCourseTitle(task.courseId)} · {task.priority}
             </span>
           </div>
           <div className="flex items-center gap-2">
