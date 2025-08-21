@@ -1,0 +1,221 @@
+import { useExams, useRegularEvents, useTasks } from '@/hooks/useStore';
+import { useState } from 'react';
+
+export interface EventForm {
+  eventCategory: 'regular' | 'exam' | 'task';
+  courseIndex: number;
+  type: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  day: string;
+  start: string;
+  end: string;
+  location: string;
+  weight: number;
+  priority: string;
+  notes: string;
+  color: string;
+}
+
+export const DEFAULT_EVENT_FORM: EventForm = {
+  eventCategory: 'regular',
+  courseIndex: -1,
+  type: 'class',
+  title: '',
+  startDate: '',
+  endDate: '',
+  day: 'Mon',
+  start: '10:00',
+  end: '11:30',
+  location: '',
+  weight: 20,
+  priority: 'normal',
+  notes: '',
+  color: '#6366f1',
+};
+
+export function useEventDialog() {
+  const [open, setOpen] = useState<boolean>(false);
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
+  const [form, setForm] = useState<EventForm>(DEFAULT_EVENT_FORM);
+
+  // Import store hooks
+  const { addTask, deleteTask } = useTasks();
+  const { addExam, deleteExam } = useExams();
+  const { addRegularEvent, deleteRegularEvent } = useRegularEvents();
+
+  const openDialog = (initialData?: Partial<EventForm>) => {
+    setForm({
+      ...DEFAULT_EVENT_FORM,
+      ...initialData,
+    });
+    setEditingEvent(null);
+    setOpen(true);
+  };
+
+  const openEditDialog = (event: any) => {
+    setEditingEvent(event);
+
+    if (event.eventType === 'regular') {
+      setForm({
+        eventCategory: 'regular',
+        courseIndex: event.courseIndex ?? -1,
+        title: event.title || '',
+        startDate: event.startDate ? new Date(event.startDate).toISOString().split('T')[0] : '',
+        endDate: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : '',
+        location: event.location || '',
+        notes: event.notes || '',
+        color: event.color || '#6366f1',
+        type: 'class',
+        day: 'Mon',
+        start: '10:00',
+        end: '11:30',
+        weight: 20,
+        priority: 'normal',
+      });
+    } else if (event.eventType === 'exam') {
+      setForm({
+        eventCategory: 'exam',
+        courseIndex: event.courseIndex ?? -1,
+        title: event.title || '',
+        startDate: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
+        weight: event.weight || 20,
+        notes: event.notes || '',
+        color: '#ef4444', // Red for exams
+        endDate: '',
+        location: '',
+        type: 'class',
+        day: 'Mon',
+        start: '10:00',
+        end: '11:30',
+        priority: 'normal',
+      });
+    } else if (event.eventType === 'task') {
+      setForm({
+        eventCategory: 'task',
+        courseIndex: event.courseIndex ?? -1,
+        title: event.title || '',
+        startDate: event.due ? new Date(event.due).toISOString().split('T')[0] : '',
+        priority: event.priority || 'normal',
+        notes: event.notes || '',
+        color: '#f59e0b', // Amber for tasks
+        endDate: '',
+        location: '',
+        type: 'class',
+        day: 'Mon',
+        start: '10:00',
+        end: '11:30',
+        weight: 20,
+      });
+    }
+    setOpen(true);
+  };
+
+  const closeDialog = () => {
+    setEditingEvent(null);
+    setForm(DEFAULT_EVENT_FORM);
+    setOpen(false);
+  };
+
+  const handleSave = () => {
+    handleAddEvent(form, editingEvent);
+    closeDialog();
+  };
+
+  const handleDelete = () => {
+    if (editingEvent) {
+      handleDeleteEvent(editingEvent);
+      closeDialog();
+    }
+  };
+
+  // Built-in event handlers
+  const handleAddEvent = (formData: EventForm, editingEvent: any | null) => {
+    if (!formData.title) return;
+
+    // If we're editing an existing event, delete the original first
+    if (editingEvent) {
+      if (editingEvent.eventType === 'regular') {
+        deleteRegularEvent(editingEvent.id);
+      } else if (editingEvent.eventType === 'exam') {
+        deleteExam(editingEvent.id);
+      } else if (editingEvent.eventType === 'task') {
+        deleteTask(editingEvent.id);
+      }
+    }
+
+    if (formData.eventCategory === 'regular') {
+      const eventData: any = {
+        courseIndex: formData.courseIndex,
+        title: formData.title,
+        startDate: formData.startDate,
+        location: formData.location,
+        notes: formData.notes,
+        color: formData.color,
+      };
+
+      // Only add endDate if user explicitly provided one that's different from startDate
+      if (formData.endDate && formData.endDate !== formData.startDate) {
+        eventData.endDate = formData.endDate;
+        eventData.isMultiDay = true;
+      } else {
+        eventData.isMultiDay = false;
+      }
+
+      addRegularEvent(eventData);
+    } else if (formData.eventCategory === 'exam') {
+      addExam({
+        courseIndex: formData.courseIndex,
+        title: formData.title,
+        date: formData.startDate,
+        weight: formData.weight,
+        notes: formData.notes,
+      });
+    } else if (formData.eventCategory === 'task') {
+      addTask({
+        courseIndex: formData.courseIndex,
+        title: formData.title,
+        due: formData.startDate,
+        priority: formData.priority,
+        notes: formData.notes,
+      });
+    }
+  };
+
+  const handleDeleteEvent = (event: any) => {
+    if (event.eventType === 'regular') {
+      deleteRegularEvent(event.id);
+    } else if (event.eventType === 'exam') {
+      deleteExam(event.id);
+    } else if (event.eventType === 'task') {
+      deleteTask(event.id);
+    }
+  };
+
+  return {
+    // State
+    open,
+    editingEvent,
+    form,
+    setForm,
+
+    // Actions
+    openDialog,
+    openEditDialog,
+    closeDialog,
+    handleSave,
+    handleDelete,
+    handleAddEvent,
+    handleDeleteEvent,
+
+    // Dialog handlers
+    onOpenChange: (open: boolean) => {
+      if (!open) {
+        closeDialog();
+      } else {
+        setOpen(open);
+      }
+    },
+  };
+}

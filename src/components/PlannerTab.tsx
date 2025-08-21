@@ -1,20 +1,13 @@
+import { EventDialog } from '@/components/EventDialog';
+import { EventDialogTrigger } from '@/components/EventDialogTrigger';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import ColorPicker from '@/components/ui/color-picker';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
@@ -46,50 +39,15 @@ interface WeeklyGoal {
   color?: string;
 }
 
-interface PlannerForm {
-  eventCategory: 'regular' | 'exam' | 'task';
-  courseIndex: number;
-  type: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  day: DayName;
-  start: string;
-  end: string;
-  location: string;
-  weight: number;
-  priority: string;
-  notes: string;
-  color: string;
-}
-
-// Default form values to avoid redundancy
-const DEFAULT_PLANNER_FORM: PlannerForm = {
-  eventCategory: 'regular',
-  courseIndex: -1,
-  type: 'class',
-  title: '',
-  startDate: '',
-  endDate: '',
-  day: 'Mon',
-  start: '10:00',
-  end: '11:30',
-  location: '',
-  weight: 20,
-  priority: 'normal',
-  notes: '',
-  color: '#6366f1',
-};
-
 // -----------------------------
 // Planner (Week + Month views)
 // -----------------------------
 
 export default function PlannerTab() {
   const { courses } = useCourses();
-  const { tasks, addTask, deleteTask } = useTasks();
-  const { exams, addExam, deleteExam } = useExams();
-  const { regularEvents, addRegularEvent, deleteRegularEvent } = useRegularEvents();
+  const { tasks } = useTasks();
+  const { exams } = useExams();
+  const { regularEvents } = useRegularEvents();
   const { eventsForDay, removeSchedule } = useSchedule();
 
   // Localization hooks
@@ -97,16 +55,16 @@ export default function PlannerTab() {
   const { t: tCommon } = useTranslation('common');
   const { getShortDayNames, getShortMonthNames, getMonthNames, formatDate: localizedFormatDate } = useLocalization();
 
-  const [open, setOpen] = useState<boolean>(false);
   const [showMultiDayEvents, setShowMultiDayEvents] = useState<boolean>(false);
-  const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);
   const [goalForm, setGoalForm] = useState<{ title: string }>({ title: '' });
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
-  const [form, setForm] = useState<PlannerForm>(DEFAULT_PLANNER_FORM);
   const [filterCourse, setFilterCourse] = useState<string>('all');
   const [view, setView] = useState<'week' | 'month'>('month');
   const [weekOffset, setWeekOffset] = useState<number>(0);
+
+  // Event dialog hook
+  const eventDialog = useEventDialog();
 
   // Month data
   const now = new Date();
@@ -256,153 +214,10 @@ export default function PlannerTab() {
     setWeeklyGoals(prev => prev.filter(goal => goal.id !== id));
   }
 
-  // Handler for adding new events
-  const handleAddEvent = (): void => {
-    if (!form.title) return;
-
-    // If we're editing an existing event, delete the original first
-    if (editingEvent) {
-      if (editingEvent.eventType === 'regular') {
-        deleteRegularEvent(editingEvent.id);
-      } else if (editingEvent.eventType === 'exam') {
-        deleteExam(editingEvent.id);
-      } else if (editingEvent.eventType === 'task') {
-        deleteTask(editingEvent.id);
-      }
-    }
-
-    if (form.eventCategory === 'regular') {
-      const eventData: any = {
-        courseIndex: form.courseIndex,
-        title: form.title,
-        startDate: form.startDate,
-        location: form.location,
-        notes: form.notes,
-        color: form.color,
-      };
-
-      // Only add endDate if user explicitly provided one that's different from startDate
-      if (form.endDate && form.endDate !== form.startDate) {
-        eventData.endDate = form.endDate;
-        eventData.isMultiDay = true;
-      } else {
-        eventData.isMultiDay = false;
-      }
-
-      addRegularEvent(eventData);
-    } else if (form.eventCategory === 'exam') {
-      addExam({
-        courseIndex: form.courseIndex,
-        title: form.title,
-        date: form.startDate,
-        weight: form.weight,
-        notes: form.notes,
-      });
-    } else if (form.eventCategory === 'task') {
-      addTask({
-        courseIndex: form.courseIndex,
-        title: form.title,
-        due: form.startDate,
-        priority: form.priority,
-        notes: form.notes,
-      });
-    }
-
-    // Reset form and editing state
-    setForm(DEFAULT_PLANNER_FORM);
-    setEditingEvent(null);
-    setOpen(false);
-  };
-
-  // Handle event edit action
-  const handleEditEvent = (event: any): void => {
-    setEditingEvent(event); // Store the original event for potential restoration
-
-    if (event.eventType === 'regular') {
-      setForm({
-        eventCategory: 'regular',
-        courseIndex: event.courseIndex ?? -1,
-        title: event.title || '',
-        startDate: event.startDate ? new Date(event.startDate).toISOString().split('T')[0] : '',
-        endDate: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : '',
-        location: event.location || '',
-        notes: event.notes || '',
-        color: event.color || '#6366f1',
-        type: 'class',
-        day: 'Mon',
-        start: '10:00',
-        end: '11:30',
-        weight: 20,
-        priority: 'normal',
-      });
-    } else if (event.eventType === 'exam') {
-      setForm({
-        eventCategory: 'exam',
-        courseIndex: event.courseIndex ?? -1,
-        title: event.title || '',
-        startDate: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
-        weight: event.weight || 20,
-        notes: event.notes || '',
-        color: '#ef4444', // Red for exams
-        endDate: '',
-        location: '',
-        type: 'class',
-        day: 'Mon',
-        start: '10:00',
-        end: '11:30',
-        priority: 'normal',
-      });
-    } else if (event.eventType === 'task') {
-      setForm({
-        eventCategory: 'task',
-        courseIndex: event.courseIndex ?? -1,
-        title: event.title || '',
-        startDate: event.due ? new Date(event.due).toISOString().split('T')[0] : '',
-        priority: event.priority || 'normal',
-        notes: event.notes || '',
-        color: '#f59e0b', // Amber for tasks
-        endDate: '',
-        location: '',
-        type: 'class',
-        day: 'Mon',
-        start: '10:00',
-        end: '11:30',
-        weight: 20,
-      });
-    }
-    setOpen(true);
-  };
-
-  // Handle event delete action
-  const handleDeleteEvent = (event: any): void => {
-    if (event.eventType === 'regular') {
-      deleteRegularEvent(event.id);
-    } else if (event.eventType === 'exam') {
-      deleteExam(event.id);
-    } else if (event.eventType === 'task') {
-      deleteTask(event.id);
-    }
-  };
-
   // Handle day click to create new event with pre-filled date
   const handleDayClick = (date: Date): void => {
     const dateString = date.toISOString().split('T')[0];
-    setForm({
-      ...DEFAULT_PLANNER_FORM,
-      startDate: dateString,
-    });
-    setEditingEvent(null); // Make sure we're not in edit mode
-    setOpen(true);
-  };
-
-  // Handle dialog close (including cancel)
-  const handleDialogClose = (open: boolean): void => {
-    if (!open) {
-      // Dialog is being closed - reset editing state and form
-      setEditingEvent(null);
-      setForm(DEFAULT_PLANNER_FORM);
-    }
-    setOpen(open);
+    eventDialog.openDialog({ startDate: dateString });
   };
 
   // Helper: get all events for a specific date
@@ -635,201 +450,23 @@ export default function PlannerTab() {
               <Label className="text-sm text-gray-900 dark:text-gray-100">{t('filters.showMultiDayEvents')}</Label>
             </div>
           )}
-          <Dialog open={open} onOpenChange={handleDialogClose}>
-            <DialogTrigger asChild>
-              <Button className="rounded-xl">
-                <Plus className="w-4 h-4 mr-2" />
-                {t('events.addEvent')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
-              <DialogHeader className="">
-                <DialogTitle className="text-gray-900 dark:text-gray-100">
-                  {editingEvent ? t('events.editEvent') : t('events.addEvent')}
-                </DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-300">
-                  {editingEvent ? t('messages.modifyEventDetails') : t('messages.createEventDescription')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <div>
-                  <Label className="text-gray-700 dark:text-gray-300">{t('forms.eventCategory')}</Label>
-                  <Select value={form.eventCategory} onValueChange={v => setForm({ ...form, eventCategory: v })}>
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="regular">{t('eventTypes.regular')}</SelectItem>
-                      <SelectItem value="exam">{t('eventTypes.exam')}</SelectItem>
-                      <SelectItem value="task">{t('eventTypes.task')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <EventDialogTrigger onOpenDialog={() => eventDialog.openDialog()}>
+            <Button className="rounded-xl">
+              <Plus className="w-4 h-4 mr-2" />
+              {t('events.addEvent')}
+            </Button>
+          </EventDialogTrigger>
 
-                <div>
-                  <Label className="text-gray-700 dark:text-gray-300">{t('forms.courseOptional')}</Label>
-                  <Select
-                    value={String(form.courseIndex)}
-                    onValueChange={v => setForm({ ...form, courseIndex: Number(v) })}
-                  >
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder={t('forms.courseOptional')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="-1">{tCommon('common.none')}</SelectItem>
-                      {courses.map((c, i) => (
-                        <SelectItem key={i} value={String(i)}>
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-gray-700 dark:text-gray-300">{t('forms.title')}</Label>
-                  <Input
-                    value={form.title}
-                    onChange={e => setForm({ ...form, title: e.target.value })}
-                    className="rounded-xl"
-                    placeholder={
-                      form.eventCategory === 'regular'
-                        ? t('placeholders.regularEventTitle')
-                        : form.eventCategory === 'exam'
-                        ? t('placeholders.examTitle')
-                        : t('placeholders.taskTitle')
-                    }
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-gray-700 dark:text-gray-300">
-                      {form.eventCategory === 'regular'
-                        ? t('forms.startDate')
-                        : form.eventCategory === 'exam'
-                        ? t('forms.startDate')
-                        : t('forms.startDate')}
-                    </Label>
-                    <Input
-                      type="date"
-                      value={form.startDate}
-                      onChange={e => setForm({ ...form, startDate: e.target.value })}
-                      className="rounded-xl"
-                    />
-                  </div>
-                  {form.eventCategory === 'regular' && (
-                    <div>
-                      <Label className="text-gray-700 dark:text-gray-300">
-                        {t('forms.endDate')} {tCommon('common.optional')}
-                      </Label>
-                      <Input
-                        type="date"
-                        value={form.endDate}
-                        onChange={e => setForm({ ...form, endDate: e.target.value })}
-                        className="rounded-xl"
-                        min={form.startDate}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {form.eventCategory === 'regular' && (
-                  <div>
-                    <Label className="text-gray-700 dark:text-gray-300">
-                      {t('forms.location')} {tCommon('common.optional')}
-                    </Label>
-                    <Input
-                      value={form.location}
-                      onChange={e => setForm({ ...form, location: e.target.value })}
-                      className="rounded-xl"
-                      placeholder={t('placeholders.locationExample')}
-                    />
-                  </div>
-                )}
-
-                {form.eventCategory === 'regular' && (
-                  <ColorPicker
-                    label={t('forms.color')}
-                    value={form.color}
-                    onChange={color => setForm({ ...form, color })}
-                  />
-                )}
-
-                {form.eventCategory === 'exam' && (
-                  <div>
-                    <Label className="text-gray-700 dark:text-gray-300">{t('forms.weight')}</Label>
-                    <Input
-                      type="number"
-                      value={form.weight}
-                      onChange={e => setForm({ ...form, weight: Number(e.target.value) })}
-                      className="rounded-xl"
-                      min="0"
-                      max="100"
-                    />
-                  </div>
-                )}
-
-                {form.eventCategory === 'task' && (
-                  <div>
-                    <Label className="text-gray-700 dark:text-gray-300">{t('forms.priority')}</Label>
-                    <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">{tCommon('priorities.low')}</SelectItem>
-                        <SelectItem value="normal">{tCommon('priorities.normal')}</SelectItem>
-                        <SelectItem value="high">{tCommon('priorities.high')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div>
-                  <Label className="text-gray-700 dark:text-gray-300">
-                    {t('forms.notes')} {tCommon('common.optional')}
-                  </Label>
-                  <Textarea
-                    value={form.notes}
-                    onChange={e => setForm({ ...form, notes: e.target.value })}
-                    className="rounded-xl"
-                    placeholder={
-                      form.eventCategory === 'regular'
-                        ? t('messages.eventDetailsAgenda')
-                        : form.eventCategory === 'exam'
-                        ? t('messages.examTopicsChapters')
-                        : t('messages.taskDetails')
-                    }
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex gap-2 mt-2">
-                  <Button onClick={handleAddEvent} className="rounded-xl flex-1">
-                    {editingEvent ? tCommon('actions.edit') : tCommon('actions.add')}{' '}
-                    {form.eventCategory === 'regular'
-                      ? t('eventTypes.regular')
-                      : form.eventCategory === 'exam'
-                      ? t('eventTypes.exam')
-                      : t('eventTypes.task')}
-                  </Button>
-                  {editingEvent && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        handleDeleteEvent(editingEvent);
-                        setOpen(false);
-                      }}
-                      className="rounded-xl px-4"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <EventDialog
+            open={eventDialog.open}
+            onOpenChange={eventDialog.onOpenChange}
+            form={eventDialog.form}
+            setForm={eventDialog.setForm}
+            editingEvent={eventDialog.editingEvent}
+            onSave={eventDialog.handleSave}
+            onDelete={eventDialog.handleDelete}
+            namespace="planner"
+          />
         </div>
       </div>
 
@@ -934,7 +571,7 @@ export default function PlannerTab() {
                                     }
                                   } else {
                                     // For other events, directly open edit dialog
-                                    handleEditEvent(e);
+                                    eventDialog.openEditDialog(e);
                                   }
                                 }}
                               >
@@ -976,7 +613,7 @@ export default function PlannerTab() {
                               }
                             } else {
                               // For other events, directly open edit dialog
-                              handleEditEvent(e);
+                              eventDialog.openEditDialog(e);
                             }
                           }}
                         >
@@ -1233,7 +870,7 @@ export default function PlannerTab() {
                             }
                           } else {
                             // For other events, directly open edit dialog
-                            handleEditEvent(e);
+                            eventDialog.openEditDialog(e);
                           }
                         }}
                         title={t('messages.clickToEdit')}
@@ -1318,7 +955,7 @@ export default function PlannerTab() {
                         style={{ borderTopColor: event.color || '#6366f1' }}
                         onClick={e => {
                           e.stopPropagation();
-                          handleEditEvent({ ...event, eventType: 'regular' });
+                          eventDialog.openEditDialog({ ...event, eventType: 'regular' });
                         }}
                         title={t('messages.clickToEdit')}
                       >
