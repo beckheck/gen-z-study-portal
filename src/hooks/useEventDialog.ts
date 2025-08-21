@@ -42,7 +42,8 @@ export function useEventDialog() {
 
   // Import store hooks
   const { addTask, deleteTask } = useTasks();
-  const { addExam, deleteExam } = useExams();
+
+  const { addExam, updateExam, deleteExam } = useExams();
   const { addRegularEvent, deleteRegularEvent } = useRegularEvents();
 
   const openDialog = (initialData?: Partial<EventForm>) => {
@@ -119,7 +120,7 @@ export function useEventDialog() {
   };
 
   const handleSave = () => {
-    handleAddEvent(form, editingEvent);
+    handleSaveEvent(form, editingEvent);
     closeDialog();
   };
 
@@ -131,19 +132,8 @@ export function useEventDialog() {
   };
 
   // Built-in event handlers
-  const handleAddEvent = (formData: EventForm, editingEvent: any | null) => {
+  const handleSaveEvent = (formData: EventForm, editingEvent: any | null) => {
     if (!formData.title) return;
-
-    // If we're editing an existing event, delete the original first
-    if (editingEvent) {
-      if (editingEvent.eventType === 'regular') {
-        deleteRegularEvent(editingEvent.id);
-      } else if (editingEvent.eventType === 'exam') {
-        deleteExam(editingEvent.id);
-      } else if (editingEvent.eventType === 'task') {
-        deleteTask(editingEvent.id);
-      }
-    }
 
     if (formData.eventCategory === 'regular') {
       const eventData: any = {
@@ -163,23 +153,43 @@ export function useEventDialog() {
         eventData.isMultiDay = false;
       }
 
+      // If we're editing an existing regular event, delete the original first
+      if (editingEvent && editingEvent.eventType === 'regular') {
+        deleteRegularEvent(editingEvent.id);
+      }
+
       addRegularEvent(eventData);
     } else if (formData.eventCategory === 'exam') {
-      addExam({
+      const examData = {
         courseIndex: formData.courseIndex,
         title: formData.title,
         date: formData.startDate,
         weight: formData.weight,
         notes: formData.notes,
-      });
+      };
+
+      if (editingEvent && editingEvent.eventType === 'exam') {
+        // Update existing exam (preserves ID and associated grades)
+        updateExam(editingEvent.id, examData);
+      } else {
+        // Add new exam
+        addExam(examData);
+      }
     } else if (formData.eventCategory === 'task') {
-      addTask({
+      const taskData = {
         courseIndex: formData.courseIndex,
         title: formData.title,
         due: formData.startDate,
         priority: formData.priority,
         notes: formData.notes,
-      });
+      };
+
+      // If we're editing an existing task, delete the original first
+      if (editingEvent && editingEvent.eventType === 'task') {
+        deleteTask(editingEvent.id);
+      }
+
+      addTask(taskData);
     }
   };
 
@@ -206,7 +216,7 @@ export function useEventDialog() {
     closeDialog,
     handleSave,
     handleDelete,
-    handleAddEvent,
+    handleSaveEvent,
     handleDeleteEvent,
 
     // Dialog handlers
