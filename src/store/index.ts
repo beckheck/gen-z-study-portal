@@ -465,12 +465,3 @@ function updateProxyFromState(proxy: any, newState: any, patch = false) {
     }
   });
 }
-
-// Ensure courses array always has the correct length (migration helper)
-if (store.courses.length < DEFAULT_COURSES.length) {
-  const updatedCourses = [...store.courses];
-  for (let i = store.courses.length; i < DEFAULT_COURSES.length; i++) {
-    updatedCourses.push(DEFAULT_COURSES[i]);
-  }
-  store.courses = updatedCourses;
-}
