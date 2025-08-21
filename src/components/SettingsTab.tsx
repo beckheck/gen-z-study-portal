@@ -1,15 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ColorPicker from '@/components/ui/color-picker';
+import { DeferredInput } from '@/components/ui/deferred-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useCourses, useSoundtrack, useTheme, useWeather } from '@/hooks/useStore';
-import { dataTransfer } from '@/store';
+import { dataTransfer, persistStore } from '@/store';
 import { Download } from 'lucide-react';
 import { ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import StorageInfoCard from './StorageInfoCard';
 
 export default function SettingsTab() {
   // Translation hooks
@@ -41,7 +43,11 @@ export default function SettingsTab() {
           {courses.map((c, i) => (
             <div key={c.id} className="grid grid-cols-[100px_1fr] items-center gap-3">
               <Label>{t('courses.courseLabel', { number: i + 1 })}</Label>
-              <Input defaultValue={c.title} onBlur={e => renameCourse(c.id, e.target.value)} className="rounded-xl" />
+              <DeferredInput
+                value={c.title}
+                onDeferredChange={value => renameCourse(c.id, value)}
+                className="rounded-xl"
+              />
             </div>
           ))}
         </CardContent>
@@ -76,12 +82,17 @@ export default function SettingsTab() {
                           try {
                             const success = await dataTransfer.importFile(file);
                             if (success) {
-                              alert(t('about.importSuccess'));
-                              window.location.reload(); // Refresh to ensure all components update
+                              // Wait for the data to be persisted before reloading
+                              await persistStore();
+                              setTimeout(() => {
+                                alert(t('about.importSuccess'));
+                                window.location.reload();
+                              }, 100);
                             } else {
                               alert(t('about.importError'));
                             }
                           } catch (error) {
+                            console.error('Import error:', error);
                             alert(t('about.importErrorGeneral'));
                           }
                           e.target.value = ''; // Reset input
@@ -98,6 +109,7 @@ export default function SettingsTab() {
               </div>
             </div>
           </div>
+          <StorageInfoCard />
         </CardContent>
       </Card>
 

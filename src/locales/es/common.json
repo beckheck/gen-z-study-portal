@@ -47,6 +47,22 @@
     "none": "Ninguno",
     "all": "Todos"
   },
+  "loadingScreen": {
+    "loadingData": "Cargando tus datos de estudio...",
+    "initializingStorage": "Inicializando sistema de almacenamiento...",
+    "settingUpExperience": "Configurando tu experiencia personalizada",
+    "failedToLoad": "Error al Cargar Datos de la App",
+    "reloadApp": "Recargar App",
+    "checkingStorageCompatibility": "Verificando compatibilidad de almacenamiento...",
+    "loadingFromStorage": "Cargando desde {{adapter}}...",
+    "restoringData": "Restaurando tus datos...",
+    "checkingLegacyStorage": "Verificando almacenamiento heredado...",
+    "migratingLegacyData": "Migrando datos heredados...",
+    "loadingHybridStorage": "Cargando almacenamiento híbrido...",
+    "updatingApplicationState": "Actualizando estado de la aplicación...",
+    "ready": "Listo",
+    "errorOccurred": "Error ocurrido"
+  },
   "time": {
     "days": {
       "monday": "Lunes",

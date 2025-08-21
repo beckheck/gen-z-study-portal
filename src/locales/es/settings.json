@@ -8,7 +8,7 @@
   "about": {
     "title": "Acerca de",
     "description": "Local · Privado · Súper lindo",
-    "localFirst": "Todo se guarda en tu navegador (localStorage).",
+    "localFirst": "Todo se guarda en tu navegador.",
     "builtWith": "Construido con Tailwind, shadcn/ui, lucide icons, framer‑motion, y Recharts.",
     "proTip": "Consejo pro: guarda esta pestaña y vive tu mejor vida de estudio ✨",
     "exportData": "Exportar Datos",
@@ -84,6 +84,27 @@
       "cityPlaceholder": "Ingresa el nombre de la ciudad (ej. Londres, Tokio, Nueva York)",
       "deviceLocationNote": "Desactiva la ubicación del dispositivo para ingresar una ciudad manualmente",
       "manualLocationNote": "Ingresa el nombre de una ciudad para obtener el clima de esa ubicación"
+    }
+  },
+  "storage": {
+    "title": "Estado del Almacenamiento",
+    "adapter": {
+      "indexeddb": "IndexedDB",
+      "localstorage": "localStorage"
+    },
+    "status": {
+      "good": "Bien",
+      "warning": "Advertencia",
+      "critical": "Crítico"
+    },
+    "used": "Usado: {{amount}}",
+    "available": "Disponible: {{amount}}",
+    "quotaUsed": "{{percentage}}% de {{quota}} cuota usada",
+    "unavailable": "Información de almacenamiento no disponible",
+    "loading": "Cargando información de almacenamiento...",
+    "messages": {
+      "highCapacity": "✓ Usando almacenamiento de alta capacidad",
+      "upgradeWarning": "⚠ Considera actualizar tu navegador para más almacenamiento"
     }
   }
 }

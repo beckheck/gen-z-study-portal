@@ -8,7 +8,7 @@
   "about": {
     "title": "About",
     "description": "Local-first · Private · Cute af",
-    "localFirst": "Everything saves to your browser (localStorage).",
+    "localFirst": "Everything saves to your browser.",
     "builtWith": "Built with Tailwind, shadcn/ui, lucide icons, framer‑motion, and Recharts.",
     "proTip": "Pro tip: pin this tab and live your best study life ✨",
     "exportData": "Export Data",
@@ -84,6 +84,27 @@
       "cityPlaceholder": "Enter city name (e.g., London, Tokyo, New York)",
       "deviceLocationNote": "Turn off device location to enter a city manually",
       "manualLocationNote": "Enter a city name to get weather for that location"
+    }
+  },
+  "storage": {
+    "title": "Storage Status",
+    "adapter": {
+      "indexeddb": "IndexedDB",
+      "localstorage": "localStorage"
+    },
+    "status": {
+      "good": "Good",
+      "warning": "Warning", 
+      "critical": "Critical"
+    },
+    "used": "Used: {{amount}}",
+    "available": "Available: {{amount}}",
+    "quotaUsed": "{{percentage}}% of {{quota}} quota used",
+    "unavailable": "Storage info unavailable",
+    "loading": "Loading storage info...",
+    "messages": {
+      "highCapacity": "✓ Using high-capacity storage",
+      "upgradeWarning": "⚠ Consider upgrading browser for more storage"
     }
   }
 }

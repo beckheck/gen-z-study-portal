@@ -2,6 +2,7 @@ import CourseManagerTab from '@/components/CourseManagerTab';
 import DashboardTab from '@/components/DashboardTab';
 import DegreePlanTab from '@/components/DegreePlanTab';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import LoadingScreen from '@/components/LoadingScreen';
 import MoonSunToggle from '@/components/MoonSunToggle';
 import OverflowTabs from '@/components/OverflowTabs';
 import PlannerTab from '@/components/PlannerTab';
@@ -17,7 +18,7 @@ import useBaseStyles from '@/hooks/useBaseStyles';
 import useCardOpacityStyles from '@/hooks/useCardOpacityStyles';
 import useDarkModeStyles from '@/hooks/useDarkModeStyles';
 import useHashNavigation from '@/hooks/useHashNavigation';
-import { useSoundtrack, useTheme } from '@/hooks/useStore';
+import { useSoundtrack, useStoreLoading, useTheme } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import {
   Brain,
@@ -63,6 +64,7 @@ export default function StudyPortal(): React.JSX.Element {
   // Get state from centralized store
   const { theme, setDarkMode } = useTheme();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
+  const { isLoading, error, status } = useStoreLoading();
 
   // Localized tabs array
   const tabs: AppTab[] = [
@@ -101,6 +103,11 @@ export default function StudyPortal(): React.JSX.Element {
     },
     [setActiveTab, setIsDrawerOpen]
   );
+
+  // Show loading screen until state is ready
+  if (isLoading || error) {
+    return <LoadingScreen error={error} status={status} />;
+  }
 
   return (
     <div

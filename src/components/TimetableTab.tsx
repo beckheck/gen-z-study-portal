@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourses, useTimetable } from '@/hooks/useStore';
-import { uid } from '@/lib/utils';
 import { Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +15,7 @@ export default function TimetableTab() {
   const { t } = useTranslation('timetable');
   const { t: tCommon } = useTranslation('common');
   const { courses, getCourseTitle } = useCourses();
-  const { timetableEvents, setTimetableEvents, deleteTimetableEvent } = useTimetable();
+  const { timetableEvents, addTimetableEvent, updateTimetableEvent, deleteTimetableEvent } = useTimetable();
   const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -126,13 +125,10 @@ export default function TimetableTab() {
   const addEvent = (): void => {
     if (isEditing && editingEventId) {
       // Update existing event
-      setTimetableEvents(
-        timetableEvents.map(event => (event.id === editingEventId ? { ...eventInput, id: editingEventId } : event))
-      );
+      updateTimetableEvent(editingEventId, eventInput);
     } else {
       // Add new event
-      const newEvent: TimetableEvent = { ...eventInput, id: uid() };
-      setTimetableEvents([...timetableEvents, newEvent]);
+      addTimetableEvent(eventInput);
     }
 
     setIsEditing(false);

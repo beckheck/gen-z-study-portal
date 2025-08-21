@@ -1,6 +1,6 @@
 import { useSnapshot } from 'valtio';
 import { uid } from '../lib/utils';
-import { store } from '../store';
+import { store, storeLoadingState } from '../store';
 import type {
   DegreePlan,
   ExamGrade,
@@ -12,12 +12,16 @@ import type {
   SoundtrackPosition,
   Task,
   TaskInput,
-  TimetableEvent,
   TimetableEventInput,
   WeatherLocation,
   WeeklyGoal,
 } from '../types';
 
+// Hook for loading state
+export function useStoreLoading() {
+  const loadingState = useSnapshot(storeLoadingState);
+  return loadingState;
+}
 /**
  * Main hook to access the entire app state snapshot
  */
@@ -35,10 +39,10 @@ export function useCourses() {
     courses: state.courses,
     selectedCourseId: state.selectedCourseId,
     getCourseById: (courseId: string) => {
-      return store.courses.find(c => c.id === courseId);
+      return state.courses.find(c => c.id === courseId);
     },
     getCourseTitle: (courseId: string) => {
-      return store.courses.find(c => c.id === courseId)?.title || '';
+      return state.courses.find(c => c.id === courseId)?.title || '';
     },
     setSelectedCourse: (courseId: string) => {
       store.selectedCourseId = courseId;
@@ -200,11 +204,14 @@ export function useTimetable() {
 
   return {
     timetableEvents,
-    setTimetableEvents: (events: TimetableEvent[]) => {
-      store.timetableEvents = events;
-    },
     addTimetableEvent: (event: TimetableEventInput) => {
       store.timetableEvents.push({ ...event, id: uid() });
+    },
+    updateTimetableEvent: (id: string, updatedEvent: TimetableEventInput) => {
+      const eventIndex = store.timetableEvents.findIndex(e => e.id === id);
+      if (eventIndex !== -1) {
+        store.timetableEvents[eventIndex] = { ...updatedEvent, id };
+      }
     },
     deleteTimetableEvent: (id: string) => {
       const eventIndex = store.timetableEvents.findIndex(e => e.id === id);
