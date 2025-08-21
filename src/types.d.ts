@@ -421,6 +421,7 @@ export interface Semester {
  * Degree plan object for tracking academic progress
  */
 export interface DegreePlan {
+  name: string;
   semesters: Semester[];
   completedCourses: string[];
 }

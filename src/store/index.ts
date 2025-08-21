@@ -21,6 +21,7 @@ const DEFAULT_MOOD_EMOJIS: MoodEmojis = {
 };
 
 const DEFAULT_DEGREE_PLAN: DegreePlan = {
+  name: 'Degree Plan',
   semesters: [],
   completedCourses: [],
 };
@@ -179,9 +180,10 @@ function loadState(): AppState {
         // Deep merge theme and wellness objects to preserve default values
         theme: { ...initialState.theme, ...parsed.theme },
         soundtrack: { ...initialState.soundtrack, ...parsed.soundtrack },
-        weather: { ...initialState.weather, ...parsed.weather },
-        wellness: { ...initialState.wellness, ...oldWeather, ...parsed.wellness },
+        weather: { ...initialState.weather, ...oldWeather, ...parsed.weather },
+        wellness: { ...initialState.wellness, ...parsed.wellness },
         weeklyGoals: parsed.weeklyGoals || [],
+        degreePlan: { ...initialState.degreePlan, ...parsed.degreePlan },
       };
 
       if (mergedState.soundtrack?.position === 'hidden') {
@@ -204,6 +206,7 @@ function loadState(): AppState {
       weather: { ...initialState.weather, ...migratedState.weather },
       wellness: { ...initialState.wellness, ...migratedState.wellness },
       weeklyGoals: migratedState.weeklyGoals || [],
+      degreePlan: { ...initialState.degreePlan, ...migratedState.degreePlan },
     };
 
     // If we migrated data, save it to the new centralized key and clean up old keys

@@ -4,6 +4,7 @@
   "actions": {
     "customize": "Personalizar Malla Interactiva",
     "editSemester": "Editar semestre",
+    "deleteSemester": "Eliminar semestre",
     "removeEmptySemester": "Eliminar semestre vacío",
     "addNewSemester": "Agregar Nuevo Semestre",
     "clearDegreePlan": "Limpiar Malla Interactiva",
@@ -78,6 +79,11 @@
     "clear": {
       "title": "Limpiar Malla Interactiva",
       "description": "¿Estás seguro de que quieres limpiar todo tu malla interactiva? Esto eliminará todos los semestres, cursos y progreso. Esta acción no se puede deshacer."
+    },
+    "deleteSemester": {
+      "title": "Eliminar Semestre",
+      "description": "¿Estás seguro de que quieres eliminar el {{number}}° semestre? Esta acción no se puede deshacer.",
+      "descriptionWithCourses": "¿Estás seguro de que quieres eliminar el {{number}}° semestre? Esto eliminará permanentemente todos los cursos de este semestre. Esta acción no se puede deshacer."
     },
     "resetEverything": "Reiniciar Todo",
     "clearEverything": "Limpiar Todo"

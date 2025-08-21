@@ -365,6 +365,9 @@ export function useDegreePlan() {
         store.degreePlan = degreePlanOrUpdater;
       }
     },
+    setDegreePlanName: (name: string) => {
+      store.degreePlan.name = name;
+    },
     setSemesters: (semesters: any[]) => {
       store.degreePlan.semesters = semesters;
     },
@@ -384,9 +387,9 @@ export function useDegreePlan() {
     },
     removeSemester: (semesterNumber: number) => {
       const semester = store.degreePlan.semesters.find(s => s.number === semesterNumber);
-      if (!semester || semester.courses.length > 0) return;
+      if (!semester) return;
 
-      // Remove the semester
+      // Remove the semester (now allows removing non-empty semesters with confirmation)
       const filteredSemesters = store.degreePlan.semesters.filter(s => s.number !== semesterNumber);
 
       // Renumber remaining semesters

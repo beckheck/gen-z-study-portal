@@ -164,7 +164,10 @@ export class DataTransfer {
           apiKey: data.settings.weatherApiKey,
           location: data.settings.weatherLocation,
         },
-        degreePlan: data.settings.degreePlan || { semesters: [], completedCourses: [] },
+        degreePlan: {
+          name: data.settings.degreePlan?.name || 'Degree Plan',
+          ...(data.settings.degreePlan || { semesters: [], completedCourses: [] })
+        },
       };
 
       console.log('DataTransfer - calling setState with:', newState);
@@ -173,7 +176,12 @@ export class DataTransfer {
 
     // Import degree plan data (for backward compatibility)
     if (data.degreePlan) {
-      this.setState({ degreePlan: data.degreePlan });
+      this.setState({ 
+        degreePlan: {
+          name: data.degreePlan.name || 'Degree Plan',
+          ...data.degreePlan
+        }
+      });
     }
 
     // Then import data with proper course indices, preserving user customizations
@@ -515,6 +523,7 @@ interface ExchangeFormatV1 {
 }
 
 interface ExchangeFormatV1_DegreePlan {
+  name?: string;
   semesters: Array<{
     id: string | number;
     name?: string;

@@ -23,7 +23,7 @@ export default function DegreePlanTab() {
   const { t: tCommon } = useTranslation('common');
 
   // State management
-  const { degreePlan, setDegreePlan, setSemesters, addCompletedCourse, removeCompletedCourse, removeSemester } =
+  const { degreePlan, setDegreePlan, setDegreePlanName, setSemesters, addCompletedCourse, removeCompletedCourse, removeSemester } =
     useDegreePlan();
   const [degreePlanDialog, setDegreePlanDialog] = useState<boolean>(false);
   const [degreePlanStep, setDegreePlanStep] = useState<'setup' | 'courses' | 'view'>('setup');
@@ -31,9 +31,13 @@ export default function DegreePlanTab() {
   const [editingCourse, setEditingCourse] = useState<DegreeCourse | null>(null);
   const [resetConfirmDialog, setResetConfirmDialog] = useState<boolean>(false);
   const [clearConfirmDialog, setClearConfirmDialog] = useState<boolean>(false);
+  const [deleteSemesterDialog, setDeleteSemesterDialog] = useState<boolean>(false);
+  const [semesterToDelete, setSemesterToDelete] = useState<number | null>(null);
   const [draggedCourse, setDraggedCourse] = useState<DegreeCourse | null>(null);
   const [draggedFromSemester, setDraggedFromSemester] = useState<number | null>(null);
   const [totalSemestersInput, setTotalSemestersInput] = useState<number>(0);
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false);
+  const [tempTitle, setTempTitle] = useState<string>('');
   const [semesterForm, setSemesterForm] = useState<SemesterForm>({
     acronym: '',
     name: '',
@@ -109,12 +113,15 @@ export default function DegreePlanTab() {
 
   function resetDegreePlan(): void {
     setDegreePlan({
+      name: 'Degree Plan',
       semesters: [],
       completedCourses: [],
     });
     setDegreePlanStep('setup');
     setCurrentSemester(1);
     setEditingCourse(null);
+    setIsEditingTitle(false);
+    setTempTitle('');
     setSemesterForm({
       acronym: '',
       name: '',
@@ -216,6 +223,33 @@ export default function DegreePlanTab() {
     setSemesters([...degreePlan.semesters, newSemester]);
   };
 
+  // Handle title editing functions
+  const handleTitleDoubleClick = (): void => {
+    setIsEditingTitle(true);
+    setTempTitle(degreePlan.name || 'Degree Plan');
+  };
+
+  const handleTitleSave = (): void => {
+    if (tempTitle.trim()) {
+      setDegreePlanName(tempTitle.trim());
+    }
+    setIsEditingTitle(false);
+    setTempTitle('');
+  };
+
+  const handleTitleCancel = (): void => {
+    setIsEditingTitle(false);
+    setTempTitle('');
+  };
+
+  const handleTitleKeyPress = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Enter') {
+      handleTitleSave();
+    } else if (e.key === 'Escape') {
+      handleTitleCancel();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
@@ -224,7 +258,26 @@ export default function DegreePlanTab() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="w-5 h-5" />
-                {t('title')}
+                {isEditingTitle ? (
+                  <Input
+                    value={tempTitle}
+                    onChange={(e) => setTempTitle(e.target.value)}
+                    onBlur={handleTitleSave}
+                    onKeyDown={handleTitleKeyPress}
+                    className="h-8 text-lg font-bold bg-white dark:bg-zinc-800 border-2 border-blue-400 rounded-xl px-3 focus:border-blue-500 focus:outline-none"
+                    autoFocus
+                    style={{ minWidth: '200px' }}
+                  />
+                ) : (
+                  <div
+                    className="inline-block px-4 py-2 bg-white/60 dark:bg-white/10 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 font-bold"
+                    onDoubleClick={handleTitleDoubleClick}
+                    title="Double-click to edit degree plan name"
+                  >
+                    {degreePlan.name || t('title')}
+                  </div>
+                )}
+                <span className="text-sm font-normal text-gray-500">Overview</span>
               </CardTitle>
               <CardDescription>{t('description')}</CardDescription>
             </div>
@@ -793,17 +846,18 @@ export default function DegreePlanTab() {
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        {semester.courses.length === 0 && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeSemester(semester.number)}
-                            className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            title={t('actions.removeEmptySemester')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSemesterToDelete(semester.number);
+                            setDeleteSemesterDialog(true);
+                          }}
+                          className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          title={t('actions.deleteSemester')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                     <div className="space-y-2 max-h-[300px] overflow-y-auto">
@@ -963,6 +1017,48 @@ export default function DegreePlanTab() {
             >
               <Trash2 className="w-4 h-4 mr-2" />
               {t('confirmations.clearEverything')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Semester Confirmation Dialog */}
+      <Dialog open={deleteSemesterDialog} onOpenChange={setDeleteSemesterDialog}>
+        <DialogContent className="max-w-md bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
+          <DialogHeader className="">
+            <DialogTitle className="text-zinc-900 dark:text-zinc-100">
+              {t('confirmations.deleteSemester.title')}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-600 dark:text-zinc-400">
+              {semesterToDelete && degreePlan.semesters.find(s => s.number === semesterToDelete)?.courses.length > 0
+                ? t('confirmations.deleteSemester.descriptionWithCourses', { number: semesterToDelete })
+                : t('confirmations.deleteSemester.description', { number: semesterToDelete })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-between pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteSemesterDialog(false);
+                setSemesterToDelete(null);
+              }}
+              className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              {tCommon('actions.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (semesterToDelete) {
+                  removeSemester(semesterToDelete);
+                }
+                setDeleteSemesterDialog(false);
+                setSemesterToDelete(null);
+              }}
+              className="rounded-xl"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t('actions.deleteSemester')}
             </Button>
           </div>
         </DialogContent>

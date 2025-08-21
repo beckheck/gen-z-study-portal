@@ -4,6 +4,7 @@
   "actions": {
     "customize": "Customize Degree Plan",
     "editSemester": "Edit semester",
+    "deleteSemester": "Delete semester",
     "removeEmptySemester": "Remove empty semester",
     "addNewSemester": "Add New Semester",
     "clearDegreePlan": "Clear Degree Plan",
@@ -78,6 +79,11 @@
     "clear": {
       "title": "Clear Degree Plan",
       "description": "Are you sure you want to clear your entire degree plan? This will delete all semesters, courses, and progress. This action cannot be undone."
+    },
+    "deleteSemester": {
+      "title": "Delete Semester",
+      "description": "Are you sure you want to delete semester {{number}}? This action cannot be undone.",
+      "descriptionWithCourses": "Are you sure you want to delete semester {{number}}? This will permanently remove all courses in this semester. This action cannot be undone."
     },
     "resetEverything": "Reset Everything",
     "clearEverything": "Clear Everything"
