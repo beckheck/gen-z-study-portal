@@ -202,7 +202,7 @@ export function PlannerMonthView({
                     style={{ borderTopColor: event.color || '#6366f1' }}
                     onClick={e => {
                       e.stopPropagation();
-                      eventDialog.openEditDialog({ ...event, eventType: 'regular' });
+                      eventDialog.openEditRegularDialog(event);
                     }}
                     title={t('messages.clickToEdit')}
                   >

@@ -4,14 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
-import { CalendarDays, ListTodo, Plus, Trash2, Undo, Edit } from 'lucide-react';
+import { CalendarDays, Edit, ListTodo, Plus, Trash2, Undo } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
 import { useTranslation } from 'react-i18next';
@@ -249,11 +248,7 @@ export default function CourseManagerTab() {
                       className="flex-1 cursor-pointer"
                       onClick={() => {
                         // Create task event with proper format for editing
-                        const taskEvent = {
-                          ...t,
-                          eventType: 'task',
-                        };
-                        eventDialog.openEditDialog(taskEvent);
+                        eventDialog.openEditTaskDialog(t);
                       }}
                     >
                       <div className="font-medium">{t.title}</div>
@@ -268,11 +263,7 @@ export default function CourseManagerTab() {
                         className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={(e) => {
                           e.stopPropagation();
-                          const taskEvent = {
-                            ...t,
-                            eventType: 'task',
-                          };
-                          eventDialog.openEditDialog(taskEvent);
+                          eventDialog.openEditTaskDialog(t);
                         }}
                         title={tCourse('actions.edit')}
                       >
@@ -318,11 +309,7 @@ export default function CourseManagerTab() {
                             className="flex-1 cursor-pointer"
                             onClick={() => {
                               // Create task event with proper format for editing
-                              const taskEvent = {
-                                ...t,
-                                eventType: 'task',
-                              };
-                              eventDialog.openEditDialog(taskEvent);
+                              eventDialog.openEditTaskDialog(t);
                             }}
                           >
                             <div className="line-through group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
@@ -339,11 +326,7 @@ export default function CourseManagerTab() {
                               className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const taskEvent = {
-                                  ...t,
-                                  eventType: 'task',
-                                };
-                                eventDialog.openEditDialog(taskEvent);
+                                eventDialog.openEditTaskDialog(t);
                               }}
                               title={tCourse('actions.edit')}
                             >
@@ -419,10 +402,9 @@ export default function CourseManagerTab() {
                       // Create exam event with proper format
                       const examEvent = {
                         ...e,
-                        eventType: 'exam',
                         date: e.date, // Keep the exam date format
                       };
-                      eventDialog.openEditDialog(examEvent);
+                      eventDialog.openEditExamDialog(examEvent);
                     }}
                   >
                     <div>
@@ -487,10 +469,9 @@ export default function CourseManagerTab() {
                         // Create exam event with proper format
                         const examEvent = {
                           ...exam,
-                          eventType: 'exam',
                           date: exam.date, // Keep the exam date format
                         };
-                        eventDialog.openEditDialog(examEvent);
+                        eventDialog.openEditExamDialog(examEvent);
                       }}
                     >
                       <div className="flex-1 min-w-0">
