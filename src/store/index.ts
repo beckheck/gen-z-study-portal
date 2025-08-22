@@ -24,12 +24,21 @@ const DEFAULT_COURSES = [
   title: c,
 }));
 
-const DEFAULT_MOOD_EMOJIS: MoodEmojis = {
+export const DEFAULT_MOOD_EMOJIS: MoodEmojis = {
   angry: { emoji: '😠', color: '#ff6b6b', word: 'Angry' },
   sad: { emoji: '😔', color: '#ff9f43', word: 'Sad' },
   neutral: { emoji: '😐', color: '#f7dc6f', word: 'Neutral' },
   happy: { emoji: '🙂', color: '#45b7d1', word: 'Happy' },
   excited: { emoji: '😁', color: '#10ac84', word: 'Excited' },
+};
+
+export const DEFAULT_HYDRATION_SETTINGS = {
+  useCups: true,
+  cupSizeML: 250,
+  cupSizeOZ: 8.5,
+  dailyGoalML: 2000,
+  dailyGoalOZ: 67.6,
+  unit: 'metric' as const,
 };
 
 const DEFAULT_DEGREE_PLAN: DegreePlan = {
@@ -98,6 +107,7 @@ function createInitialState(): AppState {
       monthlyMoods: {},
       showWords: true,
       moodEmojis: { ...DEFAULT_MOOD_EMOJIS },
+      hydrationSettings: { ...DEFAULT_HYDRATION_SETTINGS },
     },
   };
 }

@@ -391,6 +391,18 @@ export interface WeeklyGoal {
 }
 
 /**
+ * Hydration settings for water tracking
+ */
+export interface HydrationSettings {
+  useCups: boolean;
+  cupSizeML: number;
+  cupSizeOZ: number;
+  dailyGoalML: number;
+  dailyGoalOZ: number;
+  unit: 'metric' | 'imperial';
+}
+
+/**
  * Wellness data object for tracking user wellness metrics
  */
 export interface Wellness {
@@ -401,6 +413,7 @@ export interface Wellness {
   monthlyMoods: MonthlyMoods;
   showWords: boolean;
   moodEmojis: MoodEmojis;
+  hydrationSettings: HydrationSettings;
 }
 
 /**

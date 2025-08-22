@@ -448,6 +448,9 @@ export function useWellness() {
     setMoodEmojis: (moodEmojis: typeof wellness.moodEmojis) => {
       store.wellness.moodEmojis = moodEmojis;
     },
+    setHydrationSettings: (hydrationSettings: typeof wellness.hydrationSettings) => {
+      store.wellness.hydrationSettings = hydrationSettings;
+    },
   };
 }
 

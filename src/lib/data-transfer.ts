@@ -1,3 +1,4 @@
+import { DEFAULT_HYDRATION_SETTINGS, DEFAULT_MOOD_EMOJIS } from '@/store';
 import { AppState, SoundtrackPosition } from '@/types';
 import { uid } from './utils';
 
@@ -129,11 +130,10 @@ export class DataTransfer {
         monthlyMoods: data.wellness.monthlyMoods || {},
         showWords: data.wellness.showWords !== undefined ? data.wellness.showWords : true,
         moodEmojis: data.wellness.moodEmojis || {
-          angry: { emoji: '😠', color: '#ff6b6b', word: 'Angry' },
-          sad: { emoji: '😔', color: '#ff9f43', word: 'Sad' },
-          neutral: { emoji: '😐', color: '#f7dc6f', word: 'Neutral' },
-          happy: { emoji: '🙂', color: '#45b7d1', word: 'Happy' },
-          excited: { emoji: '😁', color: '#10ac84', word: 'Excited' },
+          ...DEFAULT_MOOD_EMOJIS,
+        },
+        hydrationSettings: data.wellness.hydrationSettings || {
+          ...DEFAULT_HYDRATION_SETTINGS,
         },
       },
       soundtrack: {
@@ -392,11 +392,10 @@ export class DataTransfer {
           monthlyMoods: data.wellness.monthlyMoods || {},
           showWords: data.wellness.showWords !== undefined ? data.wellness.showWords : true,
           moodEmojis: data.wellness.moodEmojis || {
-            angry: { emoji: '😠', color: '#ff6b6b', word: 'Angry' },
-            sad: { emoji: '😔', color: '#ff9f43', word: 'Sad' },
-            neutral: { emoji: '😐', color: '#f7dc6f', word: 'Neutral' },
-            happy: { emoji: '🙂', color: '#45b7d1', word: 'Happy' },
-            excited: { emoji: '😁', color: '#10ac84', word: 'Excited' },
+            ...DEFAULT_MOOD_EMOJIS,
+          },
+          hydrationSettings: {
+            ...DEFAULT_HYDRATION_SETTINGS,
           },
         },
       });
@@ -557,6 +556,14 @@ interface ExchangeFormatV2 {
         word: string;
       }
     >;
+    hydrationSettings?: {
+      useCups: boolean;
+      cupSizeML: number;
+      cupSizeOZ: number;
+      dailyGoalML: number;
+      dailyGoalOZ: number;
+      unit: 'metric' | 'imperial';
+    };
   };
   weeklyGoals: Array<{
     id: string;
