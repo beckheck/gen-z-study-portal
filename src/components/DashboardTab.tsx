@@ -78,6 +78,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
               onCourseSelect={setSelectedCourse}
               onTaskClick={task => {
                 setSelectedCourse(task.courseId);
+                onTabChange('courses');
               }}
             />
           </div>
