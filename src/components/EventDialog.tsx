@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { EventForm } from '@/hooks/useEventDialog';
 import { useCourses } from '@/hooks/useStore';
-import { Trash2 } from 'lucide-react';
+import { CalendarDays, ListTodo, NotebookPen, Trash2 } from 'lucide-react';
 import { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -81,9 +81,24 @@ export function EventDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="regular">{t('eventTypes.regular')}</SelectItem>
-                  <SelectItem value="exam">{t('eventTypes.exam')}</SelectItem>
-                  <SelectItem value="task">{t('eventTypes.task')}</SelectItem>
+                  <SelectItem value="regular">
+                    <div className="inline-flex gap-2">
+                      <CalendarDays size={16} />
+                      {t('eventTypes.regular')}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="exam">
+                    <div className="inline-flex gap-2">
+                      <NotebookPen size={16} />
+                      {t('eventTypes.exam')}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="task">
+                    <div className="inline-flex gap-2">
+                      <ListTodo size={16} />
+                      {t('eventTypes.task')}
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
