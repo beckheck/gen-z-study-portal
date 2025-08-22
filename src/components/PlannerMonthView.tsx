@@ -32,7 +32,7 @@ export function PlannerMonthView({
   const { regularEvents } = useRegularEvents();
   const { removeSchedule } = useSchedule();
   const { t } = useTranslation('planner');
-  const { getShortDayNames, formatDate: localizedFormatDate } = useLocalization();
+  const { getShortDayNames, formatDate: localizedFormatDate, formatDateDDMMYYYY } = useLocalization();
 
   return (
     <div className="space-y-4">
@@ -214,10 +214,8 @@ export function PlannerMonthView({
                           <div>
                             📅{' '}
                             {event.isMultiDay
-                              ? `${new Date(event.startDate).toLocaleDateString()} - ${new Date(
-                                  event.endDate
-                                ).toLocaleDateString()}`
-                              : new Date(event.startDate).toLocaleDateString()}
+                              ? `${formatDateDDMMYYYY(event.startDate)} - ${formatDateDDMMYYYY(event.endDate)}`
+                              : formatDateDDMMYYYY(event.startDate)}
                           </div>
                           {event.location && <div>📍 {event.location}</div>}
                           {event.notes && <div className="italic">📝 {event.notes}</div>}

@@ -49,51 +49,67 @@ export function EventDialog({
       <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
         <DialogHeader className="">
           <DialogTitle className="text-gray-900 dark:text-gray-100">
-            {editingEvent ? t('events.editEvent') : t('events.addEvent')}
+            {editingEvent 
+              ? (namespace === 'courseManager' && form.eventCategory === 'exam' 
+                  ? t('events.editExam') 
+                  : t('events.editEvent'))
+              : (namespace === 'courseManager' && form.eventCategory === 'exam' 
+                  ? t('events.addExam') 
+                  : t('events.addEvent'))
+            }
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-300">
-            {editingEvent ? t('messages.modifyEventDetails') : t('messages.createEventDescription')}
+            {editingEvent 
+              ? (namespace === 'courseManager' && form.eventCategory === 'exam' 
+                  ? t('messages.modifyExamDetails') 
+                  : t('messages.modifyEventDetails'))
+              : (namespace === 'courseManager' && form.eventCategory === 'exam' 
+                  ? t('messages.createExamDescription') 
+                  : t('messages.createEventDescription'))
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
-          <div>
-            <Label className="text-gray-700 dark:text-gray-300">{t('forms.eventCategory')}</Label>
-            <Select
-              value={form.eventCategory}
-              onValueChange={v => handleFormChange('eventCategory', v)}
-              disabled={disableEventCategory}
-            >
-              <SelectTrigger className="rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="regular">{t('eventTypes.regular')}</SelectItem>
-                <SelectItem value="exam">{t('eventTypes.exam')}</SelectItem>
-                <SelectItem value="task">{t('eventTypes.task')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {!disableEventCategory && (
+            <div>
+              <Label className="text-gray-700 dark:text-gray-300">{t('forms.eventCategory')}</Label>
+              <Select
+                value={form.eventCategory}
+                onValueChange={v => handleFormChange('eventCategory', v)}
+              >
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="regular">{t('eventTypes.regular')}</SelectItem>
+                  <SelectItem value="exam">{t('eventTypes.exam')}</SelectItem>
+                  <SelectItem value="task">{t('eventTypes.task')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          <div>
-            <Label className="text-gray-700 dark:text-gray-300">{t('forms.courseOptional')}</Label>
-            <Select
-              value={form.courseId}
-              onValueChange={v => handleFormChange('courseId', v)}
-              disabled={disableCourse}
-            >
-              <SelectTrigger className="rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={undefined}>{tCommon('common.none')}</SelectItem>
-                {courses.map(c => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!disableCourse && (
+            <div>
+              <Label className="text-gray-700 dark:text-gray-300">{t('forms.courseOptional')}</Label>
+              <Select
+                value={form.courseId}
+                onValueChange={v => handleFormChange('courseId', v)}
+              >
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={undefined}>{tCommon('common.none')}</SelectItem>
+                  {courses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label className="text-gray-700 dark:text-gray-300">{t('forms.title')}</Label>

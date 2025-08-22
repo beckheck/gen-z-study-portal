@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses } from '@/hooks/useStore';
 import { Task } from '@/types';
 import { motion } from 'framer-motion';
@@ -20,6 +21,7 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
   ref
 ) {
   const { getCourseTitle } = useCourses();
+  const { formatDateDDMMYYYY } = useLocalization();
   const [dragX, setDragX] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [startX, setStartX] = useState<number>(0);
@@ -27,6 +29,20 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
   const isDraggingRef = useRef<boolean>(false);
 
   const COMPLETE_THRESHOLD = 80; // Drag 80px right to complete
+
+  // Get priority color for tasks
+  const getPriorityColor = (priority: string): string => {
+    switch (priority) {
+      case 'high':
+        return '#ef4444'; // red-500
+      case 'normal':
+        return '#f97316'; // orange-500
+      case 'low':
+        return '#eab308'; // yellow-500
+      default:
+        return '#f97316'; // default to orange
+    }
+  };
 
   const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -125,12 +141,13 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
 
       {/* Task item */}
       <div
-        className="relative bg-white/70 dark:bg-white/5 p-3 cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors will-change-transform"
+        className="relative bg-white/70 dark:bg-white/5 p-3 cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors will-change-transform border-l-4 rounded-r-xl"
         style={{
           transform: `translate3d(${dragX}px, 0, 0)`,
           transition: isDragging ? 'none' : 'transform 0.2s ease-out',
           zIndex: 1,
           position: 'relative',
+          borderLeftColor: getPriorityColor(task.priority),
         }}
         onMouseDown={handleStart}
         onMouseMove={handleMove}
@@ -156,7 +173,7 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="rounded-full">
-              due {task.due}
+              due {formatDateDDMMYYYY(task.due)}
             </Badge>
             <Badge
               variant="outline"

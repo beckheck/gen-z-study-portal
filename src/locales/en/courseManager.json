@@ -12,6 +12,9 @@
   "tasks": {
     "title": "To‑Dos",
     "description": "Add, complete, delete",
+    "sortOrder": "Sort order",
+    "sortByDate": "Sort by date",
+    "sortByPriority": "Sort by priority",
     "form": {
       "title": "Title",
       "dueDate": "Due date",
@@ -61,6 +64,44 @@
     "examsSummary": "{{graded}} of {{total}} exams graded",
     "addExamsFirst": "Add exams first to track grades",
     "weight": "{{weight}}% weight"
+  },
+  "events": {
+    "addEvent": "Add Task",
+    "editEvent": "Edit Task",
+    "addExam": "Add Exam",
+    "editExam": "Edit Exam"
+  },
+  "forms": {
+    "eventCategory": "Event Category",
+    "courseOptional": "Course (Optional)",
+    "title": "Title",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "location": "Location",
+    "color": "Color",
+    "weight": "Weight (%)",
+    "priority": "Priority",
+    "notes": "Notes"
+  },
+  "eventTypes": {
+    "regular": "Regular Event",
+    "exam": "Exam",
+    "task": "Task"
+  },
+  "messages": {
+    "modifyEventDetails": "Modify the task details below",
+    "createEventDescription": "Create a new task",
+    "modifyExamDetails": "Modify the exam details below",
+    "createExamDescription": "Create a new exam",
+    "eventDetailsAgenda": "Event details, agenda, etc.",
+    "examTopicsChapters": "Chapters, topics, allowed materials...",
+    "taskDetails": "Additional task details..."
+  },
+  "placeholders": {
+    "regularEventTitle": "e.g., Math Olympics Week",
+    "examTitle": "e.g., Midterm Exam",
+    "taskTitle": "e.g., Submit Assignment",
+    "locationExample": "e.g., Main Auditorium"
   },
   "confirmations": {
     "clearData": {

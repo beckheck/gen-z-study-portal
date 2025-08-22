@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocalization } from '@/hooks/useLocalization';
 import { useWellness } from '@/hooks/useStore';
 import { CalendarView, MonthlyMood, MoodEmoji } from '@/types';
 import { motion } from 'framer-motion';
@@ -15,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 export default function WellnessTab() {
   // Translation hooks
   const { t } = useTranslation('wellness');
+  const { formatDate, formatDateDDMMYYYY } = useLocalization();
 
   const {
     wellness,
@@ -536,7 +538,7 @@ export default function WellnessTab() {
                     ‹
                   </Button>
                   <div className="text-sm font-medium min-w-[120px] text-center">
-                    {new Date(calendarView.year, calendarView.month).toLocaleDateString('en-US', {
+                    {formatDate(new Date(calendarView.year, calendarView.month), {
                       month: 'long',
                       year: 'numeric',
                     })}
@@ -593,11 +595,11 @@ export default function WellnessTab() {
                               <div className="bg-white dark:bg-zinc-800 shadow-xl rounded-xl p-3 border border-white/20 dark:border-white/10 min-w-[200px]">
                                 {/* Date Header */}
                                 <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2 text-center">
-                                  {new Date(
+                                  {formatDate(new Date(
                                     `${calendarView.year}-${String(calendarView.month + 1).padStart(2, '0')}-${String(
                                       day
                                     ).padStart(2, '0')}`
-                                  ).toLocaleDateString('en-US', {
+                                  ), {
                                     month: 'short',
                                     day: 'numeric',
                                   })}

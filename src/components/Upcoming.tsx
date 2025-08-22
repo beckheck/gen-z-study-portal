@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
@@ -23,6 +24,7 @@ export default function Upcoming({
   onCourseSelect,
 }: UpcomingProps) {
   const { t } = useTranslation('common');
+  const { formatDateDDMMYYYY } = useLocalization();
   const { getCourseTitle } = useCourses();
   const { tasks, toggleTask } = useTasks();
   const { exams } = useExams();
@@ -100,7 +102,7 @@ export default function Upcoming({
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="rounded-full">
-                    {e.date}
+                    {formatDateDDMMYYYY(e.date)}
                   </Badge>
                   <Badge
                     variant="outline"

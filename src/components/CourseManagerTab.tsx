@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEventDialog } from '@/hooks/useEventDialog';
+import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import { CalendarDays, ListTodo, Plus, Trash2, Undo, Edit } from 'lucide-react';
@@ -18,14 +19,82 @@ import { useTranslation } from 'react-i18next';
 export default function CourseManagerTab() {
   const { t: tCourse } = useTranslation('courseManager');
   const { t: tCommon } = useTranslation('common');
+  const { formatDateDDMMYYYY } = useLocalization();
   const { courses, selectedCourseId, getCourseTitle, setSelectedCourse, clearCourseData } = useCourses();
   const { tasks, toggleTask, deleteTask } = useTasks();
   const { exams, examGrades, addExam, updateExam, setExamGrades } = useExams();
   const eventDialog = useEventDialog();
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
+  const [taskSortOrder, setTaskSortOrder] = useState<'date' | 'priority'>('date');
   const courseTasks = tasks.filter(t => t.courseId === selectedCourseId);
   const courseExams = exams.filter(e => e.courseId === selectedCourseId);
+
+  // Get priority color for tasks
+  const getPriorityColor = (priority: string): string => {
+    switch (priority) {
+      case 'high':
+        return '#ef4444'; // red-500
+      case 'normal':
+        return '#f97316'; // orange-500
+      case 'low':
+        return '#eab308'; // yellow-500
+      default:
+        return '#f97316'; // default to orange
+    }
+  };
+
+  // Sort tasks based on selected order
+  const sortTasks = (taskList: typeof courseTasks) => {
+    return [...taskList].sort((a, b) => {
+      if (taskSortOrder === 'date') {
+        // Sort by due date (earliest first), then by priority, then alphabetically
+        if (!a.due && !b.due) {
+          // Both have no due date, sort by priority then alphabetically
+          const priorityOrder = { high: 0, normal: 1, low: 2 };
+          const priorityComparison = priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+          if (priorityComparison !== 0) return priorityComparison;
+          return a.title.localeCompare(b.title);
+        }
+        if (!a.due) return 1; // Tasks without due date go to end
+        if (!b.due) return -1;
+        
+        const dateComparison = new Date(a.due).getTime() - new Date(b.due).getTime();
+        if (dateComparison !== 0) return dateComparison;
+        
+        // If dates are same, sort by priority
+        const priorityOrder = { high: 0, normal: 1, low: 2 };
+        const priorityComparison = priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+        if (priorityComparison !== 0) return priorityComparison;
+        
+        // If both date and priority are same, sort alphabetically
+        return a.title.localeCompare(b.title);
+      } else {
+        // Sort by priority (high > normal > low), then by due date, then alphabetically
+        const priorityOrder = { high: 0, normal: 1, low: 2 };
+        const priorityComparison = priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+        if (priorityComparison !== 0) return priorityComparison;
+        
+        // If priorities are same, sort by due date
+        if (!a.due && !b.due) {
+          // Both have no due date, sort alphabetically
+          return a.title.localeCompare(b.title);
+        }
+        if (!a.due) return 1;
+        if (!b.due) return -1;
+        
+        const dateComparison = new Date(a.due).getTime() - new Date(b.due).getTime();
+        if (dateComparison !== 0) return dateComparison;
+        
+        // If both priority and date are same, sort alphabetically
+        return a.title.localeCompare(b.title);
+      }
+    });
+  };
+
+  // Create sorted task lists
+  const openTasks = sortTasks(courseTasks.filter(t => !t.done));
+  const completedTasks = sortTasks(courseTasks.filter(t => t.done));
 
   // Grade calculation logic
   const courseGrades = examGrades.filter(g => {
@@ -74,10 +143,10 @@ export default function CourseManagerTab() {
   };
 
   const progress = useMemo(() => {
-    const d = courseTasks.filter(t => t.done).length;
+    const d = completedTasks.length;
     const tot = courseTasks.length || 1;
     return Math.round((d / tot) * 100);
-  }, [courseTasks]);
+  }, [completedTasks, courseTasks]);
   return (
     <div className="space-y-6">
       {showConfetti && (
@@ -134,37 +203,47 @@ export default function CourseManagerTab() {
                 </CardTitle>
                 <CardDescription>{tCourse('tasks.description')}</CardDescription>
               </div>
-              <Button
-                onClick={() =>
-                  eventDialog.openDialog({
-                    eventCategory: 'task',
-                    courseId: selectedCourseId,
-                  })
-                }
-                size="sm"
-                className="rounded-xl"
-                style={{
-                  backgroundColor: `hsl(var(--accent-h) var(--accent-s) var(--accent-l))`,
-                  color: 'white',
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {tCourse('actions.addTask')}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={taskSortOrder} onValueChange={(value: 'date' | 'priority') => setTaskSortOrder(value)}>
+                  <SelectTrigger className="w-36 h-8 text-xs rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date">{tCourse('tasks.sortByDate')}</SelectItem>
+                    <SelectItem value="priority">{tCourse('tasks.sortByPriority')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() =>
+                    eventDialog.openDialog({
+                      eventCategory: 'task',
+                      courseId: selectedCourseId,
+                    })
+                  }
+                  size="sm"
+                  className="rounded-xl"
+                  style={{
+                    backgroundColor: `hsl(var(--accent-h) var(--accent-s) var(--accent-l))`,
+                    color: 'white',
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {tCourse('actions.addTask')}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="text-xs uppercase tracking-wide text-zinc-500">{tCourse('tasks.sections.open')}</div>
-              {courseTasks.filter(t => !t.done).length === 0 && (
+              {openTasks.length === 0 && (
                 <div className="text-sm text-zinc-500">{tCourse('tasks.empty.noPending')}</div>
               )}
-              {courseTasks
-                .filter(t => !t.done)
-                .map(t => (
+              {openTasks.map(t => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl group"
+                    className="flex items-center justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl group border-l-4"
+                    style={{ borderLeftColor: getPriorityColor(t.priority) }}
                   >
                     <div
                       className="flex-1 cursor-pointer"
@@ -179,7 +258,7 @@ export default function CourseManagerTab() {
                     >
                       <div className="font-medium">{t.title}</div>
                       <div className="text-xs text-zinc-500">
-                        {t.due || '—'} · {t.priority}
+                        {t.due ? formatDateDDMMYYYY(t.due) : '—'} · {t.priority}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -206,7 +285,7 @@ export default function CourseManagerTab() {
                         onClick={() => {
                           toggleTask(t.id);
                           // Check if this was the last incomplete task
-                          const incompleteTasks = courseTasks.filter(task => !task.done && task.id !== t.id);
+                          const incompleteTasks = openTasks.filter(task => task.id !== t.id);
                           if (incompleteTasks.length === 0 && courseTasks.length > 0) {
                             setShowConfetti(true);
                           }
@@ -221,20 +300,19 @@ export default function CourseManagerTab() {
                   </div>
                 ))}
 
-              {courseTasks.filter(t => t.done).length > 0 && (
+              {completedTasks.length > 0 && (
                 <>
                   <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">
                     {tCommon('status.completed')}
                   </div>
                   <div className="space-y-2">
-                    {courseTasks
-                      .filter(t => t.done)
-                      .map(t => (
+                    {completedTasks.map(t => (
                         <motion.div
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           key={t.id}
-                          className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group"
+                          className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group border-l-4"
+                          style={{ borderLeftColor: getPriorityColor(t.priority) }}
                         >
                           <div
                             className="flex-1 cursor-pointer"
@@ -251,7 +329,7 @@ export default function CourseManagerTab() {
                               {t.title}
                             </div>
                             <div className="text-xs text-zinc-500">
-                              {t.due || '—'} · {t.priority}
+                              {t.due ? formatDateDDMMYYYY(t.due) : '—'} · {t.priority}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -350,7 +428,7 @@ export default function CourseManagerTab() {
                     <div>
                       <div className="font-medium">{e.title}</div>
                       <div className="text-xs text-zinc-500">
-                        {e.date} · {e.weight}%{e.notes && <div className="mt-1 text-xs italic">{e.notes}</div>}
+                        {formatDateDDMMYYYY(e.date)} · {e.weight}%{e.notes && <div className="mt-1 text-xs italic">{e.notes}</div>}
                       </div>
                     </div>
                     <Badge variant="secondary" className="rounded-full self-start">
@@ -509,7 +587,7 @@ export default function CourseManagerTab() {
         setForm={eventDialog.setForm}
         onSave={eventDialog.handleSave}
         onDelete={eventDialog.handleDelete}
-        namespace={eventDialog.form.eventCategory === 'task' ? 'courseManager' : 'planner'}
+        namespace="courseManager"
         disableEventCategory={true}
         disableCourse={true}
       />

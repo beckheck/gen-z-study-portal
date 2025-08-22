@@ -9,6 +9,26 @@ export function cn(...inputs: Parameters<typeof clsx>): string {
   return twMerge(clsx(inputs));
 }
 
+// Date formatting utilities
+export function formatDateToDDMMYYYY(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+export function formatDateInputValue(date: Date | string): string {
+  // HTML date inputs still need YYYY-MM-DD format
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toISOString().split('T')[0];
+}
+
+export function parseDateFromDDMMYYYY(dateString: string): Date {
+  const [day, month, year] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 // Convert hex to HSL components
 export function getHSLComponents(hex: string) {
   if (typeof hex !== 'string') {

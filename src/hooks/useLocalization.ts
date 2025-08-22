@@ -39,8 +39,14 @@ export function useLocalization() {
 
   const formatDate = useCallback(
     (date: Date, options?: Intl.DateTimeFormatOptions) => {
-      const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
-      return date.toLocaleDateString(locale, options);
+      const locale = i18n.language === 'es' ? 'es-ES' : 'en-GB'; // Use en-GB for DD/MM/YYYY format
+      const defaultOptions: Intl.DateTimeFormatOptions = {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric',
+        ...options
+      };
+      return date.toLocaleDateString(locale, defaultOptions);
     },
     [i18n.language]
   );
@@ -68,6 +74,18 @@ export function useLocalization() {
       return rtf.format(value, unit);
     },
     [i18n.language]
+  );
+
+  // Format date as DD-MM-YYYY or DD/MM/YYYY
+  const formatDateDDMMYYYY = useCallback(
+    (date: Date | string, separator: string = '-') => {
+      const d = typeof date === 'string' ? new Date(date) : date;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}${separator}${month}${separator}${year}`;
+    },
+    []
   );
 
   // Get localized day names
@@ -138,6 +156,7 @@ export function useLocalization() {
     changeLanguage,
     getCurrentLanguage,
     formatDate,
+    formatDateDDMMYYYY,
     formatTime,
     formatNumber,
     formatRelativeTime,
