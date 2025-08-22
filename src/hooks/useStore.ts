@@ -307,6 +307,9 @@ export function useTheme() {
     setBgImage: (bgImage: string) => {
       store.theme.bgImage = bgImage;
     },
+    setCustomCursor: (customCursor: string) => {
+      store.theme.customCursor = customCursor;
+    },
     setAccentColor: (accentColor: typeof theme.accentColor) => {
       store.theme.accentColor = accentColor;
     },

@@ -1,6 +1,6 @@
 import { useCourses, useExams, useSoundtrack, useTasks, useWeather } from '@/hooks/useStore';
 import { CalendarDays, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CurrentDateTime from './CurrentDateTime';
 import SoundtrackCard from './SoundtrackCard';
@@ -26,6 +26,24 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
 
   const [nextUpExpanded, setNextUpExpanded] = useState<number>(0); // Number of additional "pages" shown (0 = collapsed)
+  const [isAnimating, setIsAnimating] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const animateToExpanded = (newValue: number) => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setNextUpExpanded(newValue);
+      setTimeout(() => setIsAnimating(false), 300);
+    }, 50);
+  };
+
+  const animateToCollapsed = () => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setNextUpExpanded(0);
+      setTimeout(() => setIsAnimating(false), 300);
+    }, 50);
+  };
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start mb-4">
@@ -41,18 +59,28 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
           <CardDescription>{t('dashboard.upcomingExamsAndTasks')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Upcoming
-            expanded={nextUpExpanded}
-            onTaskComplete={taskId => {
-              const updatedTasks = tasks.map(t => (t.id === taskId ? { ...t, done: true } : t));
-              setTasks(updatedTasks);
+          <div
+            ref={contentRef}
+            className={`transition-all duration-300 ease-in-out ${
+              isAnimating ? 'opacity-80' : 'opacity-100'
+            }`}
+            style={{
+              transform: isAnimating ? 'translateY(-2px)' : 'translateY(0)',
             }}
-            onTabChange={onTabChange}
-            onCourseSelect={setSelectedCourse}
-            onTaskClick={task => {
-              setSelectedCourse(task.courseId);
-            }}
-          />
+          >
+            <Upcoming
+              expanded={nextUpExpanded}
+              onTaskComplete={taskId => {
+                const updatedTasks = tasks.map(t => (t.id === taskId ? { ...t, done: true } : t));
+                setTasks(updatedTasks);
+              }}
+              onTabChange={onTabChange}
+              onCourseSelect={setSelectedCourse}
+              onTaskClick={task => {
+                setSelectedCourse(task.courseId);
+              }}
+            />
+          </div>
         </CardContent>
         {(() => {
           // Calculate if there are more items to show
@@ -75,27 +103,38 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
           if (!showButton) return null;
 
           return (
-            <div className="flex justify-center pb-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (hasMore) {
-                    // Show 3 more items
-                    setNextUpExpanded(nextUpExpanded + 1);
-                  } else {
-                    // Collapse to original state
-                    setNextUpExpanded(0);
-                  }
-                }}
-                className="h-8 w-8 p-0 hover:bg-white/20 rounded-full transition-all duration-300 ease-in-out"
-              >
-                <ChevronDown
-                  className={`w-4 h-4 transition-all duration-500 ease-in-out transform ${
-                    !hasMore && nextUpExpanded > 0 ? 'rotate-180' : 'rotate-0'
-                  }`}
-                />
-              </Button>
+            <div className="flex justify-center pb-4 gap-2">
+              {/* Collapse button - shown when expanded */}
+              {nextUpExpanded > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => animateToCollapsed()}
+                  disabled={isAnimating}
+                  className="h-8 w-8 p-0 hover:bg-white/20 rounded-full transition-all duration-300 ease-in-out disabled:opacity-50"
+                  title="Collapse"
+                >
+                  <ChevronDown className={`w-4 h-4 transition-all duration-300 ease-in-out transform rotate-180 ${
+                    isAnimating ? 'scale-90' : 'scale-100'
+                  }`} />
+                </Button>
+              )}
+              
+              {/* Expand button - shown when there are more items */}
+              {hasMore && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => animateToExpanded(nextUpExpanded + 1)}
+                  disabled={isAnimating}
+                  className="h-8 w-8 p-0 hover:bg-white/20 rounded-full transition-all duration-300 ease-in-out disabled:opacity-50"
+                  title="Show more"
+                >
+                  <ChevronDown className={`w-4 h-4 transition-all duration-300 ease-in-out ${
+                    isAnimating ? 'scale-90' : 'scale-100'
+                  }`} />
+                </Button>
+              )}
             </div>
           );
         })()}

@@ -308,6 +308,7 @@ export interface OpacityTheme {
 export interface ThemeState {
   darkMode: boolean;
   bgImage: string;
+  customCursor: string;
   accentColor: ColorTheme;
   cardOpacity: OpacityTheme;
   gradientEnabled: boolean;

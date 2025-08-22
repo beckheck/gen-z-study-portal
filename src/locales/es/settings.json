@@ -36,6 +36,15 @@
     "clear": "Limpiar",
     "preview": "Vista previa del fondo"
   },
+  "customCursor": {
+    "title": "Cursor Personalizado",
+    "description": "Sube un cursor personalizado (archivo .cur)",
+    "clear": "Restablecer por Defecto",
+    "preview": "Cursor personalizado activo",
+    "note": "Puedes descargar cursores personalizados desde",
+    "linkText": "Cursors-4u.com",
+    "animatedNote": "Nota: Los cursores animados (.ani) no son compatibles con todos los navegadores"
+  },
   "accentColor": {
     "title": "Color de Acento",
     "description": "Personaliza el color principal del tema",

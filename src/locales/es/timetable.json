@@ -53,5 +53,6 @@
     "ta": "Ayudante:"
   },
   "unknownCourse": "Curso Desconocido",
-  "addEventHint": "Agregar evento"
+  "addEventHint": "Agregar evento",
+  "dropHere": "Soltar aquí"
 }

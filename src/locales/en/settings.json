@@ -36,6 +36,15 @@
     "clear": "Clear",
     "preview": "Background preview"
   },
+  "customCursor": {
+    "title": "Custom Cursor",
+    "description": "Upload a custom cursor (.cur file)",
+    "clear": "Reset to Default",
+    "preview": "Custom cursor active",
+    "note": "You can download custom cursors from",
+    "linkText": "Cursors-4u.com",
+    "animatedNote": "Note: Animated cursors (.ani) are not supported by all browsers"
+  },
   "accentColor": {
     "title": "Accent Color",
     "description": "Customize the main theme color",

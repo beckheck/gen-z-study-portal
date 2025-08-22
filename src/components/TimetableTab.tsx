@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourses, useTimetable } from '@/hooks/useStore';
 import { Plus, Trash2 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
 
@@ -19,6 +19,9 @@ export default function TimetableTab() {
   const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [draggedEvent, setDraggedEvent] = useState<TimetableEvent | null>(null);
+  const [dragOverCell, setDragOverCell] = useState<{ day: string; block: string } | null>(null);
+  const dragCounter = useRef(0);
 
   // Days of the week - use English as keys, translate for display
   const weekDays: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -156,6 +159,68 @@ export default function TimetableTab() {
     return timetableEvents.filter(event => event.day === day && event.block === block);
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, event: TimetableEvent) => {
+    setDraggedEvent(event);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', event.id);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedEvent(null);
+    setDragOverCell(null);
+    dragCounter.current = 0;
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e: React.DragEvent, day: string, block: string) => {
+    e.preventDefault();
+    dragCounter.current++;
+    setDragOverCell({ day, block });
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setDragOverCell(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetDay: string, targetBlock: string) => {
+    e.preventDefault();
+    
+    if (!draggedEvent) return;
+
+    // Check if the event is being dropped in a different cell
+    if (draggedEvent.day !== targetDay || draggedEvent.block !== targetBlock) {
+      // Find the time block info for the target
+      const blockInfo = timeBlocks.find(tb => tb.block === targetBlock);
+      const [startTime, endTime] = blockInfo ? blockInfo.time.split(' - ') : ['8:20', '9:30'];
+
+      // Update the event with new day, block, and times
+      const updatedEvent = {
+        ...draggedEvent,
+        day: targetDay,
+        block: targetBlock,
+        startTime: startTime,
+        endTime: endTime,
+      };
+
+      // Remove the id field since updateTimetableEvent expects TimetableEventInput
+      const { id, ...eventWithoutId } = updatedEvent;
+      updateTimetableEvent(draggedEvent.id, eventWithoutId);
+    }
+
+    setDraggedEvent(null);
+    setDragOverCell(null);
+    dragCounter.current = 0;
+  };
+
   return (
     <div className="space-y-6">
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
@@ -205,26 +270,40 @@ export default function TimetableTab() {
               {weekDays.map(day => {
                 const eventsInCell = getEventForDayAndBlock(day, block);
                 const isEmpty = eventsInCell.length === 0;
+                const isDragOver = dragOverCell?.day === day && dragOverCell?.block === block;
 
                 return (
                   <div
                     key={`${day}-${block}`}
-                    className={`min-h-[70px] rounded-lg p-1 ${
+                    className={`min-h-[70px] rounded-lg p-1 transition-all duration-200 ${
                       isEmpty
-                        ? 'bg-white/30 dark:bg-white/5 hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer transition-colors duration-200'
+                        ? 'bg-white/30 dark:bg-white/5 hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer'
                         : 'bg-white/50 dark:bg-white/5'
+                    } ${
+                      isDragOver
+                        ? 'bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-600 border-dashed'
+                        : ''
                     }`}
                     onClick={isEmpty ? () => handleCellClick(day, block) : undefined}
+                    onDragOver={handleDragOver}
+                    onDragEnter={(e) => handleDragEnter(e, day, block)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, day, block)}
                   >
                     {eventsInCell.map(event => (
                       <div
                         key={event.id}
-                        className="relative group cursor-pointer rounded-md shadow-sm p-2 h-full"
+                        className={`relative group cursor-pointer rounded-md shadow-sm p-2 h-full transition-all duration-200 ${
+                          draggedEvent?.id === event.id ? 'opacity-50 scale-95' : ''
+                        }`}
                         style={{
                           backgroundColor: event.color ? `${event.color}20` : 'rgba(255, 255, 255, 0.9)',
                           borderLeft: `4px solid ${event.color || '#7c3aed'}`,
                           color: event.color ? undefined : undefined,
                         }}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, event)}
+                        onDragEnd={handleDragEnd}
                         onClick={e => {
                           e.stopPropagation();
                           editEvent(event);
@@ -272,7 +351,9 @@ export default function TimetableTab() {
                       <div className="flex items-center justify-center h-full opacity-0 hover:opacity-50 transition-opacity duration-200">
                         <div className="text-center">
                           <div className="text-xl text-zinc-400 dark:text-zinc-600">+</div>
-                          <div className="text-xs text-zinc-400 dark:text-zinc-600">{t('addEventHint')}</div>
+                          <div className="text-xs text-zinc-400 dark:text-zinc-600">
+                            {isDragOver ? t('dropHere') : t('addEventHint')}
+                          </div>
                         </div>
                       </div>
                     )}

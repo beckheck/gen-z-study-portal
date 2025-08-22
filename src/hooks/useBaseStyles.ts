@@ -1,6 +1,9 @@
 import { useLayoutEffect } from 'react';
+import { useTheme } from './useStore';
 
 export default function useBaseStyles(): void {
+  const { theme } = useTheme();
+
   useLayoutEffect(() => {
     if (document.getElementById('sp-reset')) return;
     const style = document.createElement('style');
@@ -113,4 +116,18 @@ button, .button {
 `;
     document.head.appendChild(style);
   }, []);
+
+  // Handle custom cursor separately
+  useLayoutEffect(() => {
+    const body = document.body;
+    if (theme.customCursor) {
+      body.style.cursor = `url(${theme.customCursor}), auto`;
+    } else {
+      body.style.cursor = '';
+    }
+
+    return () => {
+      body.style.cursor = '';
+    };
+  }, [theme.customCursor]);
 }

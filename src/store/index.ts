@@ -67,6 +67,7 @@ function createInitialState(): AppState {
     theme: {
       darkMode: prefersDark,
       bgImage: '',
+      customCursor: '',
       accentColor: { light: '#7c3aed', dark: '#8b5cf6' },
       cardOpacity: { light: 0.8, dark: 0.25 },
       gradientEnabled: true,
@@ -119,6 +120,7 @@ const MIGRATION_MAP = {
   // Theme settings
   'sp:dark': (value: any) => ({ theme: { darkMode: value } }),
   'sp:bgImage': (value: any) => ({ theme: { bgImage: value } }),
+  'sp:customCursor': (value: any) => ({ theme: { customCursor: value } }),
   'sp:accentColor': (value: any) => ({ theme: { accentColor: value } }),
   'sp:cardOpacity': (value: any) => ({ theme: { cardOpacity: value } }),
   'sp:gradientEnabled': (value: any) => ({ theme: { gradientEnabled: value } }),

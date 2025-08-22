@@ -5,6 +5,8 @@
   "editEvent": "Edit Event",
   "addToTimetable": "Add to Timetable",
   "updateEvent": "Update Event",
+  "addEventHint": "Add event",
+  "dropHere": "Drop here",
   "days": {
     "monday": "Monday",
     "tuesday": "Tuesday",
