@@ -2,6 +2,7 @@ import { useSnapshot } from 'valtio';
 import { uid } from '../lib/utils';
 import { store, storeLoadingState } from '../store';
 import type {
+  Course,
   DegreePlan,
   ExamGrade,
   ExamInput,
@@ -35,6 +36,59 @@ export function useAppState() {
 export function useCourses() {
   const state = useSnapshot(store);
 
+  const clearCourseData = (courseId: string) => {
+    // Clear tasks
+    for (let i = store.tasks.length - 1; i >= 0; i--) {
+      if (store.tasks[i].courseId === courseId) {
+        store.tasks.splice(i, 1);
+      }
+    }
+
+    // Clear exams and their grades
+    const examIdsToDelete: string[] = [];
+    for (let i = store.exams.length - 1; i >= 0; i--) {
+      if (store.exams[i].courseId === courseId) {
+        examIdsToDelete.push(store.exams[i].id);
+        store.exams.splice(i, 1);
+      }
+    }
+
+    // Clear exam grades for deleted exams
+    for (let i = store.examGrades.length - 1; i >= 0; i--) {
+      if (examIdsToDelete.includes(store.examGrades[i].examId)) {
+        store.examGrades.splice(i, 1);
+      }
+    }
+
+    // Clear timetable events
+    for (let i = store.timetableEvents.length - 1; i >= 0; i--) {
+      if (store.timetableEvents[i].courseId === courseId) {
+        store.timetableEvents.splice(i, 1);
+      }
+    }
+
+    // Clear regular events
+    for (let i = store.regularEvents.length - 1; i >= 0; i--) {
+      if (store.regularEvents[i].courseId === courseId) {
+        store.regularEvents.splice(i, 1);
+      }
+    }
+
+    // Clear schedule entries
+    for (let i = store.schedule.length - 1; i >= 0; i--) {
+      if (store.schedule[i].courseId === courseId) {
+        store.schedule.splice(i, 1);
+      }
+    }
+
+    // Clear study sessions
+    for (let i = store.sessions.length - 1; i >= 0; i--) {
+      if (store.sessions[i].courseId === courseId) {
+        store.sessions.splice(i, 1);
+      }
+    }
+  };
+
   return {
     courses: state.courses,
     selectedCourseId: state.selectedCourseId,
@@ -48,62 +102,47 @@ export function useCourses() {
       store.selectedCourseId = courseId;
     },
     renameCourse: (courseId: string, title: string) => {
-      store.courses.find(c => c.id === courseId).title = title;
+      const course = store.courses.find(c => c.id === courseId);
+      if (course) {
+        course.title = title;
+      }
+    },
+    addCourse: (title: string) => {
+      const newCourse = { id: uid(), title };
+      store.courses.push(newCourse);
+      // If this is the first course, select it
+      if (store.courses.length === 1) {
+        store.selectedCourseId = newCourse.id;
+      }
+      return newCourse;
     },
     /**
      * Clear all data related to a specific course
      */
-    clearCourseData: (courseId: string) => {
-      // Clear tasks
-      for (let i = store.tasks.length - 1; i >= 0; i--) {
-        if (store.tasks[i].courseId === courseId) {
-          store.tasks.splice(i, 1);
-        }
+    clearCourseData,
+    removeCourse: (courseId: string) => {
+      // Don't allow removing if it's the only course
+      if (store.courses.length <= 1) {
+        return false;
       }
 
-      // Clear exams and their grades
-      const examIdsToDelete: string[] = [];
-      for (let i = store.exams.length - 1; i >= 0; i--) {
-        if (store.exams[i].courseId === courseId) {
-          examIdsToDelete.push(store.exams[i].id);
-          store.exams.splice(i, 1);
-        }
-      }
+      // Clear all data related to this course first
+      clearCourseData(courseId);
 
-      // Clear exam grades for deleted exams
-      for (let i = store.examGrades.length - 1; i >= 0; i--) {
-        if (examIdsToDelete.includes(store.examGrades[i].examId)) {
-          store.examGrades.splice(i, 1);
-        }
-      }
+      // Remove the course
+      const courseIndex = store.courses.findIndex(c => c.id === courseId);
+      if (courseIndex !== -1) {
+        store.courses.splice(courseIndex, 1);
 
-      // Clear timetable events
-      for (let i = store.timetableEvents.length - 1; i >= 0; i--) {
-        if (store.timetableEvents[i].courseId === courseId) {
-          store.timetableEvents.splice(i, 1);
+        // If the removed course was selected, select another one
+        if (store.selectedCourseId === courseId) {
+          store.selectedCourseId = store.courses[0]?.id || '';
         }
       }
-
-      // Clear regular events
-      for (let i = store.regularEvents.length - 1; i >= 0; i--) {
-        if (store.regularEvents[i].courseId === courseId) {
-          store.regularEvents.splice(i, 1);
-        }
-      }
-
-      // Clear schedule entries
-      for (let i = store.schedule.length - 1; i >= 0; i--) {
-        if (store.schedule[i].courseId === courseId) {
-          store.schedule.splice(i, 1);
-        }
-      }
-
-      // Clear study sessions
-      for (let i = store.sessions.length - 1; i >= 0; i--) {
-        if (store.sessions[i].courseId === courseId) {
-          store.sessions.splice(i, 1);
-        }
-      }
+      return true;
+    },
+    setCourses: (courses: Course[]) => {
+      store.courses = courses;
     },
   };
 }

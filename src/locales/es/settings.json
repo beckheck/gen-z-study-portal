@@ -5,8 +5,25 @@
   },
   "courses": {
     "title": "Cursos",
-    "description": "Renombra tus 7 cursos",
-    "courseLabel": "Curso {{number}}"
+    "description": "Agregar, eliminar, renombrar y reordenar tus cursos",
+    "addCourse": "Agregar Curso",
+    "removeCourse": "Eliminar",
+    "newCoursePlaceholder": "Nuevo Curso",
+    "dragToReorder": "Arrastra para reordenar",
+    "cannotRemoveLastCourse": "No se puede eliminar el último curso",
+    "deleteConfirmation": {
+      "title": "Eliminar Curso",
+      "description": "¿Estás seguro de que quieres eliminar \"{{courseName}}\"?",
+      "warning": "Esta acción no se puede deshacer y eliminará permanentemente:",
+      "consequences": {
+        "tasks": "Todas las tareas y asignaciones",
+        "exams": "Todos los exámenes y evaluaciones",
+        "grades": "Todas las calificaciones registradas",
+        "timetable": "Todas las entradas del horario",
+        "sessions": "Todas las sesiones de estudio"
+      },
+      "confirmDelete": "Eliminar Curso"
+    }
   },
   "about": {
     "title": "Acerca de",

@@ -39,7 +39,7 @@ export default function useBaseStyles(): void {
 }
 
 /* Primary buttons */
-button:not([variant="ghost"]):not([variant="outline"]):not([variant="secondary"]):not([variant="link"]),
+button:not([variant="ghost"]):not([variant="outline"]):not([variant="secondary"]):not([variant="link"]):not(.sp-red-button),
 button[variant="default"],
 .bg-gradient-to-br {
   background-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l)) !important;
@@ -57,7 +57,7 @@ button[variant="default"],
 }
 
 /* Button hover states */
-button:hover:not([variant="ghost"]):not([variant="outline"]):not([variant="secondary"]):not([variant="link"]),
+button:hover:not([variant="ghost"]):not([variant="outline"]):not([variant="secondary"]):not([variant="link"]):not(.sp-red-button),
 button[variant="default"]:hover {
   background-color: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) - 5%)) !important;
 }
