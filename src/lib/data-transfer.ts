@@ -40,7 +40,11 @@ export class DataTransfer {
       ),
       sessionTasks: state.sessionTasks,
       weeklyGoals: state.weeklyGoals,
-      degreePlan: state.degreePlan,
+      degreePlan: {
+        name: state.degreePlan.name,
+        semesters: state.degreePlan.semesters,
+        completedCourses: state.degreePlan.completedCourses,
+      },
       wellness: state.wellness,
       settings: {
         selectedCourseId: state.selectedCourseId,
@@ -107,7 +111,10 @@ export class DataTransfer {
   private importDataV2(data: ExchangeFormatV2) {
     this.setState({
       courses: data.courses,
-      degreePlan: data.degreePlan,
+      degreePlan: {
+        name: data.degreePlan.name || 'Degree Plan',
+        ...data.degreePlan,
+      },
       exams: data.exams,
       examGrades: data.examGrades,
       sessionTasks: data.sessionTasks,
@@ -145,6 +152,7 @@ export class DataTransfer {
         accentColor: data.settings.theme.accentColor,
         cardOpacity: data.settings.theme.cardOpacity,
         bgImage: data.settings.theme.bgImage,
+        customCursor: '',
       },
     });
 
@@ -209,6 +217,7 @@ export class DataTransfer {
           gradientEnd: data.settings.gradient.end,
           accentColor: data.settings.accentColor,
           cardOpacity: data.settings.cardOpacity,
+          customCursor: '',
         },
         soundtrack: {
           embed: data.settings.soundtrackEmbed,
@@ -515,6 +524,7 @@ interface ExchangeFormatV2 {
     createdAt: number;
   }>;
   degreePlan: {
+    name: string;
     semesters: Array<{
       id: string | number;
       name?: string;

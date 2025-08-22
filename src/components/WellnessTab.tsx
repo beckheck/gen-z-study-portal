@@ -10,6 +10,7 @@ import { useLocalization } from '@/hooks/useLocalization';
 import { useWellness } from '@/hooks/useStore';
 import { CalendarView, MonthlyMood, MoodEmoji } from '@/types';
 import { motion } from 'framer-motion';
+import { Edit } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -35,6 +36,17 @@ export default function WellnessTab() {
   // Local state for UI only (not persisted)
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState<boolean>(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null); // Track which mood is showing emoji picker
+  const [hydrationDialogOpen, setHydrationDialogOpen] = useState<boolean>(false);
+
+  // Hydration settings (you'll need to add these to your store)
+  const [hydrationSettings, setHydrationSettings] = useState({
+    useCups: true,
+    cupSizeML: 250,
+    cupSizeOZ: 8.5,
+    dailyGoalML: 2000,
+    dailyGoalOZ: 67.6,
+    unit: 'metric' as 'metric' | 'imperial'
+  });
 
   // Emoji library for picker
   const emojiLibrary: string[] = [
@@ -297,26 +309,147 @@ export default function WellnessTab() {
     setShowEmojiPicker(null);
   };
 
+  // Hydration helper functions
+  const getDisplayGoal = (): string => {
+    if (hydrationSettings.useCups) {
+      const cupsNeeded = hydrationSettings.unit === 'metric' 
+        ? Math.ceil(hydrationSettings.dailyGoalML / hydrationSettings.cupSizeML)
+        : Math.ceil(hydrationSettings.dailyGoalOZ / hydrationSettings.cupSizeOZ);
+      return `${cupsNeeded} cups`;
+    } else {
+      return hydrationSettings.unit === 'metric' 
+        ? `${hydrationSettings.dailyGoalML}mL`
+        : `${hydrationSettings.dailyGoalOZ}oz`;
+    }
+  };
+
+  const getMaxWaterValue = (): number => {
+    if (hydrationSettings.useCups) {
+      return hydrationSettings.unit === 'metric' 
+        ? Math.ceil(hydrationSettings.dailyGoalML / hydrationSettings.cupSizeML)
+        : Math.ceil(hydrationSettings.dailyGoalOZ / hydrationSettings.cupSizeOZ);
+    } else {
+      return hydrationSettings.unit === 'metric' ? hydrationSettings.dailyGoalML : hydrationSettings.dailyGoalOZ;
+    }
+  };
+
+  const getCurrentProgress = (): number => {
+    if (hydrationSettings.useCups) {
+      const totalGoalCups = hydrationSettings.unit === 'metric' 
+        ? Math.ceil(hydrationSettings.dailyGoalML / hydrationSettings.cupSizeML)
+        : Math.ceil(hydrationSettings.dailyGoalOZ / hydrationSettings.cupSizeOZ);
+      return (water / totalGoalCups) * 100;
+    } else {
+      const totalGoal = hydrationSettings.unit === 'metric' ? hydrationSettings.dailyGoalML : hydrationSettings.dailyGoalOZ;
+      return (water / totalGoal) * 100;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* First row - original cards */}
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
           <CardHeader>
-            <CardTitle>{t('hydration.title')}</CardTitle>
-            <CardDescription>{t('hydration.goal', { count: 8 })}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <Button className="rounded-xl" onClick={() => setWater(Math.max(0, water - 1))}>
-                -1
-              </Button>
-              <div className="text-4xl font-extrabold tabular-nums">{water}</div>
-              <Button className="rounded-xl" onClick={() => setWater(Math.min(12, water + 1))}>
-                +1
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{t('hydration.title')}</CardTitle>
+                <CardDescription>Goal: {getDisplayGoal()}</CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setHydrationDialogOpen(true)}
+                className="rounded-xl p-2 h-8 w-8"
+                title="Edit hydration settings"
+              >
+                <Edit className="h-4 w-4" />
               </Button>
             </div>
-            <Progress value={(water / 8) * 100} className="mt-4 h-3 rounded-xl" />
+          </CardHeader>
+          <CardContent>
+            {/* Single large drop container */}
+            <div className="flex justify-center mb-6">
+              <div className="relative w-28 h-36">
+                {/* SVG Drop Shape */}
+                <svg
+                  width="112"
+                  height="144"
+                  viewBox="0 0 112 144"
+                  className="absolute inset-0"
+                  style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' }}
+                >
+                  {/* Drop outline */}
+                  <path
+                    d="M56 10C56 10 16 40 16 80C16 105.405 35.595 126 56 126C76.405 126 96 105.405 96 80C96 40 56 10 56 10Z"
+                    fill="#e5e7eb"
+                    stroke="#d1d5db"
+                    strokeWidth="3"
+                    className="dark:fill-gray-700 dark:stroke-gray-600"
+                  />
+                  {/* Water fill with clipping path */}
+                  <defs>
+                    <clipPath id="dropClip">
+                      <path d="M56 10C56 10 16 40 16 80C16 105.405 35.595 126 56 126C76.405 126 96 105.405 96 80C96 40 56 10 56 10Z" />
+                    </clipPath>
+                    <linearGradient id="waterGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="rgba(0,0,0,0.1)" />
+                      <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+                    </linearGradient>
+                  </defs>
+                  <rect
+                    x="0"
+                    y={`${126 - (getCurrentProgress() / 100) * 116}`}
+                    width="112"
+                    height={`${(getCurrentProgress() / 100) * 116}`}
+                    fill="#60a5fa"
+                    clipPath="url(#dropClip)"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                  {/* Water surface shadow effect */}
+                  {water > 0 && (
+                    <rect
+                      x="16"
+                      y={`${126 - (getCurrentProgress() / 100) * 116}`}
+                      width="80"
+                      height="8"
+                      fill="url(#waterGradient)"
+                      clipPath="url(#dropClip)"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  )}
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-3">
+              <Button 
+                className="rounded-xl" 
+                onClick={() => {
+                  const decrement = hydrationSettings.useCups ? 1 : (hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ);
+                  setWater(Math.max(0, water - decrement));
+                }}
+              >
+                -{hydrationSettings.useCups ? '1' : `${hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ}${hydrationSettings.unit === 'metric' ? 'mL' : 'oz'}`}
+              </Button>
+              <div className="text-4xl font-extrabold tabular-nums">
+                {hydrationSettings.useCups 
+                  ? `${water}/${getMaxWaterValue()}`
+                  : hydrationSettings.unit === 'metric' 
+                    ? `${water}mL`
+                    : `${water}oz`
+                }
+              </div>
+              <Button 
+                className="rounded-xl" 
+                onClick={() => {
+                  const increment = hydrationSettings.useCups ? 1 : (hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ);
+                  setWater(water + increment);
+                }}
+              >
+                +{hydrationSettings.useCups ? '1' : `${hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ}${hydrationSettings.unit === 'metric' ? 'mL' : 'oz'}`}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -670,6 +803,145 @@ export default function WellnessTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Hydration Settings Dialog */}
+      <Dialog open={hydrationDialogOpen} onOpenChange={setHydrationDialogOpen}>
+        <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
+          <DialogHeader className="">
+            <DialogTitle>Hydration Settings</DialogTitle>
+            <DialogDescription>Customize your water intake tracking preferences</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Measurement Unit */}
+            <div className="space-y-2">
+              <Label className="font-medium">Measurement Unit</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={hydrationSettings.unit === 'metric' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setHydrationSettings(prev => ({ ...prev, unit: 'metric' }))}
+                  className="rounded-xl flex-1"
+                >
+                  Metric (mL)
+                </Button>
+                <Button
+                  variant={hydrationSettings.unit === 'imperial' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setHydrationSettings(prev => ({ ...prev, unit: 'imperial' }))}
+                  className="rounded-xl flex-1"
+                >
+                  Imperial (oz)
+                </Button>
+              </div>
+            </div>
+
+            {/* Tracking Method */}
+            <div className="space-y-2">
+              <Label className="font-medium">Tracking Method</Label>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800">
+                <Label>Use cups instead of direct volume</Label>
+                <Switch 
+                  checked={hydrationSettings.useCups} 
+                  onCheckedChange={(checked) => {
+                    const currentUseCups = hydrationSettings.useCups;
+                    const cupSize = hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ;
+                    
+                    if (currentUseCups && !checked) {
+                      // Converting from cups to direct volume
+                      const volumeAmount = water * cupSize;
+                      setWater(volumeAmount);
+                    } else if (!currentUseCups && checked) {
+                      // Converting from direct volume to cups
+                      const cupsAmount = Math.round(water / cupSize);
+                      setWater(cupsAmount);
+                    }
+                    
+                    setHydrationSettings(prev => ({ ...prev, useCups: checked }));
+                  }}
+                  className="data-[state=checked]:bg-blue-600" 
+                />
+              </div>
+            </div>
+
+            {/* Serving/Cup Size */}
+            <div className="space-y-2">
+              <Label className="font-medium">
+                {hydrationSettings.useCups ? 'Cup Size' : 'Serving Size'} ({hydrationSettings.unit === 'metric' ? 'mL' : 'oz'})
+              </Label>
+              <Input
+                type="number"
+                value={hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  setHydrationSettings(prev => ({
+                    ...prev,
+                    ...(hydrationSettings.unit === 'metric' 
+                      ? { cupSizeML: value }
+                      : { cupSizeOZ: value }
+                    )
+                  }));
+                }}
+                className="rounded-xl"
+                placeholder={hydrationSettings.unit === 'metric' ? '250' : '8.5'}
+              />
+              <div className="text-xs text-zinc-500">
+                {hydrationSettings.useCups 
+                  ? 'Volume per cup when tracking by cups'
+                  : 'Amount added/removed with each +/- button press'
+                }
+              </div>
+            </div>
+
+            {/* Daily Goal */}
+            <div className="space-y-2">
+              <Label className="font-medium">
+                Daily Goal ({hydrationSettings.unit === 'metric' ? 'mL' : 'oz'})
+              </Label>
+              <Input
+                type="number"
+                value={hydrationSettings.unit === 'metric' ? hydrationSettings.dailyGoalML : hydrationSettings.dailyGoalOZ}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  setHydrationSettings(prev => ({
+                    ...prev,
+                    ...(hydrationSettings.unit === 'metric' 
+                      ? { dailyGoalML: value }
+                      : { dailyGoalOZ: value }
+                    )
+                  }));
+                }}
+                className="rounded-xl"
+                placeholder={hydrationSettings.unit === 'metric' ? '2000' : '67.6'}
+              />
+            </div>
+
+            {/* Preview */}
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20">
+              <div className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">Preview</div>
+              <div className="text-xs text-blue-700 dark:text-blue-300">
+                Goal: {getDisplayGoal()}
+                <span className="block">
+                  {hydrationSettings.useCups 
+                    ? `(${hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ}${hydrationSettings.unit === 'metric' ? 'mL' : 'oz'} per cup)`
+                    : `(${hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ}${hydrationSettings.unit === 'metric' ? 'mL' : 'oz'} per serving)`
+                  }
+                </span>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => {
+                setHydrationDialogOpen(false);
+                // Reset water counter when settings change significantly
+                setWater(0);
+              }}
+              className="w-full rounded-xl mt-4"
+            >
+              Save Settings
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Customize Dialog */}
       <Dialog open={customizeDialogOpen} onOpenChange={setCustomizeDialogOpen}>
