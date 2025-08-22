@@ -1,5 +1,8 @@
 {
   "title": "Configuración",
+  "sidebar": {
+    "description": "Configura tus preferencias"
+  },
   "courses": {
     "title": "Cursos",
     "description": "Renombra tus 7 cursos",

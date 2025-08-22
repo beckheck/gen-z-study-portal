@@ -1,5 +1,8 @@
 {
   "title": "Settings",
+  "sidebar": {
+    "description": "Configure your preferences"
+  },
   "courses": {
     "title": "Courses",
     "description": "Rename your 7 courses",
