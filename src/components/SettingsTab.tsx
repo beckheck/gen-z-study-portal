@@ -8,7 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useCourses, useSoundtrack, useTheme, useWeather } from '@/hooks/useStore';
 import { dataTransfer, persistStore } from '@/store';
-import { BookOpen, Brush, Cloud, Download, Image, Info, Layers, MousePointer, Music, Palette } from 'lucide-react';
+import {
+  BookOpen,
+  Brush,
+  Cloud,
+  Download,
+  Github,
+  Image,
+  Info,
+  Layers,
+  MousePointer,
+  Music,
+  Palette,
+} from 'lucide-react';
 import { ChangeEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import StorageInfoCard from './StorageInfoCard';
@@ -86,6 +98,23 @@ export default function SettingsTab() {
   const renderAboutCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
       <div ref={refMap.about} />
+      {/* GitHub Corner Ribbon */}
+      <a
+        href="https://github.com/beckheck/gen-z-study-portal"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute -top-3 -right-3 z-20 group"
+        aria-label="View source on GitHub"
+      >
+        {/* Ribbon Background */}
+        <div className="w-20 h-20 relative">
+          <div className="absolute top-3 right-3 w-0 h-0 border-l-[70px] border-l-transparent border-t-[70px] border-t-gray-700 dark:border-t-gray-600 group-hover:border-t-gray-800 dark:group-hover:border-t-gray-500 transition-colors"></div>
+          {/* GitHub Icon */}
+          <div className="absolute top-6 right-6 transform rotate-45">
+            <Github className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+          </div>
+        </div>
+      </a>
       <CardHeader>
         <CardTitle>{t('about.title')}</CardTitle>
         <CardDescription>{t('about.description')}</CardDescription>
