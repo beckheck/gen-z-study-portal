@@ -58,6 +58,7 @@ export class DataTransfer {
             middle: state.theme.gradientMiddle,
             end: state.theme.gradientEnd,
           },
+          customCursor: state.theme.customCursor,
           accentColor: state.theme.accentColor,
           cardOpacity: state.theme.cardOpacity,
           bgImage: state.theme.bgImage,
@@ -149,10 +150,10 @@ export class DataTransfer {
         gradientStart: data.settings.theme.gradient.start,
         gradientMiddle: data.settings.theme.gradient.middle,
         gradientEnd: data.settings.theme.gradient.end,
+        customCursor: data.settings.theme.customCursor,
         accentColor: data.settings.theme.accentColor,
         cardOpacity: data.settings.theme.cardOpacity,
         bgImage: data.settings.theme.bgImage,
-        customCursor: '',
       },
     });
 
@@ -229,7 +230,7 @@ export class DataTransfer {
         },
         degreePlan: {
           name: data.settings.degreePlan?.name || 'Degree Plan',
-          ...(data.settings.degreePlan || { semesters: [], completedCourses: [] })
+          ...(data.settings.degreePlan || { semesters: [], completedCourses: [] }),
         },
       };
 
@@ -238,11 +239,11 @@ export class DataTransfer {
 
     // Import degree plan data (for backward compatibility)
     if (data.degreePlan) {
-      this.setState({ 
+      this.setState({
         degreePlan: {
           name: data.degreePlan.name || 'Degree Plan',
-          ...data.degreePlan
-        }
+          ...data.degreePlan,
+        },
       });
     }
 
@@ -591,6 +592,7 @@ interface ExchangeFormatV2 {
           dark: string;
         };
       };
+      customCursor: string;
       accentColor: {
         light: string;
         dark: string;

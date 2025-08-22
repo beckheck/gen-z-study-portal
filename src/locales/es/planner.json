@@ -48,7 +48,7 @@
   "filters": {
     "filterByCourse": "Filtrar por Curso",
     "showMultiDayEvents": "Mostrar eventos de varios días",
-    "allCourses": "Todas los Cursos"
+    "allCourses": "Todos los Cursos"
   },
   "messages": {
     "noEvents": "Sin eventos programados",
