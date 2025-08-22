@@ -8,7 +8,7 @@ interface WeatherWidgetProps {
 }
 
 export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) {
-  const { t } = useTranslation('common');
+  const { t, i18n } = useTranslation('common');
   const [weather, setWeather] = useState<Weather>({
     condition: 'loading',
     temperature: '--',
@@ -21,109 +21,88 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
   useEffect(() => {
     const API_KEY = apiKey || 'demo_key'; // Use provided API key or demo
 
+    // Map OpenWeatherMap icons to our emoji system
+    const getWeatherIcon = (weatherMain: string, icon: string): string => {
+      const iconMap: { [key: string]: string } = {
+        Clear: '☀️',
+        Clouds: icon.includes('01') ? '☀️' : icon.includes('02') ? '⛅' : '☁️',
+        Rain: '🌧️',
+        Drizzle: '🌦️',
+        Thunderstorm: '⛈️',
+        Snow: '❄️',
+        Mist: '🌫️',
+        Fog: '🌫️',
+        Haze: '🌫️',
+      };
+      return iconMap[weatherMain] || '🌤️';
+    };
+
+    const validateApiKey = (): void => {
+      if (!apiKey || apiKey.trim() === '') {
+        throw new Error(t('weather.errors.noApiKey'));
+      }
+    };
+
+    const handleApiResponse = async (response: Response, city?: string): Promise<OpenWeatherMapResponse> => {
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error(t('weather.errors.invalidApiKey'));
+        } else if (response.status === 404 && city) {
+          throw new Error(t('weather.errors.cityNotFound', { city }));
+        } else {
+          throw new Error(t('weather.errors.apiError', { status: response.status }));
+        }
+      }
+      return await response.json();
+    };
+
+    const processWeatherData = (data: OpenWeatherMapResponse): void => {
+      setWeather({
+        condition: data.weather[0].main.toLowerCase(),
+        temperature: Math.round(data.main.temp),
+        location: data.name,
+        description: data.weather[0].description,
+        icon: getWeatherIcon(data.weather[0].main, data.weather[0].icon),
+      });
+      setError(null);
+    };
+
+    const handleApiError = (err: unknown, context: string): void => {
+      const errorMessage = err instanceof Error ? err.message : t('weather.errors.unknownError');
+      console.error(`Weather API failed (${context}):`, errorMessage);
+      setError(errorMessage);
+      fallbackToSimulation();
+    };
+
     const fetchWeatherByCity = async (city: string): Promise<void> => {
       try {
-        if (!apiKey || apiKey.trim() === '') {
-          throw new Error(t('weather.errors.noApiKey'));
-        }
+        validateApiKey();
 
         const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`
+          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+            city
+          )}&appid=${API_KEY}&units=metric&lang=${i18n.language}`
         );
 
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error(t('weather.errors.invalidApiKey'));
-          } else if (response.status === 404) {
-            throw new Error(t('weather.errors.cityNotFound', { city }));
-          } else {
-            throw new Error(t('weather.errors.apiError', { status: response.status }));
-          }
-        }
-
-        const data: OpenWeatherMapResponse = await response.json();
-
-        // Map OpenWeatherMap icons to our emoji system
-        const getWeatherIcon = (weatherMain: string, icon: string): string => {
-          const iconMap: { [key: string]: string } = {
-            Clear: '☀️',
-            Clouds: icon.includes('01') ? '☀️' : icon.includes('02') ? '⛅' : '☁️',
-            Rain: '🌧️',
-            Drizzle: '🌦️',
-            Thunderstorm: '⛈️',
-            Snow: '❄️',
-            Mist: '🌫️',
-            Fog: '🌫️',
-            Haze: '🌫️',
-          };
-          return iconMap[weatherMain] || '🌤️';
-        };
-
-        setWeather({
-          condition: data.weather[0].main.toLowerCase(),
-          temperature: Math.round(data.main.temp),
-          location: data.name,
-          description: data.weather[0].description,
-          icon: getWeatherIcon(data.weather[0].main, data.weather[0].icon),
-        });
-        setError(null);
+        const data = await handleApiResponse(response, city);
+        processWeatherData(data);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : t('weather.errors.unknownError');
-        console.error('Weather API failed:', errorMessage);
-        setError(errorMessage);
-        fallbackToSimulation();
+        handleApiError(err, 'city search');
       }
     };
 
     const fetchWeatherData = async (lat: number, lon: number): Promise<void> => {
       try {
-        if (!apiKey || apiKey.trim() === '') {
-          throw new Error(t('weather.errors.noApiKey'));
-        }
+        validateApiKey();
 
         const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=${i18n.language}`
         );
 
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error(t('weather.errors.invalidApiKey'));
-          } else {
-            throw new Error(t('weather.errors.apiError', { status: response.status }));
-          }
-        }
-
-        const data: OpenWeatherMapResponse = await response.json();
-
-        // Map OpenWeatherMap icons to our emoji system
-        const getWeatherIcon = (weatherMain: string, icon: string): string => {
-          const iconMap: { [key: string]: string } = {
-            Clear: '☀️',
-            Clouds: icon.includes('01') ? '☀️' : icon.includes('02') ? '⛅' : '☁️',
-            Rain: '🌧️',
-            Drizzle: '🌦️',
-            Thunderstorm: '⛈️',
-            Snow: '❄️',
-            Mist: '🌫️',
-            Fog: '🌫️',
-            Haze: '🌫️',
-          };
-          return iconMap[weatherMain] || '🌤️';
-        };
-
-        setWeather({
-          condition: data.weather[0].main.toLowerCase(),
-          temperature: Math.round(data.main.temp),
-          location: data.name,
-          description: data.weather[0].description,
-          icon: getWeatherIcon(data.weather[0].main, data.weather[0].icon),
-        });
-        setError(null);
+        const data = await handleApiResponse(response);
+        processWeatherData(data);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : t('weather.errors.unknownError');
-        console.error('Weather API failed, falling back to simulation:', errorMessage);
-        // Fallback to simulated weather if API fails
-        fallbackToSimulation();
+        handleApiError(err, 'geolocation');
       }
     };
 
@@ -153,6 +132,14 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
       });
     };
 
+    const tryFallbackToCity = (): void => {
+      if (location && location.city) {
+        fetchWeatherByCity(location.city);
+      } else {
+        fallbackToSimulation();
+      }
+    };
+
     const getLocationAndWeather = (): void => {
       if (location && !location.useGeolocation && location.city) {
         // Use city name from settings
@@ -167,23 +154,13 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
           (err: GeolocationPositionError) => {
             console.error('Geolocation failed:', err.message);
             setError(t('weather.errors.locationDenied'));
-            if (location && location.city) {
-              // Try fallback to city if available
-              fetchWeatherByCity(location.city);
-            } else {
-              fallbackToSimulation();
-            }
+            tryFallbackToCity();
           },
           { timeout: 10000, enableHighAccuracy: true }
         );
       } else {
         setError(t('weather.errors.geolocationNotSupported'));
-        if (location && location.city) {
-          // Try fallback to city if available
-          fetchWeatherByCity(location.city);
-        } else {
-          fallbackToSimulation();
-        }
+        tryFallbackToCity();
       }
     };
 
@@ -193,37 +170,16 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
     const interval = setInterval(getLocationAndWeather, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [apiKey, location]);
+  }, [apiKey, location, i18n.language]);
 
-  const getWeatherDescription = (condition: string): string => {
-    // If we have a specific description from the API, try to translate it first
+  const getWeatherDescription = (): string => {
     if (weather.description) {
-      const apiDescription = weather.description.toLowerCase();
-      const apiDescriptionMappings: { [key: string]: string } = {
-        'clear sky': t('weather.conditions.clear'),
-        'few clouds': t('weather.conditions.partlyCloudy'),
-        'scattered clouds': t('weather.conditions.partlyCloudy'),
-        'broken clouds': t('weather.conditions.brokenClouds'),
-        'overcast clouds': t('weather.conditions.cloudy'),
-        'shower rain': t('weather.conditions.rain'),
-        rain: t('weather.conditions.rain'),
-        thunderstorm: t('weather.conditions.thunderstorm'),
-        snow: t('weather.conditions.snow'),
-        mist: t('weather.conditions.mist'),
-        fog: t('weather.conditions.fog'),
-        drizzle: t('weather.conditions.drizzle'),
-      };
-
-      if (apiDescriptionMappings[apiDescription]) {
-        return apiDescriptionMappings[apiDescription];
-      }
-
-      // If no specific mapping, return capitalized original description
+      // return capitalized original description
       return weather.description.charAt(0).toUpperCase() + weather.description.slice(1);
     }
 
     // Try to get localized description based on condition, fallback to capitalized condition
-    const translationKey = `weather.conditions.${condition}`;
+    const translationKey = `weather.conditions.${weather.condition}`;
     const translatedDescription = t(translationKey);
 
     // If translation exists (not the same as the key), use it
@@ -231,23 +187,10 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
       return translatedDescription;
     }
 
-    // Fallback to default English descriptions for backward compatibility
     const descriptions: { [key: string]: string } = {
-      clear: t('weather.conditions.clear'),
-      sunny: t('weather.conditions.sunny'),
-      clouds: t('weather.conditions.clouds'),
-      cloudy: t('weather.conditions.cloudy'),
-      rain: t('weather.conditions.rain'),
-      rainy: t('weather.conditions.rainy'),
-      drizzle: t('weather.conditions.drizzle'),
-      thunderstorm: t('weather.conditions.thunderstorm'),
-      snow: t('weather.conditions.snow'),
-      mist: t('weather.conditions.mist'),
-      fog: t('weather.conditions.fog'),
       'partly-cloudy': t('weather.conditions.partlyCloudy'),
-      loading: t('weather.conditions.loading'),
     };
-    return descriptions[condition] || t('weather.conditions.clear');
+    return descriptions[weather.condition] || t('weather.conditions.clear');
   };
 
   return (
@@ -257,9 +200,7 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
           {weather.condition === 'loading' ? '⏳' : weather.icon}
         </span>
         <div>
-          <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-            {getWeatherDescription(weather.condition)}
-          </div>
+          <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{getWeatherDescription()}</div>
           <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
             {weather.temperature === '--' ? '--' : `${weather.temperature}°C`}
           </div>
