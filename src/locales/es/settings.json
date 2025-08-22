@@ -73,7 +73,7 @@
     "reset": "Restablecer por Defecto"
   },
   "weatherApi": {
-    "title": "🌤️ API del Clima",
+    "title": "API del Clima",
     "description": "Obtén datos meteorológicos reales para tu ubicación",
     "apiKeyLabel": "Clave de API de OpenWeatherMap",
     "placeholder": "Ingresa tu clave de API aquí...",

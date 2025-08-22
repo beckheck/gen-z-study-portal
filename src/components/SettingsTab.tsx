@@ -8,19 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useCourses, useSoundtrack, useTheme, useWeather } from '@/hooks/useStore';
 import { dataTransfer, persistStore } from '@/store';
-import { 
-  Download, 
-  BookOpen, 
-  Info, 
-  Music, 
-  Image, 
-  MousePointer, 
-  Palette, 
-  Layers, 
-  Brush, 
-  Cloud 
-} from 'lucide-react';
-import { ChangeEvent, useState } from 'react';
+import { BookOpen, Brush, Cloud, Download, Image, Info, Layers, MousePointer, Music, Palette } from 'lucide-react';
+import { ChangeEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import StorageInfoCard from './StorageInfoCard';
 
@@ -28,10 +17,6 @@ export default function SettingsTab() {
   // Translation hooks
   const { t } = useTranslation('settings');
   const { t: tCommon } = useTranslation('common');
-
-  // State for selected menu item
-  const [selectedMenuItem, setSelectedMenuItem] = useState('courses');
-
   const { courses, renameCourse } = useCourses();
   const { weather, setWeatherApiKey, setWeatherLocation } = useWeather();
   const { soundtrack, setSoundtrackEmbed, setSoundtrackPosition } = useSoundtrack();
@@ -47,22 +32,38 @@ export default function SettingsTab() {
     setGradientStart,
   } = useTheme();
 
-  // Menu items configuration
-  const menuItems = [
-    { id: 'courses', label: t('courses.title'), icon: BookOpen },
-    { id: 'about', label: t('about.title'), icon: Info },
-    { id: 'soundtrack', label: t('soundtrack.title'), icon: Music },
-    { id: 'background', label: t('background.title'), icon: Image },
-    { id: 'customCursor', label: t('customCursor.title'), icon: MousePointer },
-    { id: 'accentColor', label: t('accentColor.title'), icon: Palette },
-    { id: 'cardOpacity', label: t('cardOpacity.title'), icon: Layers },
-    { id: 'backgroundGradient', label: t('backgroundGradient.title'), icon: Brush },
-    { id: 'weatherApi', label: t('weatherApi.title'), icon: Cloud },
-  ];
+  // Map menu items to their refs for scroll-to functionality
+  const refMap = {
+    courses: useRef<HTMLDivElement>(null),
+    about: useRef<HTMLDivElement>(null),
+    soundtrack: useRef<HTMLDivElement>(null),
+    background: useRef<HTMLDivElement>(null),
+    customCursor: useRef<HTMLDivElement>(null),
+    accentColor: useRef<HTMLDivElement>(null),
+    cardOpacity: useRef<HTMLDivElement>(null),
+    backgroundGradient: useRef<HTMLDivElement>(null),
+    weatherApi: useRef<HTMLDivElement>(null),
+  };
+
+  // Scroll to section function
+  const scrollToSection = (menuId: string) => {
+    if (menuItems[0].id === menuId) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const ref = refMap[menuId as keyof typeof refMap];
+    if (ref?.current) {
+      ref.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  };
 
   // Render functions for each settings card
   const renderCoursesCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.courses} />
       <CardHeader>
         <CardTitle>{t('courses.title')}</CardTitle>
         <CardDescription>{t('courses.description')}</CardDescription>
@@ -84,6 +85,7 @@ export default function SettingsTab() {
 
   const renderAboutCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.about} />
       <CardHeader>
         <CardTitle>{t('about.title')}</CardTitle>
         <CardDescription>{t('about.description')}</CardDescription>
@@ -145,6 +147,7 @@ export default function SettingsTab() {
 
   const renderSoundtrackCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.soundtrack} />
       <CardHeader>
         <CardTitle>{t('soundtrack.title')}</CardTitle>
         <CardDescription>{t('soundtrack.description')}</CardDescription>
@@ -188,6 +191,7 @@ export default function SettingsTab() {
 
   const renderBackgroundCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.background} />
       <CardHeader>
         <CardTitle>{t('background.title')}</CardTitle>
         <CardDescription>{t('background.description')}</CardDescription>
@@ -216,11 +220,7 @@ export default function SettingsTab() {
           </Button>
         </div>
         {theme.bgImage && (
-          <img
-            src={theme.bgImage}
-            alt={t('background.preview')}
-            className="rounded-xl max-h-40 w-full object-cover"
-          />
+          <img src={theme.bgImage} alt={t('background.preview')} className="rounded-xl max-h-40 w-full object-cover" />
         )}
       </CardContent>
     </Card>
@@ -228,6 +228,7 @@ export default function SettingsTab() {
 
   const renderCustomCursorCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.customCursor} />
       <CardHeader>
         <CardTitle>{t('customCursor.title')}</CardTitle>
         <CardDescription>{t('customCursor.description')}</CardDescription>
@@ -274,9 +275,7 @@ export default function SettingsTab() {
           </p>
         </div>
         <div className="bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg text-sm">
-          <p className="text-yellow-800 dark:text-yellow-200">
-            {t('customCursor.animatedNote')}
-          </p>
+          <p className="text-yellow-800 dark:text-yellow-200">{t('customCursor.animatedNote')}</p>
         </div>
       </CardContent>
     </Card>
@@ -284,6 +283,7 @@ export default function SettingsTab() {
 
   const renderAccentColorCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.accentColor} />
       <CardHeader>
         <CardTitle>{t('accentColor.title')}</CardTitle>
         <CardDescription>{t('accentColor.description')}</CardDescription>
@@ -320,6 +320,7 @@ export default function SettingsTab() {
 
   const renderCardOpacityCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.cardOpacity} />
       <CardHeader>
         <CardTitle>{t('cardOpacity.title')}</CardTitle>
         <CardDescription>{t('cardOpacity.description')}</CardDescription>
@@ -377,6 +378,7 @@ export default function SettingsTab() {
 
   const renderBackgroundGradientCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.backgroundGradient} />
       <CardHeader>
         <CardTitle>{t('backgroundGradient.title')}</CardTitle>
         <CardDescription>{t('backgroundGradient.description')}</CardDescription>
@@ -454,6 +456,7 @@ export default function SettingsTab() {
 
   const renderWeatherApiCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      <div ref={refMap.weatherApi} />
       <CardHeader>
         <CardTitle>{t('weatherApi.title')}</CardTitle>
         <CardDescription>{t('weatherApi.description')}</CardDescription>
@@ -544,27 +547,29 @@ export default function SettingsTab() {
     </Card>
   );
 
-  // Helper function to render the selected card
-  const renderSelectedCard = () => {
-    switch (selectedMenuItem) {
-      case 'courses': return renderCoursesCard();
-      case 'about': return renderAboutCard();
-      case 'soundtrack': return renderSoundtrackCard();
-      case 'background': return renderBackgroundCard();
-      case 'customCursor': return renderCustomCursorCard();
-      case 'accentColor': return renderAccentColorCard();
-      case 'cardOpacity': return renderCardOpacityCard();
-      case 'backgroundGradient': return renderBackgroundGradientCard();
-      case 'weatherApi': return renderWeatherApiCard();
-      default: return renderCoursesCard();
-    }
-  };
+  // Menu items configuration
+  const menuItems = [
+    { id: 'about', label: t('about.title'), icon: Info, render: renderAboutCard },
+    { id: 'courses', label: t('courses.title'), icon: BookOpen, render: renderCoursesCard },
+    { id: 'soundtrack', label: t('soundtrack.title'), icon: Music, render: renderSoundtrackCard },
+    { id: 'background', label: t('background.title'), icon: Image, render: renderBackgroundCard },
+    { id: 'customCursor', label: t('customCursor.title'), icon: MousePointer, render: renderCustomCursorCard },
+    { id: 'accentColor', label: t('accentColor.title'), icon: Palette, render: renderAccentColorCard },
+    { id: 'cardOpacity', label: t('cardOpacity.title'), icon: Layers, render: renderCardOpacityCard },
+    {
+      id: 'backgroundGradient',
+      label: t('backgroundGradient.title'),
+      icon: Brush,
+      render: renderBackgroundGradientCard,
+    },
+    { id: 'weatherApi', label: t('weatherApi.title'), icon: Cloud, render: renderWeatherApiCard },
+  ];
 
   return (
     <div className="flex h-full gap-6">
       {/* Left Sidebar Menu */}
-      <div className="w-80 flex-shrink-0">
-        <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur h-fit">
+      <div className="w-80 flex-shrink-0 hidden md:block">
+        <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur h-fit sticky top-6">
           <CardHeader>
             <CardTitle className="text-xl">{t('title')}</CardTitle>
             <CardDescription>{t('sidebar.description')}</CardDescription>
@@ -577,12 +582,8 @@ export default function SettingsTab() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setSelectedMenuItem(item.id)}
+                    onClick={() => scrollToSection(item.id)}
                     className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-all duration-200 hover:bg-white/20 dark:hover:bg-white/10 ${
-                      selectedMenuItem === item.id
-                        ? 'bg-white/30 dark:bg-white/20 border-r-2 border-blue-500'
-                        : ''
-                    } ${
                       isLast ? 'rounded-b-2xl' : ''
                     }`}
                   >
@@ -598,7 +599,11 @@ export default function SettingsTab() {
 
       {/* Right Content Area */}
       <div className="flex-1">
-        {renderSelectedCard()}
+        <div className="space-y-6 pb-24 md:pb-6">
+          {menuItems.map(item => (
+            <div key={item.id}>{item.render()}</div>
+          ))}
+        </div>
       </div>
     </div>
   );

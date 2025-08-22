@@ -73,7 +73,7 @@
     "reset": "Reset to Default"
   },
   "weatherApi": {
-    "title": "🌤️ Weather API",
+    "title": "Weather API",
     "description": "Get real weather data for your location",
     "apiKeyLabel": "OpenWeatherMap API Key",
     "placeholder": "Enter your API key here...",

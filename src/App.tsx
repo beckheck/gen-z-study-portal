@@ -24,6 +24,7 @@ import {
   Brain,
   CalendarDays,
   CalendarRange,
+  ChevronUp,
   GraduationCap,
   HeartPulse,
   Home,
@@ -32,7 +33,7 @@ import {
   Settings as SettingsIcon,
   Sparkles,
 } from 'lucide-react';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppTab } from './types';
 
@@ -89,6 +90,7 @@ export default function StudyPortal(): React.JSX.Element {
 
   // Local UI state (not persisted)
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
 
   // Style hooks
   useDarkModeStyles();
@@ -103,6 +105,21 @@ export default function StudyPortal(): React.JSX.Element {
     },
     [setActiveTab, setIsDrawerOpen]
   );
+
+  // Handle scroll to top functionality
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Show/hide scroll to top button based on scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollToTop(window.scrollY > 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Show loading screen until state is ready
   if (isLoading || error) {
@@ -280,6 +297,24 @@ export default function StudyPortal(): React.JSX.Element {
             position={soundtrack.position}
             onPositionChange={setSoundtrackPosition}
           />
+        )}
+
+        {/* Floating scroll to top button */}
+        {showScrollToTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={scrollToTop}
+            className="fixed bottom-6 left-6 z-50 p-3 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-white/90 dark:hover:bg-zinc-900/90 transition-all duration-200 shadow-lg hover:shadow-xl border border-white/20 dark:border-white/10 hover:scale-110"
+            style={{
+              boxShadow:
+                '0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.2)',
+            }}
+            aria-label={t('navigation.scrollToTop')}
+          >
+            <ChevronUp className="w-6 h-6" />
+          </motion.button>
         )}
       </div>
     </div>
