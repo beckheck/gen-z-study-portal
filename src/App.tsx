@@ -121,6 +121,17 @@ export default function StudyPortal(): React.JSX.Element {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // File attachment garbage collection - runs on app startup
+  useEffect(() => {
+    // Run garbage collection on startup (with a small delay to let the app initialize)
+    const timeoutId = setTimeout(async () => {
+      const { performGarbageCollection } = await import('./store');
+      await performGarbageCollection();
+    }, 2000);
+
+    return () => clearTimeout(timeoutId);
+  }, []); // Run only once on mount
+
   // Show loading screen until state is ready
   if (isLoading || error) {
     return <LoadingScreen error={error} status={status} />;

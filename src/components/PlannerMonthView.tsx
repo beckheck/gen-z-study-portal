@@ -1,7 +1,8 @@
 import { EventTypeIndicator } from '@/components/PlannerSharedComponents';
 import { Badge } from '@/components/ui/badge';
+import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useRegularEvents, useSchedule } from '@/hooks/useStore';
+import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
 import { useTranslation } from 'react-i18next';
 import { CalendarView } from '../types';
 
@@ -29,10 +30,33 @@ export function PlannerMonthView({
   eventDialog,
 }: PlannerMonthViewProps) {
   const { getCourseTitle } = useCourses();
-  const { regularEvents } = useRegularEvents();
+  const { regularEvents, updateRegularEvent } = useRegularEvents();
   const { removeSchedule } = useSchedule();
+  const { updateExam } = useExams();
+  const { updateTask } = useTasks();
   const { t } = useTranslation('planner');
   const { getShortDayNames, formatDate: localizedFormatDate, formatDateDDMMYYYY } = useLocalization();
+
+  // Helper function to handle content changes for different event types
+  const handleEventContentChange = (event: any, newContent: string) => {
+    switch (event.eventType) {
+      case 'exam':
+        updateExam(event.id, { ...event, notes: newContent });
+        break;
+      case 'regular':
+        updateRegularEvent(event.id, { ...event, notes: newContent });
+        break;
+      case 'task':
+        updateTask(event.id, { ...event, notes: newContent });
+        break;
+      // Schedule events don't have updatable notes in the current implementation
+      case 'schedule':
+        console.warn('Schedule event notes are not updatable');
+        break;
+      default:
+        console.warn('Unknown event type:', event.eventType);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -149,7 +173,23 @@ export function PlannerMonthView({
 
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {tooltipEvents.map((e, idx) => (
-                      <div key={idx} className="space-y-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/50">
+                      <div
+                        key={idx}
+                        className="space-y-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/50 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                        onClick={event => {
+                          event.stopPropagation();
+                          if (e.eventType === 'schedule') {
+                            // For schedule events, show delete confirmation directly
+                            if (confirm(t('messages.deleteScheduleEvent'))) {
+                              removeSchedule(e.id);
+                            }
+                          } else {
+                            // For other events, directly open edit dialog
+                            eventDialog.openEditDialog(e);
+                          }
+                        }}
+                        title={t('messages.clickToEdit')}
+                      >
                         <div className="flex items-center gap-2">
                           <EventTypeIndicator event={e} size="md" />
                           <span className="font-semibold text-zinc-900 dark:text-zinc-100">{e.title || e.type}</span>
@@ -161,7 +201,16 @@ export function PlannerMonthView({
                           {e.location && <div>📍 {e.location}</div>}
                           {e.weight && <div>⚖️ Weight: {e.weight}%</div>}
                           {e.priority && <div>🎯 Priority: {e.priority}</div>}
-                          {e.notes && <div className="italic mt-1">📝 {e.notes}</div>}
+                          {e.notes && (
+                            <div className="mt-1">
+                              <span className="mr-1">📝</span>
+                              <RichTextDisplay
+                                content={e.notes}
+                                className="inline text-sm"
+                                onContentChange={newContent => handleEventContentChange(e, newContent)}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -218,7 +267,19 @@ export function PlannerMonthView({
                               : formatDateDDMMYYYY(event.startDate)}
                           </div>
                           {event.location && <div>📍 {event.location}</div>}
-                          {event.notes && <div className="italic">📝 {event.notes}</div>}
+                          {event.notes && (
+                            <div onClick={event => event.stopPropagation()}>
+                              <span className="mr-1">📝</span>
+                              <RichTextDisplay
+                                content={event.notes}
+                                className="inline text-sm"
+                                onContentChange={newContent => {
+                                  // Regular events in multi-day view
+                                  updateRegularEvent(event.id, { ...event, notes: newContent });
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div

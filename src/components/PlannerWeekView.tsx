@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useSchedule, useWeeklyGoals } from '@/hooks/useStore';
+import { useCourses, useExams, useRegularEvents, useSchedule, useTasks, useWeeklyGoals } from '@/hooks/useStore';
 import { Plus, Target, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import ReactConfetti from 'react-confetti';
@@ -30,8 +30,32 @@ export function PlannerWeekView({
   const { getCourseTitle } = useCourses();
   const { removeSchedule } = useSchedule();
   const { weeklyGoals, addGoal, toggleGoal, deleteGoal, clearAllGoals } = useWeeklyGoals();
+  const { updateExam } = useExams();
+  const { updateTask } = useTasks();
+  const { updateRegularEvent } = useRegularEvents();
   const { t } = useTranslation('planner');
   const { getShortDayNames } = useLocalization();
+
+  // Helper function to handle content changes for different event types
+  const handleEventContentChange = (event: any, newContent: string) => {
+    switch (event.eventType) {
+      case 'exam':
+        updateExam(event.id, { ...event, notes: newContent });
+        break;
+      case 'regular':
+        updateRegularEvent(event.id, { ...event, notes: newContent });
+        break;
+      case 'task':
+        updateTask(event.id, { ...event, notes: newContent });
+        break;
+      // Schedule events don't have updatable notes in the current implementation
+      case 'schedule':
+        console.warn('Schedule event notes are not updatable');
+        break;
+      default:
+        console.warn('Unknown event type:', event.eventType);
+    }
+  };
 
   const [goalForm, setGoalForm] = useState<{ title: string }>({ title: '' });
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
@@ -232,7 +256,10 @@ export function PlannerWeekView({
                                 </div>
                               </div>
                             </div>
-                            <EventTooltip event={e} />
+                            <EventTooltip
+                              event={e}
+                              onContentChange={newContent => handleEventContentChange(e, newContent)}
+                            />
                           </div>
                         </div>
                       ))}
@@ -274,7 +301,7 @@ export function PlannerWeekView({
                           </span>
                         </div>
                       </div>
-                      <EventTooltip event={e} />
+                      <EventTooltip event={e} onContentChange={newContent => handleEventContentChange(e, newContent)} />
                     </div>
                   ))}
                   {eventsForWeekdayName(dayKey).length === 0 && (

@@ -73,7 +73,7 @@
   },
   "forms": {
     "eventCategory": "Categoría de Evento",
-    "courseOptional": "Curso (Opcional)",
+    "courseOptional": "Curso",
     "title": "Título",
     "startDate": "Fecha de Inicio",
     "endDate": "Fecha de Fin",

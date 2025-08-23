@@ -1,3 +1,4 @@
+import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { useCourses } from '@/hooks/useStore';
 
 // Color chips for different event types
@@ -36,7 +37,13 @@ export const EventTypeIndicator = ({ event, size = 'sm' }: { event: any; size?: 
 };
 
 // Shared event tooltip component
-export const EventTooltip = ({ event }: { event: any }) => {
+export const EventTooltip = ({
+  event,
+  onContentChange,
+}: {
+  event: any;
+  onContentChange?: (newContent: string) => void;
+}) => {
   const { getCourseTitle } = useCourses();
   return (
     <div
@@ -62,7 +69,11 @@ export const EventTooltip = ({ event }: { event: any }) => {
           {event.location && <div>{event.location}</div>}
           {event.weight && <div>Weight: {event.weight}%</div>}
           {event.priority && <div>Priority: {event.priority}</div>}
-          {event.notes && <div className="italic mt-2">{event.notes}</div>}
+          {event.notes && (
+            <div className="mt-2">
+              <RichTextDisplay content={event.notes} className="text-sm" onContentChange={onContentChange} />
+            </div>
+          )}
         </div>
       </div>
       {/* Arrow */}

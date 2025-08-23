@@ -14,7 +14,7 @@
   "forms": {
     "eventCategory": "Event Category",
     "course": "Course",
-    "courseOptional": "Course (Optional)",
+    "courseOptional": "Course",
     "title": "Title",
     "type": "Type",
     "startDate": "Start Date",

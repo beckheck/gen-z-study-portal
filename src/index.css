@@ -98,3 +98,509 @@
     transform: translateX(-100%) translateY(0);
   }
 }
+
+/* Tiptap Editor Styles */
+.tiptap {
+  outline: none;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.tiptap-task-list {
+  list-style: none;
+  padding: 0;
+}
+
+.tiptap-task-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-task-item > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  user-select: none;
+  margin-top: 0.125rem;
+}
+
+.tiptap-task-item > div {
+  flex: 1 1 auto;
+}
+
+.tiptap-task-item input[type="checkbox"] {
+  accent-color: hsl(var(--primary));
+  cursor: pointer;
+}
+
+/* Strikethrough for completed tasks - using Tiptap's default structure */
+.tiptap ul[data-type="taskList"] li[data-checked="true"],
+.tiptap ul[data-type="taskList"] li[data-checked="true"] > div,
+.tiptap ul[data-type="taskList"] li[data-checked="true"] p {
+  text-decoration: line-through;
+  opacity: 0.8;
+  transition: all 0.2s ease-in-out;
+}
+
+.dark .tiptap ul[data-type="taskList"] li[data-checked="true"],
+.dark .tiptap ul[data-type="taskList"] li[data-checked="true"] > div,
+.dark .tiptap ul[data-type="taskList"] li[data-checked="true"] p {
+  color: #9ca3af;
+}
+
+/* Hover effect for task items */
+.tiptap-task-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.dark .tiptap-task-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tiptap ul, .tiptap ol {
+  padding-left: 1.5rem;
+}
+
+/* Bullet Lists */
+.tiptap ul:not([data-type="taskList"]) {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+}
+
+.tiptap ul:not([data-type="taskList"]) li {
+  display: list-item !important;
+  list-style-type: disc !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Numbered Lists */
+.tiptap ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+}
+
+.tiptap ol li {
+  display: list-item !important;
+  list-style-type: decimal !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Nested lists */
+.tiptap ul ul, .tiptap ol ol, .tiptap ul ol, .tiptap ol ul {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.tiptap ul ul li {
+  list-style-type: circle;
+}
+
+.tiptap ul ul ul li {
+  list-style-type: square;
+}
+
+.tiptap li {
+  margin-bottom: 0.25rem;
+}
+
+.tiptap strong {
+  font-weight: 600;
+}
+
+.tiptap em {
+  font-style: italic;
+}
+
+/* Image styling */
+.tiptap .tiptap-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease-in-out;
+}
+
+.tiptap .tiptap-image:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.dark .tiptap .tiptap-image {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .tiptap .tiptap-image:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Image selection styling */
+.tiptap .ProseMirror-selectednode.tiptap-image {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* File attachment styling */
+.tiptap [data-type="file-attachment"] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  max-width: 300px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  position: relative;
+}
+
+/* Add hover tooltip */
+.tiptap [data-type="file-attachment"]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 1000;
+}
+
+.tiptap [data-type="file-attachment"]:hover::before {
+  opacity: 1;
+}
+
+/* Add click indicator */
+.tiptap [data-type="file-attachment"]::after {
+  content: '↗';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.tiptap [data-type="file-attachment"]:hover::after {
+  opacity: 1;
+}
+
+/* Ensure file attachments display as block when inside paragraphs */
+.tiptap p [data-type="file-attachment"] {
+  display: flex;
+  width: 100%;
+}
+
+.tiptap [data-type="file-attachment"]:hover {
+  border-color: hsl(var(--primary));
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark .tiptap [data-type="file-attachment"] {
+  border-color: #374151;
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+.dark .tiptap [data-type="file-attachment"]::before {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
+}
+
+.dark .tiptap [data-type="file-attachment"]::after {
+  color: #6b7280;
+}
+
+.dark .tiptap [data-type="file-attachment"]:hover {
+  border-color: hsl(var(--primary));
+  background-color: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .tiptap [data-type="file-attachment"]:hover::after {
+  color: #9ca3af;
+}
+
+.tiptap [data-type="file-attachment"] .file-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease-in-out;
+}
+
+.tiptap [data-type="file-attachment"] .file-icon.loading {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tiptap [data-type="file-attachment"] .file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tiptap [data-type="file-attachment"] .file-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .tiptap [data-type="file-attachment"] .file-name {
+  color: #f9fafb;
+}
+
+.tiptap [data-type="file-attachment"] .file-size {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.125rem;
+}
+
+.dark .tiptap [data-type="file-attachment"] .file-size {
+  color: #9ca3af;
+}
+
+/* Dark mode adjustments for task items */
+.dark .tiptap p.is-editor-empty:first-child::before {
+  color: #6b7280;
+}
+
+/* Hide caret and prevent text selection in checkbox-only mode */
+.checkbox-only-mode .ProseMirror {
+  caret-color: transparent !important;
+  user-select: none;
+  cursor: default !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  /* Disable spell checking */
+  -webkit-spellcheck: false;
+  -moz-spellcheck: false;
+  spellcheck: false;
+}
+
+.checkbox-only-mode .ProseMirror:focus {
+  caret-color: transparent !important;
+  outline: none;
+}
+
+.checkbox-only-mode .ProseMirror *:not(input) {
+  caret-color: transparent !important;
+  cursor: default !important;
+  /* Disable spell checking for all text elements */
+  -webkit-spellcheck: false;
+  -moz-spellcheck: false;
+  spellcheck: false;
+}
+
+.checkbox-only-mode .ProseMirror::selection {
+  background: transparent !important;
+}
+
+.checkbox-only-mode .ProseMirror::-moz-selection {
+  background: transparent !important;
+}
+
+/* Force remove any text cursor in checkbox-only mode */
+.checkbox-only-mode .ProseMirror,
+.checkbox-only-mode .ProseMirror *:not(input),
+.checkbox-only-mode .ProseMirror p,
+.checkbox-only-mode .ProseMirror div,
+.checkbox-only-mode .ProseMirror span,
+.checkbox-only-mode .ProseMirror li {
+  cursor: default !important;
+}
+
+/* Only checkboxes should have pointer cursor */
+.checkbox-only-mode input[type="checkbox"] {
+  cursor: pointer !important;
+}
+
+/* Prevent text selection in checkbox-only mode except for checkboxes */
+.checkbox-only-mode {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.checkbox-only-mode input[type="checkbox"] {
+  -webkit-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
+}
+
+/* Blockquote styling */
+.tiptap .tiptap-blockquote,
+.tiptap blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #6b7280;
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.dark .tiptap .tiptap-blockquote,
+.dark .tiptap blockquote {
+  border-left-color: #4b5563;
+  color: #9ca3af;
+  background-color: #1f2937;
+}
+
+/* Blockquote paragraphs */
+.tiptap .tiptap-blockquote p,
+.tiptap blockquote p {
+  margin: 0;
+  color: inherit;
+}
+
+.tiptap .tiptap-blockquote p:not(:last-child),
+.tiptap blockquote p:not(:last-child) {
+  margin-bottom: 0.5rem;
+}
+
+/* Heading styles */
+.tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 1.5rem 0 1rem 0;
+  color: #1f2937;
+}
+
+.tiptap h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.25rem 0 0.75rem 0;
+  color: #1f2937;
+}
+
+.tiptap h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1rem 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.tiptap h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0.75rem 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.tiptap h5 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0.75rem 0 0.25rem 0;
+  color: #1f2937;
+}
+
+.tiptap h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0.5rem 0 0.25rem 0;
+  color: #1f2937;
+}
+
+/* Dark mode heading styles */
+.dark .tiptap h1,
+.dark .tiptap h2,
+.dark .tiptap h3,
+.dark .tiptap h4,
+.dark .tiptap h5,
+.dark .tiptap h6 {
+  color: #f9fafb;
+}
+
+/* Ensure headings don't inherit font-family from parent elements */
+.tiptap h1,
+.tiptap h2,
+.tiptap h3,
+.tiptap h4,
+.tiptap h5,
+.tiptap h6 {
+  font-family: inherit;
+}
+
+/* Font size styles for TipTap editor */
+.tiptap [style*="font-size: 12px"] {
+  font-size: 12px !important;
+}
+
+.tiptap [style*="font-size: 14px"] {
+  font-size: 14px !important;
+}
+
+.tiptap [style*="font-size: 16px"] {
+  font-size: 16px !important;
+}
+
+.tiptap [style*="font-size: 18px"] {
+  font-size: 18px !important;
+}
+
+.tiptap [style*="font-size: 20px"] {
+  font-size: 20px !important;
+}
+
+.tiptap [style*="font-size: 24px"] {
+  font-size: 24px !important;
+}
+
+.tiptap [style*="font-size: 28px"] {
+  font-size: 28px !important;
+}
+
+.tiptap [style*="font-size: 32px"] {
+  font-size: 32px !important;
+}
+
+.tiptap [style*="font-size: 36px"] {
+  font-size: 36px !important;
+}
+
+.tiptap [style*="font-size: 48px"] {
+  font-size: 48px !important;
+}

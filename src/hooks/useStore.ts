@@ -158,6 +158,12 @@ export function useTasks() {
     addTask: (task: TaskInput) => {
       store.tasks.unshift({ ...task, id: uid(), done: false });
     },
+    updateTask: (id: string, updatedTask: TaskInput) => {
+      const taskIndex = store.tasks.findIndex(t => t.id === id);
+      if (taskIndex !== -1) {
+        store.tasks[taskIndex] = { ...updatedTask, id, done: store.tasks[taskIndex].done };
+      }
+    },
     toggleTask: (id: string) => {
       const taskIndex = store.tasks.findIndex(t => t.id === id);
       if (taskIndex !== -1) {
@@ -225,6 +231,12 @@ export function useRegularEvents() {
     regularEvents,
     addRegularEvent: (event: RegularEventInput) => {
       store.regularEvents.unshift({ ...event, id: uid() });
+    },
+    updateRegularEvent: (id: string, updatedEvent: RegularEventInput) => {
+      const eventIndex = store.regularEvents.findIndex(e => e.id === id);
+      if (eventIndex !== -1) {
+        store.regularEvents[eventIndex] = { ...updatedEvent, id };
+      }
     },
     deleteRegularEvent: (id: string) => {
       const eventIndex = store.regularEvents.findIndex(e => e.id === id);

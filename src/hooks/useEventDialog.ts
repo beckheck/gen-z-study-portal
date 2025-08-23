@@ -42,10 +42,10 @@ export function useEventDialog() {
   const [form, setForm] = useState<EventForm>(DEFAULT_EVENT_FORM);
 
   // Import store hooks
-  const { addTask, deleteTask } = useTasks();
+  const { addTask, updateTask, deleteTask } = useTasks();
 
   const { addExam, updateExam, deleteExam } = useExams();
-  const { addRegularEvent, deleteRegularEvent } = useRegularEvents();
+  const { addRegularEvent, updateRegularEvent, deleteRegularEvent } = useRegularEvents();
 
   const openDialog = (initialData?: Partial<EventForm>) => {
     setForm({
@@ -169,12 +169,13 @@ export function useEventDialog() {
         eventData.isMultiDay = false;
       }
 
-      // If we're editing an existing regular event, delete the original first
       if (editingEvent && editingEvent.eventType === 'regular') {
-        deleteRegularEvent(editingEvent.id);
+        // Update existing regular event
+        updateRegularEvent(editingEvent.id, eventData);
+      } else {
+        // Add new regular event
+        addRegularEvent(eventData);
       }
-
-      addRegularEvent(eventData);
     } else if (formData.eventCategory === 'exam') {
       const examData = {
         courseId: formData.courseId,
@@ -200,12 +201,13 @@ export function useEventDialog() {
         notes: formData.notes,
       };
 
-      // If we're editing an existing task, delete the original first
       if (editingEvent && editingEvent.eventType === 'task') {
-        deleteTask(editingEvent.id);
+        // Update existing task
+        updateTask(editingEvent.id, taskData);
+      } else {
+        // Add new task
+        addTask(taskData);
       }
-
-      addTask(taskData);
     }
   };
 

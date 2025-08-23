@@ -73,7 +73,7 @@
   },
   "forms": {
     "eventCategory": "Event Category",
-    "courseOptional": "Course (Optional)",
+    "courseOptional": "Course",
     "title": "Title",
     "startDate": "Start Date",
     "endDate": "End Date",

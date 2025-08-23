@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
@@ -51,29 +52,35 @@ export default function CourseManagerTab() {
         if (!a.due && !b.due) {
           // Both have no due date, sort by priority then alphabetically
           const priorityOrder = { high: 0, normal: 1, low: 2 };
-          const priorityComparison = priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+          const priorityComparison =
+            priorityOrder[a.priority as keyof typeof priorityOrder] -
+            priorityOrder[b.priority as keyof typeof priorityOrder];
           if (priorityComparison !== 0) return priorityComparison;
           return a.title.localeCompare(b.title);
         }
         if (!a.due) return 1; // Tasks without due date go to end
         if (!b.due) return -1;
-        
+
         const dateComparison = new Date(a.due).getTime() - new Date(b.due).getTime();
         if (dateComparison !== 0) return dateComparison;
-        
+
         // If dates are same, sort by priority
         const priorityOrder = { high: 0, normal: 1, low: 2 };
-        const priorityComparison = priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+        const priorityComparison =
+          priorityOrder[a.priority as keyof typeof priorityOrder] -
+          priorityOrder[b.priority as keyof typeof priorityOrder];
         if (priorityComparison !== 0) return priorityComparison;
-        
+
         // If both date and priority are same, sort alphabetically
         return a.title.localeCompare(b.title);
       } else {
         // Sort by priority (high > normal > low), then by due date, then alphabetically
         const priorityOrder = { high: 0, normal: 1, low: 2 };
-        const priorityComparison = priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+        const priorityComparison =
+          priorityOrder[a.priority as keyof typeof priorityOrder] -
+          priorityOrder[b.priority as keyof typeof priorityOrder];
         if (priorityComparison !== 0) return priorityComparison;
-        
+
         // If priorities are same, sort by due date
         if (!a.due && !b.due) {
           // Both have no due date, sort alphabetically
@@ -81,10 +88,10 @@ export default function CourseManagerTab() {
         }
         if (!a.due) return 1;
         if (!b.due) return -1;
-        
+
         const dateComparison = new Date(a.due).getTime() - new Date(b.due).getTime();
         if (dateComparison !== 0) return dateComparison;
-        
+
         // If both priority and date are same, sort alphabetically
         return a.title.localeCompare(b.title);
       }
@@ -239,57 +246,57 @@ export default function CourseManagerTab() {
                 <div className="text-sm text-zinc-500">{tCourse('tasks.empty.noPending')}</div>
               )}
               {openTasks.map(t => (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl group border-l-4"
+                  style={{ borderLeftColor: getPriorityColor(t.priority) }}
+                >
                   <div
-                    key={t.id}
-                    className="flex items-center justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl group border-l-4"
-                    style={{ borderLeftColor: getPriorityColor(t.priority) }}
+                    className="flex-1 cursor-pointer"
+                    onClick={() => {
+                      // Create task event with proper format for editing
+                      eventDialog.openEditTaskDialog(t);
+                    }}
                   >
-                    <div
-                      className="flex-1 cursor-pointer"
-                      onClick={() => {
-                        // Create task event with proper format for editing
-                        eventDialog.openEditTaskDialog(t);
-                      }}
-                    >
-                      <div className="font-medium">{t.title}</div>
-                      <div className="text-xs text-zinc-500">
-                        {t.due ? formatDateDDMMYYYY(t.due) : '—'} · {t.priority}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          eventDialog.openEditTaskDialog(t);
-                        }}
-                        title={tCourse('actions.edit')}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="default"
-                        className="rounded-xl"
-                        onClick={() => {
-                          toggleTask(t.id);
-                          // Check if this was the last incomplete task
-                          const incompleteTasks = openTasks.filter(task => task.id !== t.id);
-                          if (incompleteTasks.length === 0 && courseTasks.length > 0) {
-                            setShowConfetti(true);
-                          }
-                        }}
-                      >
-                        {tCourse('actions.done')}
-                      </Button>
-                      <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteTask(t.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    <div className="font-medium">{t.title}</div>
+                    <div className="text-xs text-zinc-500">
+                      {t.due ? formatDateDDMMYYYY(t.due) : '—'} · {t.priority}
                     </div>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={e => {
+                        e.stopPropagation();
+                        eventDialog.openEditTaskDialog(t);
+                      }}
+                      title={tCourse('actions.edit')}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="rounded-xl"
+                      onClick={() => {
+                        toggleTask(t.id);
+                        // Check if this was the last incomplete task
+                        const incompleteTasks = openTasks.filter(task => task.id !== t.id);
+                        if (incompleteTasks.length === 0 && courseTasks.length > 0) {
+                          setShowConfetti(true);
+                        }
+                      }}
+                    >
+                      {tCourse('actions.done')}
+                    </Button>
+                    <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteTask(t.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
 
               {completedTasks.length > 0 && (
                 <>
@@ -298,60 +305,60 @@ export default function CourseManagerTab() {
                   </div>
                   <div className="space-y-2">
                     {completedTasks.map(t => (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          key={t.id}
-                          className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group border-l-4"
-                          style={{ borderLeftColor: getPriorityColor(t.priority) }}
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={t.id}
+                        className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group border-l-4"
+                        style={{ borderLeftColor: getPriorityColor(t.priority) }}
+                      >
+                        <div
+                          className="flex-1 cursor-pointer"
+                          onClick={() => {
+                            // Create task event with proper format for editing
+                            eventDialog.openEditTaskDialog(t);
+                          }}
                         >
-                          <div
-                            className="flex-1 cursor-pointer"
-                            onClick={() => {
-                              // Create task event with proper format for editing
+                          <div className="line-through group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                            {t.title}
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            {t.due ? formatDateDDMMYYYY(t.due) : '—'} · {t.priority}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={e => {
+                              e.stopPropagation();
                               eventDialog.openEditTaskDialog(t);
                             }}
+                            title={tCourse('actions.edit')}
                           >
-                            <div className="line-through group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
-                              {t.title}
-                            </div>
-                            <div className="text-xs text-zinc-500">
-                              {t.due ? formatDateDDMMYYYY(t.due) : '—'} · {t.priority}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                eventDialog.openEditTaskDialog(t);
-                              }}
-                              title={tCourse('actions.edit')}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => toggleTask(t.id)}
-                              title={tCourse('actions.undo')}
-                            >
-                              <Undo className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => deleteTask(t.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </motion.div>
-                      ))}
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => toggleTask(t.id)}
+                            title={tCourse('actions.undo')}
+                          >
+                            <Undo className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => deleteTask(t.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 </>
               )}
@@ -410,7 +417,22 @@ export default function CourseManagerTab() {
                     <div>
                       <div className="font-medium">{e.title}</div>
                       <div className="text-xs text-zinc-500">
-                        {formatDateDDMMYYYY(e.date)} · {e.weight}%{e.notes && <div className="mt-1 text-xs italic">{e.notes}</div>}
+                        {formatDateDDMMYYYY(e.date)} · {e.weight}%
+                        {e.notes && (
+                          <div className="mt-1">
+                            <RichTextDisplay
+                              content={e.notes}
+                              className="text-xs"
+                              onContentChange={newContent => {
+                                // Update the exam with the new notes content
+                                updateExam(e.id, {
+                                  ...e,
+                                  notes: newContent,
+                                });
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Badge variant="secondary" className="rounded-full self-start">

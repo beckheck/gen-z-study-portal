@@ -109,6 +109,12 @@ function createInitialState(): AppState {
       moodEmojis: { ...DEFAULT_MOOD_EMOJIS },
       hydrationSettings: { ...DEFAULT_HYDRATION_SETTINGS },
     },
+
+    // File attachments
+    fileAttachments: {
+      files: {},
+      metadata: {},
+    },
   };
 }
 
@@ -446,6 +452,65 @@ window.addEventListener('storage', e => {
     }
   }
 });
+
+// File attachment garbage collection function
+export const performGarbageCollection = async (): Promise<void> => {
+  try {
+    const { fileAttachmentStorage } = await import('../lib/file-attachment-storage');
+
+    // Scan all rich text content in the app for file attachment references
+    const referencedFileIds = new Set<string>();
+
+    // Helper function to extract file IDs from HTML content
+    const extractFileIds = (htmlContent: string) => {
+      if (!htmlContent) return;
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      const fileAttachments = doc.querySelectorAll('[data-type="file-attachment"]');
+
+      fileAttachments.forEach(element => {
+        const fileId = element.getAttribute('data-file-id');
+        if (fileId) {
+          referencedFileIds.add(fileId);
+        }
+      });
+    };
+
+    // Get current store state
+    const currentStore = snapshot(store) as AppState;
+
+    // Scan regular events for file attachments in notes
+    currentStore.regularEvents.forEach(event => {
+      if (event.notes) {
+        extractFileIds(event.notes);
+      }
+    });
+
+    // Scan exams for file attachments in notes
+    currentStore.exams.forEach(exam => {
+      if (exam.notes) {
+        extractFileIds(exam.notes);
+      }
+    });
+
+    // Scan tasks for file attachments in notes
+    currentStore.tasks.forEach(task => {
+      if (task.notes) {
+        extractFileIds(task.notes);
+      }
+    });
+
+    // Perform cleanup
+    const deletedCount = await fileAttachmentStorage.cleanupOrphanedFiles(referencedFileIds);
+
+    if (deletedCount > 0) {
+      console.log(`File attachment garbage collection: Cleaned up ${deletedCount} orphaned files`);
+    }
+  } catch (error) {
+    console.error('File attachment garbage collection failed:', error);
+  }
+};
 
 // Helper function to recursively update proxy properties
 function updateProxyFromState(proxy: any, newState: any, patch = false) {

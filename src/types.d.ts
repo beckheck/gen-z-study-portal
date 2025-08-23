@@ -456,6 +456,32 @@ export interface Soundtrack {
 /**
  * Complete application state interface
  */
+/**
+ * File attachment metadata
+ */
+export interface FileAttachmentMetadata {
+  id: string;
+  fileName: string;
+  fileSize: string;
+  fileType: string;
+  uploadedAt: number;
+}
+
+/**
+ * Stored file attachment with data
+ */
+export interface StoredFileAttachment extends FileAttachmentMetadata {
+  fileData: string; // base64 data
+}
+
+/**
+ * File attachment store structure
+ */
+export interface FileAttachmentStore {
+  files: Record<string, StoredFileAttachment>;
+  metadata: Record<string, FileAttachmentMetadata>;
+}
+
 export interface AppState {
   sessions: Session[];
   exams: Exam[];
@@ -473,6 +499,7 @@ export interface AppState {
   weather: WeatherConfig;
   degreePlan: DegreePlan;
   wellness: Wellness;
+  fileAttachments: FileAttachmentStore;
 }
 
 export interface AppTab {

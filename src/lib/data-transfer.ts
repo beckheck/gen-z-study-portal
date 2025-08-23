@@ -47,6 +47,7 @@ export class DataTransfer {
         completedCourses: state.degreePlan.completedCourses,
       },
       wellness: state.wellness,
+      fileAttachments: state.fileAttachments,
       settings: {
         selectedCourseId: state.selectedCourseId,
         soundtrackEmbed: state.soundtrack.embed,
@@ -154,6 +155,10 @@ export class DataTransfer {
         accentColor: data.settings.theme.accentColor,
         cardOpacity: data.settings.theme.cardOpacity,
         bgImage: data.settings.theme.bgImage,
+      },
+      fileAttachments: data.fileAttachments || {
+        files: {},
+        metadata: {},
       },
     });
 
@@ -288,6 +293,7 @@ export class DataTransfer {
         due: o.due,
         priority: o.priority,
         done: o.done,
+        notes: o.notes,
       }));
       this.setState({ tasks });
     }
@@ -400,6 +406,14 @@ export class DataTransfer {
         },
       });
     }
+
+    // Import file attachments (V1 format doesn't have file attachments, so initialize empty)
+    this.setState({
+      fileAttachments: {
+        files: {},
+        metadata: {},
+      },
+    });
   }
 }
 
@@ -483,6 +497,7 @@ interface ExchangeFormatV2 {
     due: string;
     priority: string;
     done: boolean;
+    notes?: string;
   }>;
   schedule: Array<{
     id: string;
@@ -565,6 +580,29 @@ interface ExchangeFormatV2 {
       unit: 'metric' | 'imperial';
     };
   };
+  fileAttachments: {
+    files: Record<
+      string,
+      {
+        id: string;
+        fileName: string;
+        fileSize: string;
+        fileType: string;
+        uploadedAt: number;
+        fileData: string;
+      }
+    >;
+    metadata: Record<
+      string,
+      {
+        id: string;
+        fileName: string;
+        fileSize: string;
+        fileType: string;
+        uploadedAt: number;
+      }
+    >;
+  };
   weeklyGoals: Array<{
     id: string;
     title: string;
@@ -645,6 +683,7 @@ interface ExchangeFormatV1 {
     due: string;
     priority: string;
     done: boolean;
+    notes?: string;
   }>;
   schedule?: Array<{
     id: string;
