@@ -93,7 +93,6 @@ const FileAttachment = Node.create<FileAttachmentOptions>({
   renderHTML({ HTMLAttributes }) {
     // Determine if file can be viewed in browser
     const fileName = HTMLAttributes.fileName || '';
-    const canView = canViewInBrowser(fileName);
 
     return [
       'div',
@@ -104,7 +103,6 @@ const FileAttachment = Node.create<FileAttachmentOptions>({
           'data-file-id': HTMLAttributes.fileId,
           'data-file-name': HTMLAttributes.fileName,
           'data-file-size': HTMLAttributes.fileSize,
-          'data-tooltip': canView ? 'Click to open' : 'Click to download',
           contenteditable: 'false',
         },
         this.options.HTMLAttributes,
