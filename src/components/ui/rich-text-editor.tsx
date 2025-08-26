@@ -828,6 +828,12 @@ export function RichTextEditor({
 
           const dragEndHandler = (event: DragEvent) => {
             attachment.classList.remove('dragging');
+
+            // HACK: Insert and delete a space to re-enable formatting buttons after drop
+            editor.view.dispatch(editor.view.state.tr.insertText(' ', 0));
+            setTimeout(() => {
+              editor.view.dispatch(editor.view.state.tr.delete(0, 2));
+            }, 0);
           };
 
           attachment.addEventListener('dragstart', dragStartHandler);
