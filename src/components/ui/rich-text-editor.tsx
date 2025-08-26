@@ -34,6 +34,154 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from './button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 
+// Available toolbar button keys for configuration
+export type ToolbarButtonKey =
+  | 'undo'
+  | 'redo'
+  | 'separator'
+  | 'bold'
+  | 'italic'
+  | 'underline'
+  | 'colorPicker'
+  | 'highlight'
+  | 'bulletList'
+  | 'orderedList'
+  | 'checkbox'
+  | 'blockquote'
+  | 'image'
+  | 'attachment'
+  | 'heading'
+  | 'fontFamily'
+  | 'fontSize';
+
+// Default full toolbar configuration
+const FULL_TOOLBAR_ITEMS: ToolbarButtonKey[] = [
+  'undo',
+  'redo',
+  'separator',
+  'bold',
+  'italic',
+  'underline',
+  'separator',
+  'colorPicker',
+  'highlight',
+  'separator',
+  'bulletList',
+  'orderedList',
+  'checkbox',
+  'blockquote',
+  'separator',
+  'image',
+  'attachment',
+  'separator',
+  'heading',
+  'fontFamily',
+  'fontSize',
+];
+
+// Dropdown configurations to reduce duplication
+const FONT_FAMILIES = [
+  { value: 'default', label: 'Default' },
+  { value: 'Inter', label: 'Inter' },
+  { value: 'Arial', label: 'Arial' },
+  { value: 'Helvetica', label: 'Helvetica' },
+  { value: 'Times New Roman', label: 'Times' },
+  { value: 'Courier New', label: 'Courier' },
+  { value: 'Georgia', label: 'Georgia' },
+  { value: 'Verdana', label: 'Verdana' },
+] as const;
+
+const FONT_SIZES = [
+  { value: 'default', label: 'Default' },
+  { value: '12px', label: '12px' },
+  { value: '14px', label: '14px' },
+  { value: '16px', label: '16px' },
+  { value: '18px', label: '18px' },
+  { value: '20px', label: '20px' },
+  { value: '24px', label: '24px' },
+  { value: '28px', label: '28px' },
+  { value: '32px', label: '32px' },
+  { value: '36px', label: '36px' },
+  { value: '48px', label: '48px' },
+] as const;
+
+const HEADING_OPTIONS = [
+  { value: 'paragraph', label: 'Paragraph' },
+  { value: 'h1', label: 'Heading 1' },
+  { value: 'h2', label: 'Heading 2' },
+  { value: 'h3', label: 'Heading 3' },
+  { value: 'h4', label: 'Heading 4' },
+  { value: 'h5', label: 'Heading 5' },
+  { value: 'h6', label: 'Heading 6' },
+] as const;
+
+// Color palettes for text and highlight colors
+const TEXT_COLORS = [
+  '#000000',
+  '#374151',
+  '#6B7280',
+  '#9CA3AF',
+  '#D1D5DB',
+  '#F3F4F6',
+  '#EF4444',
+  '#F97316',
+  '#F59E0B',
+  '#EAB308',
+  '#84CC16',
+  '#22C55E',
+  '#10B981',
+  '#14B8A6',
+  '#06B6D4',
+  '#0EA5E9',
+  '#3B82F6',
+  '#6366F1',
+  '#8B5CF6',
+  '#A855F7',
+  '#D946EF',
+  '#EC4899',
+  '#F43F5E',
+  '#FB7185',
+] as const;
+
+const HIGHLIGHT_COLORS = [
+  '#FEF3C7',
+  '#FDE68A',
+  '#FCD34D',
+  '#FBBF24',
+  '#F59E0B',
+  '#D97706',
+  '#FEE2E2',
+  '#FECACA',
+  '#FCA5A5',
+  '#F87171',
+  '#EF4444',
+  '#DC2626',
+  '#DBEAFE',
+  '#BFDBFE',
+  '#93C5FD',
+  '#60A5FA',
+  '#3B82F6',
+  '#2563EB',
+  '#D1FAE5',
+  '#A7F3D0',
+  '#6EE7B7',
+  '#34D399',
+  '#10B981',
+  '#059669',
+  '#E0E7FF',
+  '#C7D2FE',
+  '#A5B4FC',
+  '#818CF8',
+  '#6366F1',
+  '#4F46E5',
+  '#F3E8FF',
+  '#DDD6FE',
+  '#C4B5FD',
+  '#A78BFA',
+  '#8B5CF6',
+  '#7C3AED',
+] as const;
+
 // File Attachment Extension
 interface FileAttachmentOptions {
   HTMLAttributes: Record<string, any>;
@@ -135,64 +283,14 @@ const FileAttachment = Node.create<FileAttachmentOptions>({
 
 // File attachment keyboard navigation handlers
 const handleFileAttachmentKeydown = async (fileAttachment: HTMLElement, event: KeyboardEvent, editor: any) => {
-  const fileId = fileAttachment.getAttribute('data-file-id');
-
   switch (event.key) {
     case 'Enter':
       await handleFileAttachmentOpen(fileAttachment, event);
       break;
     case 'Backspace':
     case 'Delete':
-      event.preventDefault();
-      event.stopPropagation();
-      // Delete the file attachment
-      if (fileId && editor) {
-        try {
-          // Simple approach: find and delete the node by its fileId
-          const { state } = editor.view;
-          let deleteSuccess = false;
-
-          // Find the file attachment node by iterating through the document
-          state.doc.descendants((node, pos) => {
-            if (node.type.name === 'fileAttachment' && node.attrs.fileId === fileId) {
-              // Create transaction to delete this node
-              const tr = state.tr.delete(pos, pos + node.nodeSize);
-              editor.view.dispatch(tr);
-              deleteSuccess = true;
-
-              return false; // Stop iteration
-            }
-          });
-
-          if (deleteSuccess) {
-            // Focus back to editor
-            setTimeout(() => {
-              editor.commands.focus();
-            }, 0);
-
-            // Clean up the stored file after a small delay
-            setTimeout(async () => {
-              try {
-                await fileAttachmentStorage.deleteFile(fileId);
-              } catch (error) {
-                console.error('Error deleting stored file:', error);
-              }
-            }, 100);
-          } else {
-            console.warn('Could not find file attachment node to delete with fileId:', fileId);
-
-            // Fallback: try to remove the DOM element
-            fileAttachment.remove();
-            editor.commands.focus();
-          }
-        } catch (error) {
-          console.error('Error during file attachment deletion:', error);
-        }
-      } else {
-        console.warn('Missing fileId or editor for deletion');
-      }
+      await handleFileAttachmentDelete(fileAttachment, event, editor);
       break;
-
     case 'ArrowLeft':
     case 'ArrowRight':
     case 'ArrowUp':
@@ -205,7 +303,7 @@ const handleFileAttachmentKeydown = async (fileAttachment: HTMLElement, event: K
 const handleArrowKeyNavigation = (event: KeyboardEvent, editor: any) => {
   // Get current cursor position
   const { selection } = editor.state;
-  const { $from, $to } = selection;
+  const { $from } = selection;
 
   // Look for adjacent file attachments
   let fileAttachmentElement: HTMLElement | null = null;
@@ -217,24 +315,15 @@ const handleArrowKeyNavigation = (event: KeyboardEvent, editor: any) => {
     // Walk backwards to find a file attachment node
     let checkPos = prevPos;
     while (checkPos > 0) {
-      const nodePrev = editor.state.doc.nodeAt(checkPos - 1);
       const node = editor.state.doc.nodeAt(checkPos);
-
       if (node && node.type.name === 'fileAttachment') {
-        try {
-          fileAttachmentElement = editor.view.nodeDOM(checkPos);
-          if (fileAttachmentElement) break;
-        } catch (error) {
-          console.error('Error finding DOM for file attachment:', error);
-        }
+        fileAttachmentElement = editor.view.nodeDOM(checkPos);
         break; // Found a file attachment node, even if DOM lookup failed
       }
-
       // If we hit a different type of node, break
       if (node && node.type.name !== 'text' && node.type.name !== 'fileAttachment') {
         break;
       }
-
       checkPos--;
     }
   } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
@@ -248,11 +337,7 @@ const handleArrowKeyNavigation = (event: KeyboardEvent, editor: any) => {
     while (checkPos < maxPos) {
       const node = editor.state.doc.nodeAt(checkPos);
       if (node && node.type.name === 'fileAttachment') {
-        try {
-          fileAttachmentElement = editor.view.nodeDOM(checkPos);
-        } catch (error) {
-          console.error('Error finding DOM for file attachment:', error);
-        }
+        fileAttachmentElement = editor.view.nodeDOM(checkPos);
         break; // Found a file attachment node, even if DOM lookup failed
       }
       if (node && node.type.name !== 'text' && node.type.name !== 'fileAttachment') {
@@ -454,6 +539,61 @@ async function handleFileAttachmentOpen(fileAttachment: HTMLElement, event?: Eve
   }
 }
 
+// File attachment deletion handler
+const handleFileAttachmentDelete = async (fileAttachment: HTMLElement, event: KeyboardEvent, editor: any) => {
+  const fileId = fileAttachment.getAttribute('data-file-id');
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  // Delete the file attachment
+  if (fileId && editor) {
+    try {
+      // Simple approach: find and delete the node by its fileId
+      const { state } = editor.view;
+      let deleteSuccess = false;
+
+      // Find the file attachment node by iterating through the document
+      state.doc.descendants((node, pos) => {
+        if (node.type.name === 'fileAttachment' && node.attrs.fileId === fileId) {
+          // Create transaction to delete this node
+          const tr = state.tr.delete(pos, pos + node.nodeSize);
+          editor.view.dispatch(tr);
+          deleteSuccess = true;
+
+          return false; // Stop iteration
+        }
+      });
+
+      if (deleteSuccess) {
+        // Focus back to editor
+        setTimeout(() => {
+          editor.commands.focus();
+        }, 0);
+
+        // Clean up the stored file after a small delay
+        setTimeout(async () => {
+          try {
+            await fileAttachmentStorage.deleteFile(fileId);
+          } catch (error) {
+            console.error('Error deleting stored file:', error);
+          }
+        }, 100);
+      } else {
+        console.warn('Could not find file attachment node to delete with fileId:', fileId);
+
+        // Fallback: try to remove the DOM element
+        fileAttachment.remove();
+        editor.commands.focus();
+      }
+    } catch (error) {
+      console.error('Error during file attachment deletion:', error);
+    }
+  } else {
+    console.warn('Missing fileId or editor for deletion');
+  }
+};
+
 // Shared editor extensions configuration
 const getEditorExtensions = (placeholder?: string) => [
   StarterKit.configure({
@@ -519,13 +659,23 @@ const getEditorAttributes = (className?: string) => ({
   ),
 });
 
+// Helper to convert file to base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
-  toolsWhenEmpty?: string[]; // Array of tool names to show when content is empty
+  toolsWhenEmpty?: ToolbarButtonKey[]; // Array of tool button keys to show when content is empty
 }
 
 export function RichTextEditor({
@@ -534,7 +684,7 @@ export function RichTextEditor({
   placeholder,
   className,
   disabled = false,
-  toolsWhenEmpty = ['checkbox', 'attachment'], // Default to checkbox and attachment
+  toolsWhenEmpty,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
@@ -542,26 +692,13 @@ export function RichTextEditor({
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
 
   // Check if content is empty (no text content)
-  const isContentEmpty = !content || content.trim() === '' || content === '<p></p>';
+  const isContentEmpty = !content || content.trim() === '' || content.trim() === '<p></p>';
   const useSimplifiedToolbar = isContentEmpty && toolsWhenEmpty && toolsWhenEmpty.length > 0;
-
-  // Helper function to convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
 
   // Handle image upload
   const handleImageUpload = async (file: File) => {
     try {
-      // Convert to base64 for storage
       const base64 = await fileToBase64(file);
-
-      // Insert image into editor
       if (editor) {
         editor.chain().focus().setImage({ src: base64 }).run();
       }
@@ -573,10 +710,7 @@ export function RichTextEditor({
   // Handle file attachment upload
   const handleFileAttachment = async (file: File) => {
     try {
-      // Store file and get metadata
       const metadata = await fileAttachmentStorage.storeFile(file);
-
-      // Insert file attachment using the custom extension
       if (editor) {
         editor
           .chain()
@@ -591,7 +725,6 @@ export function RichTextEditor({
       }
     } catch (error) {
       console.error('Error uploading file:', error);
-      // You could show a user-friendly error message here
     }
   };
 
@@ -762,89 +895,7 @@ export function RichTextEditor({
 
   // Inject styles for file attachment focus states
   useEffect(() => {
-    const styleId = 'rich-text-editor-file-attachment-styles';
-
-    // Check if styles are already injected
-    if (document.getElementById(styleId)) return;
-
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-      .rich-text-editor-content .file-attachment {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: rgb(243 244 246);
-        border: 1px solid rgb(229 231 235);
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-        outline: none;
-        margin: 2px 0;
-      }
-      .rich-text-editor-content .file-attachment:hover {
-        background: rgb(229 231 235);
-        border-color: rgb(209 213 219);
-      }
-      .rich-text-editor-content .file-attachment-focused,
-      .rich-text-editor-content .file-attachment:focus {
-        background: rgb(239 246 255);
-        border-color: rgb(147 197 253);
-        box-shadow: 0 0 0 2px rgb(191 219 254);
-      }
-      .dark .rich-text-editor-content .file-attachment {
-        background: rgb(31 41 55);
-        border-color: rgb(55 65 81);
-        color: rgb(243 244 246);
-      }
-      .dark .rich-text-editor-content .file-attachment:hover {
-        background: rgb(55 65 81);
-        border-color: rgb(75 85 99);
-      }
-      .dark .rich-text-editor-content .file-attachment-focused,
-      .dark .rich-text-editor-content .file-attachment:focus {
-        background: rgb(30 58 138);
-        border-color: rgb(37 99 235);
-        box-shadow: 0 0 0 2px rgb(30 64 175);
-      }
-      .rich-text-editor-content .file-icon {
-        font-size: 16px;
-        flex-shrink: 0;
-      }
-      .rich-text-editor-content .file-icon.loading {
-        animation: pulse 1.5s ease-in-out infinite;
-      }
-      .rich-text-editor-content .file-info {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-      }
-      .rich-text-editor-content .file-name {
-        font-weight: 500;
-        font-size: 14px;
-        color: rgb(17 24 39);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .dark .rich-text-editor-content .file-name {
-        color: rgb(243 244 246);
-      }
-      .rich-text-editor-content .file-size {
-        font-size: 12px;
-        color: rgb(107 114 128);
-      }
-      .dark .rich-text-editor-content .file-size {
-        color: rgb(156 163 175);
-      }
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-      }
-    `;
-
-    document.head.appendChild(style);
+    injectFileAttachmentStyles();
   }, []); // Empty dependency array means this runs once on mount
 
   // Close color pickers when clicking outside
@@ -891,10 +942,154 @@ export function RichTextEditor({
     </Button>
   );
 
-  // Reusable common toolbar buttons to avoid duplication
+  // Individual toolbar button components
+  const UndoButton = () => (
+    <ToolbarButton
+      onClick={() => editor.chain().focus().undo().run()}
+      disabled={!editor.can().chain().focus().undo().run()}
+    >
+      <Undo className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
+  const RedoButton = () => (
+    <ToolbarButton
+      onClick={() => editor.chain().focus().redo().run()}
+      disabled={!editor.can().chain().focus().redo().run()}
+    >
+      <Redo className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
+  const BoldButton = () => (
+    <ToolbarButton
+      onClick={() => editor.chain().focus().toggleBold().run()}
+      isActive={editor.isActive('bold')}
+      disabled={!editor.can().chain().focus().toggleBold().run()}
+    >
+      <Bold className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
+  const ItalicButton = () => (
+    <ToolbarButton
+      onClick={() => editor.chain().focus().toggleItalic().run()}
+      isActive={editor.isActive('italic')}
+      disabled={!editor.can().chain().focus().toggleItalic().run()}
+    >
+      <Italic className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
+  const UnderlineButton = () => (
+    <ToolbarButton
+      onClick={() => editor.chain().focus().toggleUnderline().run()}
+      isActive={editor.isActive('underline')}
+      disabled={!editor.can().chain().focus().toggleUnderline().run()}
+    >
+      <UnderlineIcon className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
+  const ColorPickerButton = () => (
+    <div className="relative" data-color-picker>
+      <ToolbarButton
+        onClick={() => {
+          setShowColorPicker(!showColorPicker);
+          setShowHighlightPicker(false);
+        }}
+        isActive={showColorPicker}
+      >
+        <Palette className="h-4 w-4" />
+      </ToolbarButton>
+      {showColorPicker && (
+        <ColorPickerDropdown
+          title="Text Color"
+          colors={TEXT_COLORS}
+          onColorSelect={color => {
+            editor.chain().focus().setColor(color).run();
+            setShowColorPicker(false);
+          }}
+          onClose={() => setShowColorPicker(false)}
+          currentColor={editor.getAttributes('textStyle').color}
+          resetButtonText="Reset to Default"
+          onReset={() => {
+            editor.chain().focus().unsetColor().run();
+            setShowColorPicker(false);
+          }}
+        />
+      )}
+    </div>
+  );
+
+  const HighlightButton = () => (
+    <div className="relative" data-color-picker>
+      <ToolbarButton
+        onClick={() => {
+          setShowHighlightPicker(!showHighlightPicker);
+          setShowColorPicker(false);
+        }}
+        isActive={showHighlightPicker || editor.isActive('highlight')}
+      >
+        <Highlighter className="h-4 w-4" />
+      </ToolbarButton>
+      {showHighlightPicker && (
+        <ColorPickerDropdown
+          title="Highlight"
+          colors={HIGHLIGHT_COLORS}
+          onColorSelect={color => {
+            editor.chain().focus().toggleHighlight({ color }).run();
+            setShowHighlightPicker(false);
+          }}
+          onClose={() => setShowHighlightPicker(false)}
+          currentColor={editor.getAttributes('highlight').color || '#FEF3C7'}
+          resetButtonText="Remove Highlight"
+          onReset={() => {
+            editor.chain().focus().unsetHighlight().run();
+            setShowHighlightPicker(false);
+          }}
+        />
+      )}
+    </div>
+  );
+
+  const BulletListButton = () => (
+    <ToolbarButton
+      onClick={() => editor.chain().focus().toggleBulletList().run()}
+      isActive={editor.isActive('bulletList')}
+    >
+      <List className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
+  const OrderedListButton = () => (
+    <ToolbarButton
+      onClick={() => editor.chain().focus().toggleOrderedList().run()}
+      isActive={editor.isActive('orderedList')}
+    >
+      <ListOrdered className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
   const CheckboxButton = () => (
     <ToolbarButton onClick={() => editor.chain().focus().toggleTaskList().run()} isActive={editor.isActive('taskList')}>
       <CheckSquare className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
+  const BlockquoteButton = () => (
+    <ToolbarButton
+      onClick={() => editor.chain().focus().toggleBlockquote().run()}
+      isActive={editor.isActive('blockquote')}
+      disabled={!editor.can().chain().focus().toggleBlockquote().run()}
+    >
+      <Quote className="h-4 w-4" />
+    </ToolbarButton>
+  );
+
+  const ImageButton = () => (
+    <ToolbarButton onClick={() => fileInputRef.current?.click()} disabled={disabled}>
+      <ImageIcon className="h-4 w-4" />
     </ToolbarButton>
   );
 
@@ -903,6 +1098,115 @@ export function RichTextEditor({
       <Paperclip className="h-4 w-4" />
     </ToolbarButton>
   );
+
+  const HeadingDropdown = () => (
+    <Select
+      value={getCurrentHeadingValue()}
+      onValueChange={value => {
+        if (value === 'paragraph') {
+          editor.chain().focus().setParagraph().run();
+        } else {
+          const level = parseInt(value.replace('h', ''));
+          editor
+            .chain()
+            .focus()
+            .toggleHeading({ level: level as 1 | 2 | 3 | 4 | 5 | 6 })
+            .run();
+        }
+      }}
+    >
+      <SelectTrigger className="w-[100px] h-8 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {HEADING_OPTIONS.map(option => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
+  const FontFamilyDropdown = () => (
+    <Select
+      value={editor.getAttributes('textStyle').fontFamily || 'default'}
+      onValueChange={value => {
+        if (value === 'default') {
+          editor.chain().focus().unsetFontFamily().run();
+        } else {
+          editor.chain().focus().setFontFamily(value).run();
+        }
+      }}
+    >
+      <SelectTrigger className="w-[120px] h-8 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {FONT_FAMILIES.map(font => (
+          <SelectItem key={font.value} value={font.value}>
+            {font.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
+  const FontSizeDropdown = () => (
+    <Select
+      value={editor.getAttributes('textStyle').fontSize || 'default'}
+      onValueChange={value => {
+        if (value === 'default') {
+          editor.chain().focus().unsetFontSize().run();
+        } else {
+          editor.chain().focus().setFontSize(value).run();
+        }
+      }}
+    >
+      <SelectTrigger className="w-[80px] h-8 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {FONT_SIZES.map(size => (
+          <SelectItem key={size.value} value={size.value}>
+            {size.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
+  // Toolbar separator component
+  const ToolbarSeparator = () => <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />;
+
+  // Toolbar button mapping
+  const toolbarButtons: Record<ToolbarButtonKey, React.FC> = {
+    undo: UndoButton,
+    redo: RedoButton,
+    bold: BoldButton,
+    italic: ItalicButton,
+    underline: UnderlineButton,
+    colorPicker: ColorPickerButton,
+    highlight: HighlightButton,
+    bulletList: BulletListButton,
+    orderedList: OrderedListButton,
+    checkbox: CheckboxButton,
+    blockquote: BlockquoteButton,
+    image: ImageButton,
+    attachment: AttachmentButton,
+    heading: HeadingDropdown,
+    fontFamily: FontFamilyDropdown,
+    fontSize: FontSizeDropdown,
+    separator: ToolbarSeparator,
+  };
+
+  // Render toolbar items based on configuration
+  const renderToolbarItems = (items: readonly ToolbarButtonKey[]) => {
+    return items.map((item, index) => {
+      const Component = toolbarButtons[item];
+      return Component ? <Component key={`${item}-${index}`} /> : null;
+    });
+  };
 
   // Reusable color button component to avoid duplication
   const ColorButton = ({
@@ -917,7 +1221,6 @@ export function RichTextEditor({
     indicatorColor?: string;
   }) => (
     <button
-      key={color}
       type="button"
       className={`w-8 h-8 rounded-lg border-2 hover:scale-105 transition-all duration-200 shadow-sm relative overflow-hidden ${
         isActive
@@ -973,72 +1276,61 @@ export function RichTextEditor({
     return 'paragraph';
   };
 
-  // Color palettes to avoid duplication
-  const textColors = [
-    '#000000',
-    '#374151',
-    '#6B7280',
-    '#9CA3AF',
-    '#D1D5DB',
-    '#F3F4F6',
-    '#EF4444',
-    '#F97316',
-    '#F59E0B',
-    '#EAB308',
-    '#84CC16',
-    '#22C55E',
-    '#10B981',
-    '#14B8A6',
-    '#06B6D4',
-    '#0EA5E9',
-    '#3B82F6',
-    '#6366F1',
-    '#8B5CF6',
-    '#A855F7',
-    '#D946EF',
-    '#EC4899',
-    '#F43F5E',
-    '#FB7185',
-  ];
+  // Reusable color picker dropdown component
+  const ColorPickerDropdown = ({
+    title,
+    colors,
+    onColorSelect,
+    onClose,
+    currentColor,
+    resetButtonText,
+    onReset,
+  }: {
+    title: string;
+    colors: readonly string[];
+    onColorSelect: (color: string) => void;
+    onClose: () => void;
+    currentColor?: string;
+    resetButtonText: string;
+    onReset: () => void;
+  }) => (
+    <div className="absolute top-10 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-4 shadow-2xl z-10 w-64">
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</p>
+          <button
+            type="button"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
 
-  const highlightColors = [
-    '#FEF3C7',
-    '#FDE68A',
-    '#FCD34D',
-    '#FBBF24',
-    '#F59E0B',
-    '#D97706',
-    '#FEE2E2',
-    '#FECACA',
-    '#FCA5A5',
-    '#F87171',
-    '#EF4444',
-    '#DC2626',
-    '#DBEAFE',
-    '#BFDBFE',
-    '#93C5FD',
-    '#60A5FA',
-    '#3B82F6',
-    '#2563EB',
-    '#D1FAE5',
-    '#A7F3D0',
-    '#6EE7B7',
-    '#34D399',
-    '#10B981',
-    '#059669',
-    '#E0E7FF',
-    '#C7D2FE',
-    '#A5B4FC',
-    '#818CF8',
-    '#6366F1',
-    '#4F46E5',
-    '#F3E8FF',
-    '#DDD6FE',
-    '#C4B5FD',
-    '#A78BFA',
-    '#8B5CF6',
-    '#7C3AED',
-  ];
+        {/* Colors Grid */}
+        <div className="grid grid-cols-6 gap-2 mb-4">
+          {colors.map(color => {
+            const isActive = currentColor === color;
+            return (
+              <div key={color}>
+                <ColorButton
+                  color={color}
+                  isActive={isActive}
+                  onClick={() => onColorSelect(color)}
+                  indicatorColor={title === 'Highlight' ? 'bg-gray-800 dark:bg-white' : 'bg-white dark:bg-gray-900'}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Current Color Display */}
+        <CurrentColorDisplay color={currentColor} label={`Current ${title}`} isActive={!!currentColor} />
+      </div>
+
+      <ResetButton onClick={onReset}>{resetButtonText}</ResetButton>
+    </div>
+  );
 
   return (
     <div
@@ -1050,309 +1342,11 @@ export function RichTextEditor({
     >
       {/* Toolbar */}
       <div className="flex items-center flex-wrap gap-1 p-2 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
-        {useSimplifiedToolbar ? (
-          // Simplified toolbar when content is empty
-          <>
-            {toolsWhenEmpty.includes('checkbox') && <CheckboxButton />}
-            {toolsWhenEmpty.includes('attachment') && <AttachmentButton />}
-          </>
-        ) : (
-          // Full toolbar when content is not empty
-          <>
-            {/* Undo/Redo */}
-            <ToolbarButton
-              onClick={() => editor.chain().focus().undo().run()}
-              disabled={!editor.can().chain().focus().undo().run()}
-            >
-              <Undo className="h-4 w-4" />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor.chain().focus().redo().run()}
-              disabled={!editor.can().chain().focus().redo().run()}
-            >
-              <Redo className="h-4 w-4" />
-            </ToolbarButton>
-
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-
-            {/* Basic formatting buttons */}
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              isActive={editor.isActive('bold')}
-              disabled={!editor.can().chain().focus().toggleBold().run()}
-            >
-              <Bold className="h-4 w-4" />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              isActive={editor.isActive('italic')}
-              disabled={!editor.can().chain().focus().toggleItalic().run()}
-            >
-              <Italic className="h-4 w-4" />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              isActive={editor.isActive('underline')}
-              disabled={!editor.can().chain().focus().toggleUnderline().run()}
-            >
-              <UnderlineIcon className="h-4 w-4" />
-            </ToolbarButton>
-
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-
-            {/* Color picker */}
-            <div className="relative" data-color-picker>
-              <ToolbarButton
-                onClick={() => {
-                  setShowColorPicker(!showColorPicker);
-                  setShowHighlightPicker(false); // Close highlight picker when opening color picker
-                }}
-                isActive={showColorPicker}
-              >
-                <Palette className="h-4 w-4" />
-              </ToolbarButton>
-              {showColorPicker && (
-                <div className="absolute top-10 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-4 shadow-2xl z-10 w-64">
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Text Color</p>
-                      <button
-                        type="button"
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                        onClick={() => setShowColorPicker(false)}
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    {/* Color Grid */}
-                    <div className="grid grid-cols-6 gap-2 mb-4">
-                      {textColors.map(color => {
-                        const isActive = editor.getAttributes('textStyle').color === color;
-                        return (
-                          <ColorButton
-                            color={color}
-                            isActive={isActive}
-                            onClick={() => {
-                              editor.chain().focus().setColor(color).run();
-                              setShowColorPicker(false);
-                            }}
-                            indicatorColor="bg-white dark:bg-gray-900"
-                          />
-                        );
-                      })}
-                    </div>
-
-                    {/* Current Color Display */}
-                    <CurrentColorDisplay
-                      color={editor.getAttributes('textStyle').color}
-                      label="Current Color"
-                      isActive={!!editor.getAttributes('textStyle').color}
-                    />
-                  </div>
-
-                  <ResetButton
-                    onClick={() => {
-                      editor.chain().focus().unsetColor().run();
-                      setShowColorPicker(false);
-                    }}
-                  >
-                    Reset to Default
-                  </ResetButton>
-                </div>
-              )}
-            </div>
-
-            {/* Highlight picker */}
-            <div className="relative" data-color-picker>
-              <ToolbarButton
-                onClick={() => {
-                  setShowHighlightPicker(!showHighlightPicker);
-                  setShowColorPicker(false); // Close color picker when opening highlight picker
-                }}
-                isActive={showHighlightPicker || editor.isActive('highlight')}
-              >
-                <Highlighter className="h-4 w-4" />
-              </ToolbarButton>
-              {showHighlightPicker && (
-                <div className="absolute top-10 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-4 shadow-2xl z-10 w-64">
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Highlight</p>
-                      <button
-                        type="button"
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                        onClick={() => setShowHighlightPicker(false)}
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    {/* Highlight Colors Grid */}
-                    <div className="grid grid-cols-6 gap-2 mb-4">
-                      {highlightColors.map(color => {
-                        const isActive = editor.isActive('highlight', { color });
-                        return (
-                          <ColorButton
-                            color={color}
-                            isActive={isActive}
-                            onClick={() => {
-                              editor.chain().focus().toggleHighlight({ color }).run();
-                              setShowHighlightPicker(false);
-                            }}
-                            indicatorColor="bg-gray-800 dark:bg-white"
-                          />
-                        );
-                      })}
-                    </div>
-
-                    {/* Current Highlight Display */}
-                    <CurrentColorDisplay
-                      color={editor.getAttributes('highlight').color || '#FEF3C7'}
-                      label="Current Highlight"
-                      isActive={editor.isActive('highlight')}
-                    />
-                  </div>
-
-                  <ResetButton
-                    onClick={() => {
-                      editor.chain().focus().unsetHighlight().run();
-                      setShowHighlightPicker(false);
-                    }}
-                  >
-                    Remove Highlight
-                  </ResetButton>
-                </div>
-              )}
-            </div>
-
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-
-            {/* Lists and quote */}
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBulletList().run()}
-              isActive={editor.isActive('bulletList')}
-            >
-              <List className="h-4 w-4" />
-            </ToolbarButton>
-
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleOrderedList().run()}
-              isActive={editor.isActive('orderedList')}
-            >
-              <ListOrdered className="h-4 w-4" />
-            </ToolbarButton>
-
-            <CheckboxButton />
-
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBlockquote().run()}
-              isActive={editor.isActive('blockquote')}
-              disabled={!editor.can().chain().focus().toggleBlockquote().run()}
-            >
-              <Quote className="h-4 w-4" />
-            </ToolbarButton>
-
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-
-            {/* Media buttons */}
-            <ToolbarButton onClick={() => fileInputRef.current?.click()} disabled={disabled}>
-              <ImageIcon className="h-4 w-4" />
-            </ToolbarButton>
-
-            <AttachmentButton />
-
-            {/* Headings dropdown */}
-            <Select
-              value={getCurrentHeadingValue()}
-              onValueChange={value => {
-                if (value === 'paragraph') {
-                  editor.chain().focus().setParagraph().run();
-                } else {
-                  const level = parseInt(value.replace('h', ''));
-                  editor
-                    .chain()
-                    .focus()
-                    .toggleHeading({ level: level as 1 | 2 | 3 | 4 | 5 | 6 })
-                    .run();
-                }
-              }}
-            >
-              <SelectTrigger className="w-[100px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="paragraph">Paragraph</SelectItem>
-                <SelectItem value="h1">Heading 1</SelectItem>
-                <SelectItem value="h2">Heading 2</SelectItem>
-                <SelectItem value="h3">Heading 3</SelectItem>
-                <SelectItem value="h4">Heading 4</SelectItem>
-                <SelectItem value="h5">Heading 5</SelectItem>
-                <SelectItem value="h6">Heading 6</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Font Family dropdown */}
-            <Select
-              value={editor.getAttributes('textStyle').fontFamily || 'default'}
-              onValueChange={value => {
-                if (value === 'default') {
-                  editor.chain().focus().unsetFontFamily().run();
-                } else {
-                  editor.chain().focus().setFontFamily(value).run();
-                }
-              }}
-            >
-              <SelectTrigger className="w-[120px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Default</SelectItem>
-                <SelectItem value="Inter">Inter</SelectItem>
-                <SelectItem value="Arial">Arial</SelectItem>
-                <SelectItem value="Helvetica">Helvetica</SelectItem>
-                <SelectItem value="Times New Roman">Times</SelectItem>
-                <SelectItem value="Courier New">Courier</SelectItem>
-                <SelectItem value="Georgia">Georgia</SelectItem>
-                <SelectItem value="Verdana">Verdana</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Font Size dropdown */}
-            <Select
-              value={editor.getAttributes('textStyle').fontSize || 'default'}
-              onValueChange={value => {
-                if (value === 'default') {
-                  editor.chain().focus().unsetFontSize().run();
-                } else {
-                  editor.chain().focus().setFontSize(value).run();
-                }
-              }}
-            >
-              <SelectTrigger className="w-[80px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Default</SelectItem>
-                <SelectItem value="12px">12px</SelectItem>
-                <SelectItem value="14px">14px</SelectItem>
-                <SelectItem value="16px">16px</SelectItem>
-                <SelectItem value="18px">18px</SelectItem>
-                <SelectItem value="20px">20px</SelectItem>
-                <SelectItem value="24px">24px</SelectItem>
-                <SelectItem value="28px">28px</SelectItem>
-                <SelectItem value="32px">32px</SelectItem>
-                <SelectItem value="36px">36px</SelectItem>
-                <SelectItem value="48px">48px</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-          </>
-        )}
+        {useSimplifiedToolbar
+          ? // Simplified toolbar when content is empty - render only specified tools
+            renderToolbarItems(toolsWhenEmpty)
+          : // Full toolbar when content is not empty
+            renderToolbarItems(FULL_TOOLBAR_ITEMS)}
       </div>
 
       {/* Editor Content */}
@@ -1446,27 +1440,20 @@ export function RichTextDisplay({ content, className, onContentChange, onProgres
       // Calculate initial progress after DOM is ready
       setTimeout(() => calculateProgress(editor), 50);
 
-      if (onContentChange) {
-        // Add click handlers for task items
-        editor.view.dom.addEventListener('click', event => {
-          const target = event.target as HTMLElement;
-
-          // Handle checkbox clicks with hierarchical behavior
-          if (target.tagName === 'INPUT' && target.getAttribute('type') === 'checkbox') {
-            handleHierarchicalCheckboxClick(editor, target, event, onContentChange, calculateProgress);
-            return;
-          }
-          // For non-checkbox clicks, do nothing - let them bubble up naturally
-        });
-      }
-
       // Add click handlers for file attachments
       editor.view.dom.addEventListener('click', event => {
         const target = event.target as HTMLElement;
-        const fileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
 
+        const fileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
         if (fileAttachment) {
           handleFileAttachmentOpen(fileAttachment, event);
+          return;
+        }
+
+        // Handle checkbox clicks with hierarchical behavior
+        if (onContentChange && target.tagName === 'INPUT' && target.getAttribute('type') === 'checkbox') {
+          handleHierarchicalCheckboxClick(editor, target, event, onContentChange, calculateProgress);
+          return;
         }
       });
     },
@@ -1503,29 +1490,132 @@ export function RichTextDisplay({ content, className, onContentChange, onProgres
 }
 
 // Helper function to get file icon based on MIME type
-function getFileIcon(fileType: string): string {
-  if (fileType.includes('pdf')) return '📄';
-  if (fileType.includes('word') || fileType.includes('document')) return '📝';
-  if (fileType.includes('excel') || fileType.includes('spreadsheet')) return '📊';
-  if (fileType.includes('powerpoint') || fileType.includes('presentation')) return '📈';
-  if (fileType.includes('text')) return '📋';
-  if (fileType.includes('zip') || fileType.includes('rar') || fileType.includes('archive')) return '🗜️';
-  if (fileType.includes('image')) return '🖼️';
-  if (fileType.includes('video')) return '🎥';
-  if (fileType.includes('audio')) return '🎵';
-  if (fileType.includes('code') || fileType.includes('script')) return '💻';
-  if (fileType.includes('json') || fileType.includes('xml')) return '📦';
-  if (fileType.includes('markdown')) return '📖';
-  if (fileType.includes('font')) return '🔤';
-  if (fileType.includes('database')) return '🗄️';
-  if (fileType.includes('binary') || fileType.includes('application')) return '🔢';
+const getFileIcon = (fileType: string): string => {
+  const iconMap = {
+    application: '🔢',
+    archive: '🗜️',
+    audio: '🎵',
+    binary: '🔢',
+    code: '💻',
+    database: '🗄️',
+    document: '📝',
+    excel: '📊',
+    font: '🔤',
+    image: '🖼️',
+    json: '📦',
+    markdown: '📖',
+    pdf: '📄',
+    powerpoint: '📈',
+    presentation: '📈',
+    rar: '🗜️',
+    script: '💻',
+    spreadsheet: '📊',
+    text: '📋',
+    video: '🎥',
+    word: '📝',
+    xml: '📦',
+    zip: '🗜️',
+  };
+  for (const [key, icon] of Object.entries(iconMap)) {
+    if (fileType.includes(key)) return icon;
+  }
   return '📎';
-}
+};
 
-function canViewInBrowser(fileName: string): boolean {
+// Helper function to check if file can be viewed in browser
+const canViewInBrowser = (fileName: string): boolean => {
   const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
   const viewableTypes = ['pdf', 'txt', 'html', 'htm', 'json', 'xml', 'csv'];
   const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
   const videoTypes = ['mp4', 'mov'];
   return [...viewableTypes, ...imageTypes, ...videoTypes].includes(fileExtension);
-}
+};
+
+// Helper to inject styles only once
+const injectFileAttachmentStyles = () => {
+  const styleId = 'rich-text-editor-file-attachment-styles';
+
+  // Check if styles are already injected
+  if (document.getElementById(styleId)) return;
+
+  const style = document.createElement('style');
+  style.id = styleId;
+  style.textContent = FILE_ATTACHMENT_STYLES;
+  document.head.appendChild(style);
+};
+
+// CSS styles for file attachments - extracted to avoid inline style injection
+const FILE_ATTACHMENT_STYLES = `
+  .rich-text-editor-content .file-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgb(243 244 246);
+    border: 1px solid rgb(229 231 235);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+    margin: 2px 0;
+  }
+  .rich-text-editor-content .file-attachment:hover {
+    background: rgb(229 231 235);
+    border-color: rgb(209 213 219);
+  }
+  .rich-text-editor-content .file-attachment-focused,
+  .rich-text-editor-content .file-attachment:focus {
+    background: rgb(239 246 255);
+    border-color: rgb(147 197 253);
+    box-shadow: 0 0 0 2px rgb(191 219 254);
+  }
+  .dark .rich-text-editor-content .file-attachment {
+    background: rgb(31 41 55);
+    border-color: rgb(55 65 81);
+    color: rgb(243 244 246);
+  }
+  .dark .rich-text-editor-content .file-attachment:hover {
+    background: rgb(55 65 81);
+    border-color: rgb(75 85 99);
+  }
+  .dark .rich-text-editor-content .file-attachment-focused,
+  .dark .rich-text-editor-content .file-attachment:focus {
+    background: rgb(30 58 138);
+    border-color: rgb(37 99 235);
+    box-shadow: 0 0 0 2px rgb(30 64 175);
+  }
+  .rich-text-editor-content .file-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .rich-text-editor-content .file-icon.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .rich-text-editor-content .file-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .rich-text-editor-content .file-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: rgb(17 24 39);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dark .rich-text-editor-content .file-name {
+    color: rgb(243 244 246);
+  }
+  .rich-text-editor-content .file-size {
+    font-size: 12px;
+    color: rgb(107 114 128);
+  }
+  .dark .rich-text-editor-content .file-size {
+    color: rgb(156 163 175);
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+`;
