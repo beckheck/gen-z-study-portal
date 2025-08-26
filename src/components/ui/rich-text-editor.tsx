@@ -134,8 +134,91 @@ const FileAttachment = Node.create<FileAttachmentOptions>({
   },
 });
 
-// File attachment click handler
+// Shared hierarchical checkbox handling logic
+const handleHierarchicalCheckboxClick = (
+  editor: any,
+  target: HTMLElement,
+  event: Event,
+  onContentChange?: (content: string) => void,
+  calculateProgress?: (editor: any) => void
+) => {
+  // Only prevent propagation for checkbox clicks
+  event.stopPropagation();
+  event.stopImmediatePropagation();
 
+  const checkbox = target as HTMLInputElement;
+  // Use the DOM checkbox's current state, not its inverse
+  const newCheckedState = checkbox.checked;
+
+  try {
+    // For read-only editors, temporarily make editable
+    const wasEditable = editor.isEditable;
+    if (!wasEditable) {
+      editor.setEditable(true);
+    }
+
+    // Find the position of the checkbox in the editor
+    const pos = editor.view.posAtDOM(target, 0);
+    const { state } = editor.view;
+    const $pos = state.doc.resolve(pos);
+
+    // Find the task item node that contains this checkbox
+    let taskItemPos = null;
+    for (let depth = $pos.depth; depth > 0; depth--) {
+      const node = $pos.node(depth);
+      if (node.type.name === 'taskItem') {
+        taskItemPos = $pos.before(depth);
+        break;
+      }
+    }
+
+    if (taskItemPos !== null) {
+      // Start building the transaction
+      let tr = state.tr;
+
+      // First, update the parent task item to match the DOM checkbox state
+      tr = tr.setNodeMarkup(taskItemPos, null, { checked: newCheckedState });
+
+      // Find the parent task list to determine the scope for child updates
+      const taskItemNode = state.doc.nodeAt(taskItemPos);
+      if (taskItemNode) {
+        // Look for nested task lists within this task item
+        taskItemNode.descendants((node: any, pos: number) => {
+          if (node.type.name === 'taskItem') {
+            // This is a child task item - update it to match parent
+            const childPos = taskItemPos + pos + 1;
+            tr = tr.setNodeMarkup(childPos, null, { checked: newCheckedState });
+          }
+        });
+      }
+
+      // Dispatch the transaction
+      editor.view.dispatch(tr);
+    }
+
+    // Handle post-update actions for read-only editors
+    if (!wasEditable) {
+      setTimeout(() => {
+        const updatedContent = editor.getHTML();
+        editor.setEditable(false);
+        if (onContentChange) {
+          onContentChange(updatedContent);
+        }
+        if (calculateProgress) {
+          calculateProgress(editor);
+        }
+      }, 0);
+    }
+  } catch (error) {
+    console.error('Error updating checkbox:', error);
+    // Fallback: make sure editor stays in correct editable state
+    if (!editor.isEditable) {
+      editor.setEditable(false);
+    }
+  }
+};
+
+// File attachment click handler
 const handleFileAttachmentClick = async (fileAttachment: HTMLElement, event?: Event) => {
   // Stop event propagation to prevent parent click handlers from firing
   if (event) {
@@ -366,13 +449,20 @@ export function RichTextEditor({
     content,
     editable: !disabled,
     onCreate: ({ editor }) => {
-      // Add click handlers for file attachments in the editable editor
+      // Add click handlers for file attachments and checkboxes
       editor.view.dom.addEventListener('click', event => {
         const target = event.target as HTMLElement;
-        const fileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
 
+        // Handle file attachment clicks
+        const fileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
         if (fileAttachment) {
           handleFileAttachmentClick(fileAttachment, event);
+          return;
+        }
+
+        // Handle checkbox clicks with hierarchical behavior
+        if (target.tagName === 'INPUT' && target.getAttribute('type') === 'checkbox') {
+          handleHierarchicalCheckboxClick(editor, target, event);
         }
       });
     },
@@ -990,21 +1080,24 @@ interface RichTextDisplayProps {
 
 export function RichTextDisplay({ content, className, onContentChange, onProgressChange }: RichTextDisplayProps) {
   // Helper function to calculate checkbox progress from editor content
-  const calculateProgress = React.useCallback((editor: any) => {
-    if (!editor || !onProgressChange) return;
+  const calculateProgress = React.useCallback(
+    (editor: any) => {
+      if (!editor || !onProgressChange) return;
 
-    // Use requestAnimationFrame to ensure DOM has been updated
-    requestAnimationFrame(() => {
-      const editorElement = editor.view.dom;
-      const checkboxes = editorElement.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
-      
-      const total = checkboxes.length;
-      const completed = Array.from(checkboxes).filter(checkbox => checkbox.checked).length;
-      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+      // Use requestAnimationFrame to ensure DOM has been updated
+      requestAnimationFrame(() => {
+        const editorElement = editor.view.dom;
+        const checkboxes = editorElement.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
 
-      onProgressChange({ completed, total, percentage });
-    });
-  }, [onProgressChange]);
+        const total = checkboxes.length;
+        const completed = Array.from(checkboxes).filter(checkbox => checkbox.checked).length;
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        onProgressChange({ completed, total, percentage });
+      });
+    },
+    [onProgressChange]
+  );
 
   // Handle both plain text and HTML content
   const processedContent = React.useMemo(() => {
@@ -1034,58 +1127,11 @@ export function RichTextDisplay({ content, className, onContentChange, onProgres
         // Add click handlers for task items
         editor.view.dom.addEventListener('click', event => {
           const target = event.target as HTMLElement;
+
+          // Handle checkbox clicks with hierarchical behavior
           if (target.tagName === 'INPUT' && target.getAttribute('type') === 'checkbox') {
-            // Only prevent propagation for checkbox clicks
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-
-            const checkbox = target as HTMLInputElement;
-
-            // Don't manually toggle - let TipTap handle it
-            const newCheckedState = !checkbox.checked;
-
-            // If we have an onContentChange callback, update the content
-            try {
-              // Since the editor is read-only, we need to temporarily make it editable
-              // to properly update the task item state, then make it read-only again
-              editor.setEditable(true);
-
-              // Find the position of the checkbox in the editor
-              const pos = editor.view.posAtDOM(target, 0);
-
-              // Use TipTap's built-in command to properly toggle the task item
-              const { state } = editor.view;
-              const $pos = state.doc.resolve(pos);
-
-              // Find the task item node
-              let taskItemPos = null;
-              for (let depth = $pos.depth; depth > 0; depth--) {
-                const node = $pos.node(depth);
-                if (node.type.name === 'taskItem') {
-                  taskItemPos = $pos.before(depth);
-                  break;
-                }
-              }
-
-              if (taskItemPos !== null) {
-                // Update the task item's checked state
-                const tr = state.tr.setNodeMarkup(taskItemPos, null, { checked: newCheckedState });
-                editor.view.dispatch(tr);
-              }
-
-              // Get the updated content and make editor read-only again
-              setTimeout(() => {
-                const updatedContent = editor.getHTML();
-                editor.setEditable(false);
-                onContentChange(updatedContent);
-                // Calculate progress after content change and state update
-                calculateProgress(editor);
-              }, 0);
-            } catch (error) {
-              console.error('Error updating content after checkbox toggle:', error);
-              // Fallback: make sure editor stays read-only
-              editor.setEditable(false);
-            }
+            handleHierarchicalCheckboxClick(editor, target, event, onContentChange, calculateProgress);
+            return;
           }
           // For non-checkbox clicks, do nothing - let them bubble up naturally
         });
