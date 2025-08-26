@@ -6,11 +6,13 @@ import { AlertTriangle } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import SwipeableTask from './SwipeableTask';
+import SwipeableExam from './SwipeableExam';
 import { Task } from '@/types';
 
 interface UpcomingProps {
   expanded: number;
   onTaskComplete?: (taskId: string) => void;
+  onExamComplete?: (examId: string) => void;
   onTaskClick?: (task: any) => void;
   onTabChange?: (tab: string) => void;
   onCourseSelect?: (courseId: string) => void;
@@ -19,6 +21,7 @@ interface UpcomingProps {
 export default function Upcoming({
   expanded,
   onTaskComplete,
+  onExamComplete,
   onTaskClick,
   onTabChange,
   onCourseSelect,
@@ -27,10 +30,11 @@ export default function Upcoming({
   const { formatDateDDMMYYYY } = useLocalization();
   const { getCourseTitle } = useCourses();
   const { tasks, toggleTask } = useTasks();
-  const { exams } = useExams();
+  const { exams, toggleExamComplete } = useExams();
 
   const upcomingExams = useMemo(() => {
-    const sorted = [...exams].sort((a, b) => a.date.localeCompare(b.date));
+    const filtered = [...exams].filter(e => !e.completed);
+    const sorted = filtered.sort((a, b) => a.date.localeCompare(b.date));
     const baseCount = 3;
     const additionalCount = expanded * 3;
     return sorted.slice(0, baseCount + additionalCount);
@@ -44,7 +48,7 @@ export default function Upcoming({
   }, [tasks, expanded]);
 
   // Check if there are more items to show
-  const allExams = useMemo(() => [...exams].sort((a, b) => a.date.localeCompare(b.date)), [exams]);
+  const allExams = useMemo(() => [...exams].filter(e => !e.completed).sort((a, b) => a.date.localeCompare(b.date)), [exams]);
   const allTasks = useMemo(() => [...tasks].filter(t => !t.done).sort((a, b) => a.due.localeCompare(b.due)), [tasks]);
 
   const hasMoreExams = allExams.length > upcomingExams.length;
@@ -78,45 +82,18 @@ export default function Upcoming({
           {upcomingExams.length === 0 && <div className="text-sm text-zinc-500">{t('upcoming.noExams')}</div>}
           <AnimatePresence mode="popLayout">
             {upcomingExams.map((e, index) => (
-              <motion.div
+              <SwipeableExam
                 key={e.id}
-                initial={{ opacity: 0, height: 0, y: -10 }}
-                animate={{ opacity: 1, height: 'auto', y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -10 }}
-                transition={{
-                  duration: 0.3,
-                  ease: 'easeInOut',
-                  delay: expanded > 0 ? index * 0.05 : 0,
-                }}
-                className="flex items-center justify-between bg-white/70 dark:bg-white/5 rounded-xl p-3 overflow-hidden cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors"
+                exam={e}
+                index={index}
+                expanded={expanded}
+                calculateDDay={calculateDDay}
+                onComplete={onExamComplete || toggleExamComplete}
                 onClick={() => {
                   onTabChange?.('courses');
                   onCourseSelect?.(e.courseId);
                 }}
-              >
-                <div className="flex flex-col">
-                  <span className="font-medium">{e.title}</span>
-                  <span className="text-xs text-zinc-500">
-                    {getCourseTitle(e.courseId)} · {e.weight || 0}%
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="rounded-full">
-                    {formatDateDDMMYYYY(e.date)}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={`rounded-full text-xs font-mono flex items-center gap-1 ${
-                      calculateDDay(e.date)?.startsWith('D+')
-                        ? 'border-yellow-400 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-900/20'
-                        : ''
-                    }`}
-                  >
-                    {calculateDDay(e.date)?.startsWith('D+') && <AlertTriangle className="w-3 h-3" />}
-                    {calculateDDay(e.date)}
-                  </Badge>
-                </div>
-              </motion.div>
+              />
             ))}
           </AnimatePresence>
         </div>

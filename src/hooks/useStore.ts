@@ -215,6 +215,12 @@ export function useExams() {
       }
       gradeIndices.forEach(index => store.examGrades.splice(index, 1));
     },
+    toggleExamComplete: (id: string) => {
+      const examIndex = store.exams.findIndex(e => e.id === id);
+      if (examIndex !== -1) {
+        store.exams[examIndex].completed = !store.exams[examIndex].completed;
+      }
+    },
     setExamGrades: (grades: ExamGrade[]) => {
       store.examGrades = grades;
     },

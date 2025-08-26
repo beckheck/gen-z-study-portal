@@ -11,7 +11,7 @@ import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
-import { CalendarDays, Edit, ListTodo, Plus, Trash2, Undo } from 'lucide-react';
+import { CalendarDays, Edit, ListTodo, Plus, Trash2, Undo, Check } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ReactConfetti from 'react-confetti';
 import { useTranslation } from 'react-i18next';
@@ -22,13 +22,15 @@ export default function CourseManagerTab() {
   const { formatDateDDMMYYYY } = useLocalization();
   const { courses, selectedCourseId, getCourseTitle, setSelectedCourse, clearCourseData } = useCourses();
   const { tasks, toggleTask, deleteTask } = useTasks();
-  const { exams, examGrades, addExam, updateExam, setExamGrades } = useExams();
+  const { exams, examGrades, addExam, updateExam, setExamGrades, toggleExamComplete } = useExams();
   const eventDialog = useEventDialog();
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const [taskSortOrder, setTaskSortOrder] = useState<'date' | 'priority'>('date');
   const courseTasks = tasks.filter(t => t.courseId === selectedCourseId);
   const courseExams = exams.filter(e => e.courseId === selectedCourseId);
+  const upcomingExams = courseExams.filter(e => !e.completed);
+  const completedExams = courseExams.filter(e => e.completed);
 
   // Get priority color for tasks
   const getPriorityColor = (priority: string): string => {
@@ -397,9 +399,9 @@ export default function CourseManagerTab() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {courseExams.length === 0 && <div className="text-sm text-zinc-500">{tCourse('exams.upcoming.empty')}</div>}
+            {upcomingExams.length === 0 && <div className="text-sm text-zinc-500">{tCourse('exams.upcoming.empty')}</div>}
             <div className="space-y-2 max-h-[420px] overflow-auto">
-              {courseExams
+              {upcomingExams
                 .sort((a, b) => a.date.localeCompare(b.date))
                 .map(e => (
                   <div
@@ -451,6 +453,76 @@ export default function CourseManagerTab() {
                   </div>
                 ))}
             </div>
+
+            {/* Completed Exams Section */}
+            {completedExams.length > 0 && (
+              <>
+                <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">
+                  {tCommon('status.completed')}
+                </div>
+                <div className="space-y-2">
+                  {completedExams
+                    .sort((a, b) => b.date.localeCompare(a.date))
+                    .map(e => (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={e.id}
+                        className="flex items-start justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group cursor-pointer hover:bg-white/50 dark:hover:bg-white/8 transition-colors"
+                        onClick={() => {
+                          // Create exam event with proper format
+                          const examEvent = {
+                            ...e,
+                            date: e.date, // Keep the exam date format
+                          };
+                          eventDialog.openEditExamDialog(examEvent);
+                        }}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Check className="w-4 h-4 text-green-600" />
+                            <span className="font-medium text-green-700 dark:text-green-400">
+                              {e.title}
+                            </span>
+                          </div>
+                          <div className="text-xs text-zinc-500 ml-6">
+                            {formatDateDDMMYYYY(e.date)} · {e.weight}% · Completed
+                            {e.notes && (
+                              <div className="mt-1">
+                                <RichTextDisplay
+                                  content={e.notes}
+                                  className="text-xs"
+                                  onContentChange={newContent => {
+                                    // Update the exam with the new notes content
+                                    updateExam(e.id, {
+                                      ...e,
+                                      notes: newContent,
+                                    });
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={ev => {
+                              ev.stopPropagation();
+                              toggleExamComplete(e.id);
+                            }}
+                            title="Mark as upcoming"
+                          >
+                            <Undo className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

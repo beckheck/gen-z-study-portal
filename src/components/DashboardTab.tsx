@@ -21,7 +21,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
   const { t } = useTranslation('common');
   const { setSelectedCourse } = useCourses();
   const { tasks, setTasks } = useTasks();
-  const { exams } = useExams();
+  const { exams, toggleExamComplete } = useExams();
   const { weather } = useWeather();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
 
@@ -74,6 +74,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
                 const updatedTasks = tasks.map(t => (t.id === taskId ? { ...t, done: true } : t));
                 setTasks(updatedTasks);
               }}
+              onExamComplete={toggleExamComplete}
               onTabChange={onTabChange}
               onCourseSelect={setSelectedCourse}
               onTaskClick={task => {

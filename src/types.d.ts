@@ -102,6 +102,8 @@ export interface Exam {
   notes: string;
   /** Id of the course this exam belongs to */
   courseId: string;
+  /** Whether the exam has been completed */
+  completed?: boolean;
 }
 
 /**
