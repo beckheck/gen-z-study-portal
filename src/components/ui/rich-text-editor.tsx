@@ -185,6 +185,7 @@ const HIGHLIGHT_COLORS = [
 // File Attachment Extension
 interface FileAttachmentOptions {
   HTMLAttributes: Record<string, any>;
+  draggable: boolean;
 }
 
 declare module '@tiptap/core' {
@@ -200,86 +201,90 @@ declare module '@tiptap/core' {
   }
 }
 
-const FileAttachment = Node.create<FileAttachmentOptions>({
-  name: 'fileAttachment',
+const createFileAttachmentNode = (draggable: boolean) =>
+  Node.create<FileAttachmentOptions>({
+    name: 'fileAttachment',
 
-  addOptions() {
-    return {
-      HTMLAttributes: {},
-    };
-  },
+    addOptions() {
+      return {
+        HTMLAttributes: {},
+        draggable,
+      };
+    },
 
-  group: 'block',
+    group: 'block',
 
-  atom: true,
+    atom: true,
+    draggable,
 
-  addAttributes() {
-    return {
-      fileId: {
-        default: null,
-      },
-      fileName: {
-        default: null,
-      },
-      fileSize: {
-        default: null,
-      },
-      fileIcon: {
-        default: '📎',
-      },
-    };
-  },
+    addAttributes() {
+      return {
+        fileId: {
+          default: null,
+        },
+        fileName: {
+          default: null,
+        },
+        fileSize: {
+          default: null,
+        },
+        fileIcon: {
+          default: '📎',
+        },
+      };
+    },
 
-  parseHTML() {
-    return [
-      {
-        tag: 'div[data-type="file-attachment"]',
-      },
-    ];
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    // Determine if file can be viewed in browser
-    const fileName = HTMLAttributes.fileName || '';
-
-    return [
-      'div',
-      mergeAttributes(
+    parseHTML() {
+      return [
         {
-          'data-type': 'file-attachment',
-          class: 'file-attachment',
-          'data-file-id': HTMLAttributes.fileId,
-          'data-file-name': HTMLAttributes.fileName,
-          'data-file-size': HTMLAttributes.fileSize,
-          contenteditable: 'false',
-          tabindex: '0', // Make focusable
+          tag: 'div[data-type="file-attachment"]',
         },
-        this.options.HTMLAttributes,
-        HTMLAttributes
-      ),
-      ['span', { class: 'file-icon' }, HTMLAttributes.fileIcon],
-      [
-        'div',
-        { class: 'file-info' },
-        ['div', { class: 'file-name' }, HTMLAttributes.fileName],
-        ['div', { class: 'file-size' }, HTMLAttributes.fileSize],
-      ],
-    ];
-  },
+      ];
+    },
 
-  addCommands() {
-    return {
-      setFileAttachment:
-        options =>
-        ({ commands }) => {
-          return commands.insertContent({
-            type: this.name,
-            attrs: options,
-          });
-        },
-    };
-  },
-});
+    renderHTML({ HTMLAttributes }) {
+      // Determine if file can be viewed in browser
+      const fileName = HTMLAttributes.fileName || '';
+
+      return [
+        'div',
+        mergeAttributes(
+          {
+            'data-type': 'file-attachment',
+            class: 'file-attachment',
+            'data-file-id': HTMLAttributes.fileId,
+            'data-file-name': HTMLAttributes.fileName,
+            'data-file-size': HTMLAttributes.fileSize,
+            contenteditable: 'false',
+            draggable,
+            tabindex: '0', // Make focusable
+          },
+          this.options.HTMLAttributes,
+          HTMLAttributes
+        ),
+        ['span', { class: 'file-icon' }, HTMLAttributes.fileIcon],
+        [
+          'div',
+          { class: 'file-info' },
+          ['div', { class: 'file-name' }, HTMLAttributes.fileName],
+          ['div', { class: 'file-size' }, HTMLAttributes.fileSize],
+        ],
+      ];
+    },
+
+    addCommands() {
+      return {
+        setFileAttachment:
+          options =>
+          ({ commands }) => {
+            return commands.insertContent({
+              type: this.name,
+              attrs: options,
+            });
+          },
+      };
+    },
+  });
 
 // File attachment keyboard navigation handlers
 const handleFileAttachmentKeydown = async (fileAttachment: HTMLElement, event: KeyboardEvent, editor: any) => {
@@ -595,7 +600,7 @@ const handleFileAttachmentDelete = async (fileAttachment: HTMLElement, event: Ke
 };
 
 // Shared editor extensions configuration
-const getEditorExtensions = (placeholder?: string) => [
+const getEditorExtensions = (draggableAttachments: boolean, placeholder?: string) => [
   StarterKit.configure({
     blockquote: false, // We'll add our own blockquote extension
   }),
@@ -640,7 +645,7 @@ const getEditorExtensions = (placeholder?: string) => [
       class: 'tiptap-link',
     },
   }),
-  FileAttachment,
+  createFileAttachmentNode(draggableAttachments),
   ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
 ];
 
@@ -729,7 +734,7 @@ export function RichTextEditor({
   };
 
   const editor = useEditor({
-    extensions: getEditorExtensions(placeholder),
+    extensions: getEditorExtensions(true, placeholder), // Draggable attachments for editor
     content,
     editable: !disabled,
     onCreate: ({ editor }) => {
@@ -772,8 +777,8 @@ export function RichTextEditor({
         }
       });
 
-      // Add direct keyboard event listeners to file attachment elements
-      const addFileAttachmentKeyboardListeners = () => {
+      // Add event listeners to file attachment elements
+      const addFileAttachmentEventListeners = () => {
         const fileAttachments = editor.view.dom.querySelectorAll('[data-type="file-attachment"]');
 
         fileAttachments.forEach((attachment: HTMLElement, index) => {
@@ -785,12 +790,18 @@ export function RichTextEditor({
           // Store the handler reference on the element for later removal
           (attachment as any)._keydownHandler = keydownHandler;
 
-          // Remove any existing listener
+          // Remove any existing listeners
           if ((attachment as any)._previousKeydownHandler) {
             attachment.removeEventListener('keydown', (attachment as any)._previousKeydownHandler);
           }
           if ((attachment as any)._previousEnterHandler) {
             attachment.removeEventListener('keypress', (attachment as any)._previousEnterHandler);
+          }
+          if ((attachment as any)._previousDragStartHandler) {
+            attachment.removeEventListener('dragstart', (attachment as any)._previousDragStartHandler);
+          }
+          if ((attachment as any)._previousDragEndHandler) {
+            attachment.removeEventListener('dragend', (attachment as any)._previousDragEndHandler);
           }
 
           // Add the new keyboard event listener
@@ -806,17 +817,35 @@ export function RichTextEditor({
           attachment.addEventListener('keypress', enterHandler);
           (attachment as any)._enterHandler = enterHandler;
 
+          // Add drag event handlers for visual feedback
+          const dragStartHandler = (event: DragEvent) => {
+            attachment.classList.add('dragging');
+            // Allow drag and drop by setting allowed effect
+            if (event.dataTransfer) {
+              event.dataTransfer.effectAllowed = 'move';
+            }
+          };
+
+          const dragEndHandler = (event: DragEvent) => {
+            attachment.classList.remove('dragging');
+          };
+
+          attachment.addEventListener('dragstart', dragStartHandler);
+          attachment.addEventListener('dragend', dragEndHandler);
+
           // Store reference for next cleanup
           (attachment as any)._previousKeydownHandler = keydownHandler;
           (attachment as any)._previousEnterHandler = enterHandler;
+          (attachment as any)._previousDragStartHandler = dragStartHandler;
+          (attachment as any)._previousDragEndHandler = dragEndHandler;
         });
       };
 
       // Add listeners initially and whenever content changes
-      addFileAttachmentKeyboardListeners();
+      addFileAttachmentEventListeners();
 
       // Re-add listeners when content updates (new file attachments added)
-      editor.on('update', addFileAttachmentKeyboardListeners);
+      editor.on('update', addFileAttachmentEventListeners);
 
       // Add focus/blur styling for file attachments
       editor.view.dom.addEventListener('focusin', event => {
@@ -1433,7 +1462,7 @@ export function RichTextDisplay({ content, className, onContentChange, onProgres
   }, [content]);
 
   const editor = useEditor({
-    extensions: getEditorExtensions(),
+    extensions: getEditorExtensions(false), // Non-draggable attachments for display
     content: processedContent,
     editable: false, // Always read-only for display
     onCreate: ({ editor }) => {
@@ -1554,20 +1583,31 @@ const FILE_ATTACHMENT_STYLES = `
     background: rgb(243 244 246);
     border: 1px solid rgb(229 231 235);
     border-radius: 8px;
-    cursor: pointer;
+    cursor: grab; /* Show drag cursor when draggable */
     transition: all 0.2s;
     outline: none;
     margin: 2px 0;
+    user-select: none; /* Prevent text selection during drag */
   }
   .rich-text-editor-content .file-attachment:hover {
     background: rgb(229 231 235);
     border-color: rgb(209 213 219);
+  }
+  .rich-text-editor-content .file-attachment:active {
+    cursor: grabbing; /* Show grabbing cursor when dragging */
+    transform: scale(0.98);
   }
   .rich-text-editor-content .file-attachment-focused,
   .rich-text-editor-content .file-attachment:focus {
     background: rgb(239 246 255);
     border-color: rgb(147 197 253);
     box-shadow: 0 0 0 2px rgb(191 219 254);
+  }
+  /* Drag feedback styles */
+  .rich-text-editor-content .file-attachment.dragging,
+  .rich-text-editor-content .file-attachment:is([draggable="true"]:active) {
+    opacity: 0.6;
+    transform: scale(0.95);
   }
   .dark .rich-text-editor-content .file-attachment {
     background: rgb(31 41 55);
