@@ -52,7 +52,6 @@
     "settingUpExperience": "Configurando tu experiencia personalizada",
     "failedToLoad": "Error al Cargar Datos de la App",
     "reloadApp": "Recargar App",
-    "checkingStorageCompatibility": "Verificando compatibilidad de almacenamiento...",
     "loadingFromStorage": "Cargando desde {{adapter}}...",
     "restoringData": "Restaurando tus datos...",
     "checkingLegacyStorage": "Verificando almacenamiento heredado...",
@@ -115,7 +114,9 @@
     "study": "Seguimiento de Estudio",
     "wellness": "Bienestar",
     "settings": "Configuración",
-    "openNavigationMenu": "Abrir menú de navegación"
+    "openNavigationMenu": "Abrir menú de navegación",
+    "openInTab": "Abrir en nueva pestaña",
+    "scrollToTop": "Subir al inicio"
   },
   "app": {
     "title": "StudyHub ✨",
@@ -142,7 +143,7 @@
   },
   "weather": {
     "loading": {
-      "location": "Obteniendo ubicación...",
+      "location": "Localizando...",
       "description": "Cargando...",
       "temperature": "--"
     },

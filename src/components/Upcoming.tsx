@@ -1,13 +1,11 @@
-import { Badge } from '@/components/ui/badge';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
-import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
+import { Task } from '@/types';
+import { AnimatePresence } from 'framer-motion';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import SwipeableTask from './SwipeableTask';
 import SwipeableExam from './SwipeableExam';
-import { Task } from '@/types';
+import SwipeableTask from './SwipeableTask';
 
 interface UpcomingProps {
   expanded: number;

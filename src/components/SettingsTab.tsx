@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 import { useCourses, useSoundtrack, useTheme, useWeather } from '@/hooks/useStore';
-import { dataTransfer, persistStore } from '@/store';
+import { dataTransfer, persistStore } from '@/stores/app';
 import { Reorder } from 'framer-motion';
 import {
   BookOpen,
@@ -58,6 +59,7 @@ export default function SettingsTab() {
     setGradientMiddle,
     setGradientStart,
   } = useTheme();
+  const { scrollToTop } = useScrollToTop();
 
   // Map menu items to their refs for scroll-to functionality
   const refMap = {
@@ -75,7 +77,7 @@ export default function SettingsTab() {
   // Scroll to section function
   const scrollToSection = (menuId: string) => {
     if (menuItems[0].id === menuId) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
       return;
     }
     const ref = refMap[menuId as keyof typeof refMap];

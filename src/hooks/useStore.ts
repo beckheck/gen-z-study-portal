@@ -1,6 +1,6 @@
 import { useSnapshot } from 'valtio';
 import { uid } from '../lib/utils';
-import { store, storeLoadingState } from '../store';
+import { store, storeLoadingState } from '../stores/app';
 import type {
   Course,
   DegreePlan,
@@ -8,8 +8,8 @@ import type {
   ExamInput,
   RegularEventInput,
   ScheduleEvent,
-  Session,
-  SessionTask,
+  StudySession,
+  StudySessionTask,
   SoundtrackPosition,
   Task,
   TaskInput,
@@ -305,20 +305,20 @@ export function useSchedule() {
 /**
  * Hook to access and modify study sessions
  */
-export function useSessions() {
+export function useStudySessions() {
   const sessions = useSnapshot(store.sessions);
   const sessionTasks = useSnapshot(store.sessionTasks);
 
   return {
     sessions,
     sessionTasks,
-    setSessions: (sessions: Session[]) => {
+    setSessions: (sessions: StudySession[]) => {
       store.sessions = sessions;
     },
-    setSessionTasks: (tasks: SessionTask[]) => {
+    setSessionTasks: (tasks: StudySessionTask[]) => {
       store.sessionTasks = tasks;
     },
-    addSession: (session: Session) => {
+    addSession: (session: StudySession) => {
       store.sessions.unshift(session);
     },
     deleteSession: (id: string) => {

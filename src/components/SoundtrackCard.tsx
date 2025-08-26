@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SoundtrackPosition } from '@/types';
 import { Music2 } from 'lucide-react';
-import React, { RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Global iframe management with better React integration
@@ -141,7 +141,7 @@ export default function SoundtrackCard({
   const [componentId] = useState(() => `soundtrack-${++mountCounter}`);
 
   // Check if component should be active (consolidate visibility checks)
-  const isActive = embed && visible && position !== 'off';
+  const isActive = useMemo(() => embed && visible && position !== 'off', [embed, visible, position]);
 
   // Helper function to update iframe position
   const updateIframePosition = useCallback(() => {
@@ -215,12 +215,21 @@ export default function SoundtrackCard({
   useEffect(() => {
     if (!isActive) return;
 
-    window.addEventListener('scroll', updateIframePosition);
+    const getScrollContainer = (): Element => {
+      const extensionContainer = document.querySelector('.extension-container');
+      if (extensionContainer && getComputedStyle(extensionContainer).overflowY === 'auto') {
+        return extensionContainer;
+      }
+      return window as any;
+    };
+
+    const scrollContainer = getScrollContainer();
+    scrollContainer.addEventListener('scroll', updateIframePosition);
     window.addEventListener('resize', updateIframePosition);
     const timeoutId = setTimeout(updateIframePosition, 500);
 
     return () => {
-      window.removeEventListener('scroll', updateIframePosition);
+      scrollContainer.removeEventListener('scroll', updateIframePosition);
       window.removeEventListener('resize', updateIframePosition);
       clearTimeout(timeoutId);
     };

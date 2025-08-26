@@ -103,18 +103,23 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
 
   const completionProgress = Math.abs(dragX) / Math.abs(COMPLETE_THRESHOLD);
   const shouldComplete = dragX >= COMPLETE_THRESHOLD;
+  const animationsEnabled = expanded > 0;
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, height: 0, y: -10 }}
-      animate={{ opacity: 1, height: 'auto', y: 0 }}
-      exit={{ opacity: 0, height: 0, y: -10 }}
-      transition={{
-        duration: 0.3,
-        ease: 'easeInOut',
-        delay: expanded > 0 ? index * 0.05 : 0,
-      }}
+      initial={animationsEnabled ? { opacity: 0, height: 0, y: -10 } : false}
+      animate={animationsEnabled ? { opacity: 1, height: 'auto', y: 0 } : false}
+      exit={animationsEnabled ? { opacity: 0, height: 0, y: -10 } : false}
+      transition={
+        animationsEnabled
+          ? {
+              duration: 0.3,
+              ease: 'easeInOut',
+              delay: expanded > 0 ? index * 0.05 : 0,
+            }
+          : undefined
+      }
       className="relative overflow-hidden rounded-xl"
       style={{ position: 'relative' }} // Ensure positioning context
     >

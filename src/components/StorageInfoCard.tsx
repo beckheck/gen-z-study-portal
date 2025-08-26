@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { hybridStorage } from '../lib/indexeddb-storage';
+import { hybridStorage } from '../lib/hybrid-storage';
 import { Card } from './ui/card';
 
 interface StorageInfo {
@@ -21,6 +21,7 @@ export const StorageInfoCard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const formatBytes = (bytes: number): string => {
+    if (bytes === Infinity) return '∞';
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -41,10 +42,8 @@ export const StorageInfoCard: React.FC = () => {
 
   const getStatusText = (adapter: string, percentage: number): string => {
     const statusKey = percentage < 50 ? 'good' : percentage < 80 ? 'warning' : 'critical';
-    const adapterKey = adapter.toLowerCase() === 'indexeddb' ? 'indexeddb' : 'localstorage';
     const status = t(`storage.status.${statusKey}`);
-    const adapterName = t(`storage.adapter.${adapterKey}`);
-    return `${adapterName} - ${status}`;
+    return `${adapter} - ${status}`;
   };
 
   useEffect(() => {
@@ -117,6 +116,12 @@ export const StorageInfoCard: React.FC = () => {
             quota: formatBytes(storageInfo.quota),
           })}
         </div>
+
+        {storageInfo.adapter === 'Browser' && (
+          <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+            {t('storage.messages.unlimitedCapacity')}
+          </div>
+        )}
 
         {storageInfo.adapter === 'IndexedDB' && (
           <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">

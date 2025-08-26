@@ -2,13 +2,10 @@ import { uid } from '@/lib/utils';
 import i18next from 'i18next';
 import { proxy, snapshot, subscribe } from 'valtio';
 import { DataTransfer } from '../lib/data-transfer';
-import { hybridStorage } from '../lib/indexeddb-storage';
+import { hybridStorage } from '../lib/hybrid-storage';
 import type { AppState, DegreePlan, MoodEmojis, WeatherLocation } from '../types';
 
-// Translation helper for store loading messages
-const tLoadingScreen = (key: string, options?: { adapter?: string }) => {
-  return i18next.t(`common:loadingScreen.${key}`, options);
-};
+const STORAGE_KEY = 'sp:appStateExchange';
 
 // Default values
 const DEFAULT_COURSES = [
@@ -115,6 +112,9 @@ function createInitialState(): AppState {
       files: {},
       metadata: {},
     },
+
+    // Active tabs per mode
+    activeTabsByMode: {},
   };
 }
 
@@ -163,6 +163,11 @@ const MIGRATION_MAP = {
 function migrateFromLocalStorage(): Partial<AppState> {
   const migratedState: any = {};
 
+  // Only migrate if localStorage is available
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return migratedState;
+  }
+
   // Migrate each localStorage key
   Object.entries(MIGRATION_MAP).forEach(([key, migrator]) => {
     try {
@@ -201,18 +206,22 @@ export const storeLoadingState = proxy<{
   status: tLoadingScreen('initializingStorage'),
 });
 
-// Load state from hybrid storage (IndexedDB or localStorage) or create initial state
+// Load state from hybrid storage (IndexedDB/BrowserStorage or localStorage) or create initial state
 async function loadState(): Promise<AppState> {
   try {
-    // Initialize hybrid storage and handle migration
-    storeLoadingState.status = tLoadingScreen('checkingStorageCompatibility');
-    await hybridStorage.initialize();
+    // Check if we're in browser environment
+    if (typeof window === 'undefined') {
+      console.log('Not in browser environment, returning initial state');
+      return createInitialState();
+    }
 
-    storeLoadingState.status = tLoadingScreen('loadingFromStorage', { adapter: hybridStorage.getCurrentAdapter() });
-    const exchangeDataString =
-      localStorage.getItem('sp:appStateExchange') || (await hybridStorage.getItem('sp:appStateExchange'));
-    if (exchangeDataString) {
-      const exchangeData = JSON.parse(exchangeDataString);
+    storeLoadingState.status = tLoadingScreen('loadingFromStorage', { adapter: hybridStorage.adapterName });
+
+    // Try to load from hybrid storage
+    let exchangeData: any = null;
+    exchangeData = await hybridStorage.getItem(STORAGE_KEY);
+
+    if (exchangeData) {
       let state = createInitialState();
       const dataTransfer: DataTransfer = new DataTransfer(
         () => state,
@@ -227,7 +236,8 @@ async function loadState(): Promise<AppState> {
 
     // Fallback: try to load from the old centralized localStorage key
     storeLoadingState.status = tLoadingScreen('checkingLegacyStorage');
-    const centralizedRaw = localStorage.getItem('sp:appState');
+    const centralizedRaw =
+      typeof window !== 'undefined' && typeof localStorage !== 'undefined' ? localStorage.getItem('sp:appState') : null;
     if (centralizedRaw) {
       const parsed = JSON.parse(centralizedRaw);
       const oldWeather = {
@@ -281,7 +291,7 @@ async function loadState(): Promise<AppState> {
         () => mergedState,
         () => {}
       ).exportData();
-      await hybridStorage.setItem('sp:appStateExchange', JSON.stringify(exchangeData));
+      await hybridStorage.setItem(STORAGE_KEY, exchangeData);
     }
 
     return mergedState;
@@ -312,6 +322,9 @@ loadState()
     // Mark store as ready to enable persistence
     isStoreReady = true;
 
+    // Set up cross-context synchronization AFTER store is ready
+    setupStorageSynchronization();
+
     // Do initial persistence to ensure data is saved in hybrid storage
     persistStore().catch(error => {
       console.error('Failed to persist initial state:', error);
@@ -325,6 +338,9 @@ loadState()
 
     // Even on error, mark store as ready to enable persistence of fallback state
     isStoreReady = true;
+
+    // Set up cross-context synchronization even on error
+    setupStorageSynchronization();
   });
 
 // Function to update the store state (for data import)
@@ -364,14 +380,12 @@ export function persistStore(): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       const exchangeData = dataTransfer.exportData();
-      const exchangeDataString = JSON.stringify(exchangeData);
       removeDeprecatedLocalStorageItems();
 
-      // Use hybrid storage (IndexedDB with localStorage fallback)
+      // Use hybrid storage for all contexts (extension and web)
       hybridStorage
-        .setItem('sp:appStateExchange', exchangeDataString)
+        .setItem(STORAGE_KEY, exchangeData)
         .then(() => {
-          notifyOtherTabs();
           resolve();
         })
         .catch(error => {
@@ -386,72 +400,44 @@ export function persistStore(): Promise<void> {
 }
 
 function removeDeprecatedLocalStorageItems() {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return;
+  }
+
   Object.keys(MIGRATION_MAP).forEach(oldKey => {
     if (localStorage.getItem(oldKey) !== null) {
       localStorage.removeItem(oldKey);
     }
   });
   localStorage.removeItem('sp:appState');
-  localStorage.removeItem('sp:appStateExchange');
+  localStorage.removeItem(STORAGE_KEY);
 }
 
-// For IndexedDB, we need to implement custom cross-tab sync since IndexedDB doesn't have storage events
-// We'll use localStorage as a signaling mechanism for IndexedDB changes
-const SYNC_SIGNAL_KEY = 'sp:sync-signal';
-
-// Helper function to notify other tabs of IndexedDB changes
-function notifyOtherTabs() {
-  try {
-    // Use localStorage as a signaling mechanism
-    const signal = {
-      timestamp: Date.now(),
-      action: 'indexeddb-updated',
-    };
-    localStorage.setItem(SYNC_SIGNAL_KEY, JSON.stringify(signal));
-    // Don't clean up immediately - let the storage event fire first
-    setTimeout(() => {
-      try {
-        localStorage.removeItem(SYNC_SIGNAL_KEY);
-      } catch (error) {
-        console.warn('Failed to clean up sync signal:', error);
-      }
-    }, 100);
-  } catch (error) {
-    console.warn('Failed to send sync signal:', error);
+// Function to set up storage synchronization between tabs/contexts
+function setupStorageSynchronization() {
+  if (typeof window === 'undefined') {
+    return;
   }
+
+  // Set up unified change listener for all storage adapters (BrowserStorage, IndexedDB, localStorage)
+  hybridStorage.addChangeListener((key: string, newValue: any) => {
+    if (key === STORAGE_KEY && newValue && isStoreReady) {
+      try {
+        isApplyingFromStorage = true;
+        // newValue is already the native object from storage adapters
+        dataTransfer.importData(newValue);
+      } catch (error) {
+        console.error('Failed to handle storage sync:', error);
+      } finally {
+        setTimeout(() => {
+          isApplyingFromStorage = false;
+        }, 0);
+      }
+    }
+  });
 }
 
 // Listen for storage changes from other tabs (browser's native storage events only)
-window.addEventListener('storage', e => {
-  if (e.key === SYNC_SIGNAL_KEY && e.newValue && isStoreReady) {
-    try {
-      const signal = JSON.parse(e.newValue);
-      if (signal.action === 'indexeddb-updated') {
-        // Reload state from IndexedDB
-        hybridStorage
-          .getItem('sp:appStateExchange')
-          .then(exchangeDataString => {
-            if (exchangeDataString) {
-              isApplyingFromStorage = true;
-              const exchangeData = JSON.parse(exchangeDataString);
-              // Use dataTransfer.importData to properly transform the versioned exchange format
-              dataTransfer.importData(exchangeData);
-            }
-          })
-          .catch(error => {
-            console.error('Failed to sync state from IndexedDB:', error);
-          })
-          .finally(() => {
-            setTimeout(() => {
-              isApplyingFromStorage = false;
-            }, 0);
-          });
-      }
-    } catch (error) {
-      console.error('Failed to handle IndexedDB sync signal:', error);
-    }
-  }
-});
 
 // File attachment garbage collection function
 export const performGarbageCollection = async (): Promise<void> => {
@@ -528,7 +514,17 @@ function updateProxyFromState(proxy: any, newState: any, patch = false) {
     const newValue = newState[key];
     const currentValue = proxy[key];
 
-    if (newValue && typeof newValue === 'object' && !Array.isArray(newValue)) {
+    if (Array.isArray(newValue)) {
+      // For arrays, update in place to maintain valtio reactivity
+      if (Array.isArray(currentValue)) {
+        // Clear existing array and add new items
+        currentValue.length = 0;
+        currentValue.push(...newValue);
+      } else {
+        // Replace with new array if current is not an array
+        proxy[key] = newValue;
+      }
+    } else if (newValue && typeof newValue === 'object') {
       // For nested objects, recursively update if current value is also an object
       if (currentValue && typeof currentValue === 'object' && !Array.isArray(currentValue)) {
         updateProxyFromState(currentValue, newValue, patch);
@@ -537,8 +533,13 @@ function updateProxyFromState(proxy: any, newState: any, patch = false) {
         proxy[key] = newValue;
       }
     } else {
-      // For primitive values and arrays, direct assignment
+      // For primitive values, direct assignment
       proxy[key] = newValue;
     }
   });
+}
+
+// Translation helper for store loading messages
+function tLoadingScreen(key: string, options?: { adapter?: string }) {
+  return i18next.t(`common:loadingScreen.${key}`, options);
 }

@@ -118,10 +118,6 @@
   },
   "storage": {
     "title": "Estado del Almacenamiento",
-    "adapter": {
-      "indexeddb": "IndexedDB",
-      "localstorage": "localStorage"
-    },
     "status": {
       "good": "Bien",
       "warning": "Advertencia",
@@ -133,6 +129,7 @@
     "unavailable": "Información de almacenamiento no disponible",
     "loading": "Cargando información de almacenamiento...",
     "messages": {
+      "unlimitedCapacity": "✓ Usando almacenamiento ilimitado",
       "highCapacity": "✓ Usando almacenamiento de alta capacidad",
       "upgradeWarning": "⚠ Considera actualizar tu navegador para más almacenamiento"
     }

@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { useCourses, useSessions } from '@/hooks/useStore';
+import { useCourses, useStudySessions } from '@/hooks/useStore';
 import useStudyTimer from '@/hooks/useStudyTimer';
-import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2 } from 'lucide-react';
+import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -25,17 +26,19 @@ export default function StudyTrackerTab() {
     toggleSessionTask,
     deleteSessionTask,
     clearCompletedSessionTasks,
-  } = useSessions();
+  } = useStudySessions();
 
   // Study timer with session completion callback
   const studyTimer = useStudyTimer(session => {
     addSession(session);
-  });
+  }, selectedCourseId);
+  const { timerState } = studyTimer;
 
-  const elapsedMin = Math.floor(studyTimer.elapsed / 60)
+  const elapsedMin = Math.floor(timerState.elapsed / 60)
     .toString()
     .padStart(2, '0');
-  const elapsedSec = (studyTimer.elapsed % 60).toString().padStart(2, '0');
+  const elapsedSec = (timerState.elapsed % 60).toString().padStart(2, '0');
+  const elapsedMinSec = `${elapsedMin}:${elapsedSec}`;
 
   // Session-only tasks
   const [sessionTaskTitle, setSessionTaskTitle] = useState<string>('');
@@ -80,7 +83,7 @@ export default function StudyTrackerTab() {
             </div>
             <div>
               <Label>{t('focusTimer.technique')}</Label>
-              <Select value={studyTimer.technique} onValueChange={studyTimer.setTechnique}>
+              <Select value={timerState.technique} onValueChange={studyTimer.setTechnique}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
@@ -96,21 +99,19 @@ export default function StudyTrackerTab() {
           <div className="grid md:grid-cols-2 gap-3">
             <MoodSlider
               label={t('focusTimer.moodStart')}
-              value={studyTimer.moodStart}
+              value={timerState.moodStart}
               onChange={studyTimer.setMoodStart}
             />
-            <MoodSlider label={t('focusTimer.moodEnd')} value={studyTimer.moodEnd} onChange={studyTimer.setMoodEnd} />
+            <MoodSlider label={t('focusTimer.moodEnd')} value={timerState.moodEnd} onChange={studyTimer.setMoodEnd} />
           </div>
 
           <div className="text-center p-6 bg-white/70 dark:bg-white/5 rounded-2xl">
-            <div className="text-5xl font-extrabold tracking-wider tabular-nums">
-              {elapsedMin}:{elapsedSec}
-            </div>
+            <div className="text-5xl font-extrabold tracking-wider tabular-nums">{elapsedMinSec}</div>
             <div className="text-xs text-zinc-500 mt-1">
-              {studyTimer.running ? t('focusTimer.status.studying') : t('focusTimer.status.ready')}
+              {timerState.running ? t('focusTimer.status.studying') : t('focusTimer.status.ready')}
             </div>
             <div className="flex items-center justify-center gap-2 mt-4">
-              {!studyTimer.running ? (
+              {!timerState.running ? (
                 <Button onClick={studyTimer.startTimer} className="rounded-xl">
                   <Flame className="w-4 h-4 mr-2" />
                   {t('focusTimer.buttons.start')}
@@ -137,11 +138,42 @@ export default function StudyTrackerTab() {
           <div>
             <Label>{t('focusTimer.sessionNotes')}</Label>
             <Textarea
-              value={studyTimer.note}
+              value={timerState.note}
               onChange={e => studyTimer.setNote(e.target.value)}
               className="rounded-xl"
               placeholder={t('focusTimer.notesPlaceholder')}
             />
+          </div>
+
+          {/* Audio Settings */}
+          <div className="bg-white/50 dark:bg-white/5 p-4 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {timerState.audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                <Label className="text-sm font-medium">{t('focusTimer.audio.notifications')}</Label>
+              </div>
+              <Switch checked={timerState.audioEnabled} onCheckedChange={studyTimer.setAudioEnabled} />
+            </div>
+
+            {timerState.audioEnabled && (
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-500 uppercase tracking-wide">{t('focusTimer.audio.volume')}</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={timerState.audioVolume}
+                    onChange={e => studyTimer.setAudioVolume(parseFloat(e.target.value))}
+                    className="flex-1 h-2 bg-white/70 dark:bg-white/10 rounded-lg appearance-none slider"
+                  />
+                  <span className="text-sm text-zinc-500 min-w-[3rem]">
+                    {Math.round(timerState.audioVolume * 100)}%
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -52,7 +52,6 @@
     "settingUpExperience": "Setting up your personalized experience",
     "failedToLoad": "Failed to Load App Data",
     "reloadApp": "Reload App",
-    "checkingStorageCompatibility": "Checking storage compatibility...",
     "loadingFromStorage": "Loading from {{adapter}}...",
     "restoringData": "Restoring your data...",
     "checkingLegacyStorage": "Checking legacy storage...",
@@ -115,7 +114,9 @@
     "study": "Study Tracker",
     "wellness": "Wellness",
     "settings": "Settings",
-    "openNavigationMenu": "Open navigation menu"
+    "openNavigationMenu": "Open navigation menu",
+    "openInTab": "Open in new tab",
+    "scrollToTop": "Scroll to top"
   },
   "app": {
     "title": "StudyHub ✨",

@@ -13,11 +13,13 @@ import TimetableTab from '@/components/TimetableTab';
 import WellnessTab from '@/components/WellnessTab';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useAppContext } from '@/contexts/AppContext';
 import useAccentColorStyles from '@/hooks/useAccentColorStyles';
 import useBaseStyles from '@/hooks/useBaseStyles';
 import useCardOpacityStyles from '@/hooks/useCardOpacityStyles';
 import useDarkModeStyles from '@/hooks/useDarkModeStyles';
-import useHashNavigation from '@/hooks/useHashNavigation';
+import useModeAwareTab from '@/hooks/useModeAwareTab';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 import { useSoundtrack, useStoreLoading, useTheme } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import {
@@ -25,6 +27,7 @@ import {
   CalendarDays,
   CalendarRange,
   ChevronUp,
+  Expand,
   GraduationCap,
   HeartPulse,
   Home,
@@ -35,6 +38,7 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { browser } from 'wxt/browser';
 import { AppTab } from './types';
 
 function AppSubtitle() {
@@ -55,12 +59,11 @@ function AppSubtitle() {
   );
 }
 
-// -----------------------------
-// Main App Component
-// -----------------------------
 export default function StudyPortal(): React.JSX.Element {
   // Translation hook
   const { t } = useTranslation('common');
+
+  const { isExtension, mode } = useAppContext();
 
   // Get state from centralized store
   const { theme, setDarkMode } = useTheme();
@@ -81,16 +84,20 @@ export default function StudyPortal(): React.JSX.Element {
 
   const navigationValues = tabs.map(tab => tab.value);
 
-  // Hash-based navigation for tabs
-  const { currentValue: activeTab, setValue: setActiveTab } = useHashNavigation({
+  // Mode-aware tab navigation with persistence and hash support
+  // - Remembers the active tab for each mode (popup, sidepanel, newtab, tab, web)
+  // - Respects hash navigation when present (e.g., when opened via expand button)
+  // - Persists tab state using data-transfer system
+  const { activeTab, setActiveTab } = useModeAwareTab({
     validValues: navigationValues,
     defaultValue: navigationValues[0],
-    useHistory: true,
   });
 
   // Local UI state (not persisted)
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
+
+  // Scroll to top functionality
+  const { showScrollToTop, scrollToTop } = useScrollToTop();
 
   // Style hooks
   useDarkModeStyles();
@@ -106,26 +113,19 @@ export default function StudyPortal(): React.JSX.Element {
     [setActiveTab, setIsDrawerOpen]
   );
 
-  // Handle scroll to top functionality
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // Show/hide scroll to top button based on scroll position
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollToTop(window.scrollY > 100);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // Handle opening in full tab
+  const openInTab = useCallback(() => {
+    browser.runtime.sendMessage({
+      type: 'openStudyPortalTab',
+      activeTab,
+    });
+  }, [activeTab]);
 
   // File attachment garbage collection - runs on app startup
   useEffect(() => {
     // Run garbage collection on startup (with a small delay to let the app initialize)
     const timeoutId = setTimeout(async () => {
-      const { performGarbageCollection } = await import('./store');
+      const { performGarbageCollection } = await import('./stores/app');
       await performGarbageCollection();
     }, 2000);
 
@@ -164,8 +164,8 @@ export default function StudyPortal(): React.JSX.Element {
         <div className="md:hidden fixed top-6 left-6 z-50">
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              <button className="p-3 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-white/90 dark:hover:bg-zinc-900/90 transition-all duration-200 shadow-lg hover:shadow-xl border border-white/20 dark:border-white/10">
-                <Menu className="w-6 h-6" />
+              <button className="p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-white/90 dark:hover:bg-zinc-900/90 transition-all duration-200 shadow-lg hover:shadow-xl border border-white/20 dark:border-white/10">
+                <Menu className="w-5 h-5" />
                 <span className="sr-only">{t('navigation.openNavigationMenu')}</span>
               </button>
             </SheetTrigger>
@@ -173,7 +173,7 @@ export default function StudyPortal(): React.JSX.Element {
               side="left"
               className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-r border-white/20 dark:border-white/10"
             >
-              <div className="flex flex-col space-y-6">
+              <div className="flex flex-col space-y-4">
                 {/* Header content in drawer */}
                 <div className="flex items-center gap-3 pt-4">
                   <div className="p-3 rounded-2xl bg-white/70 dark:bg-white/10 backdrop-blur shadow-lg">
@@ -181,7 +181,12 @@ export default function StudyPortal(): React.JSX.Element {
                   </div>
                   <div>
                     <h1 className="text-xl font-extrabold tracking-tight">
-                      {t('app.title')} — <AppSubtitle />
+                      {t('app.title')}{' '}
+                      {!isExtension && (
+                        <>
+                          — <AppSubtitle />
+                        </>
+                      )}
                     </h1>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400">{t('app.tagline')}</p>
                   </div>
@@ -256,6 +261,20 @@ export default function StudyPortal(): React.JSX.Element {
           </div>
         </motion.header>
 
+        {/* Mobile expand button - positioned outside header to avoid layout flash */}
+        {(mode === 'popup' || mode === 'sidepanel') && (
+          <div className="md:hidden fixed top-6 right-6 z-50">
+            <button
+              onClick={openInTab}
+              className="p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-white/90 dark:hover:bg-zinc-900/90 transition-all duration-200 shadow-lg hover:shadow-xl border border-white/20 dark:border-white/10"
+              title={t('navigation.openInTab')}
+              aria-label={t('navigation.openInTab')}
+            >
+              <Expand className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           {/* Desktop tabs with overflow handling - hidden on mobile */}
           <div className="hidden md:flex justify-center">
@@ -318,14 +337,14 @@ export default function StudyPortal(): React.JSX.Element {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={scrollToTop}
-            className="fixed bottom-6 left-6 z-50 p-3 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-white/90 dark:hover:bg-zinc-900/90 transition-all duration-200 shadow-lg hover:shadow-xl border border-white/20 dark:border-white/10 hover:scale-110"
+            className="fixed bottom-6 left-6 z-50 p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-white/90 dark:hover:bg-zinc-900/90 transition-all duration-200 shadow-lg hover:shadow-xl border border-white/20 dark:border-white/10 hover:scale-110"
             style={{
               boxShadow:
                 '0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.2)',
             }}
             aria-label={t('navigation.scrollToTop')}
           >
-            <ChevronUp className="w-6 h-6" />
+            <ChevronUp className="w-5 h-5" />
           </motion.button>
         )}
       </div>

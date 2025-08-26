@@ -118,10 +118,6 @@
   },
   "storage": {
     "title": "Storage Status",
-    "adapter": {
-      "indexeddb": "IndexedDB",
-      "localstorage": "localStorage"
-    },
     "status": {
       "good": "Good",
       "warning": "Warning", 
@@ -133,6 +129,7 @@
     "unavailable": "Storage info unavailable",
     "loading": "Loading storage info...",
     "messages": {
+      "unlimitedCapacity": "✓ Using unlimited storage",
       "highCapacity": "✓ Using high-capacity storage",
       "upgradeWarning": "⚠ Consider upgrading browser for more storage"
     }

@@ -3,7 +3,7 @@
  * Stores file attachments in the centralized AppState store for easy export/import
  */
 
-import { store } from '@/store';
+import { store } from '@/stores/app';
 
 export interface FileAttachmentMetadata {
   id: string;

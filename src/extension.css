@@ -1,0 +1,81 @@
+/* Extension-specific styles */
+.extension-container {
+  width: 100%;
+  /* height: 100%; */
+  /* display: flex; */
+  /* flex-direction: column; */
+  /* overflow: hidden; */
+}
+
+/* Popup mode - compact layout */
+.extension-container.popup {
+  max-width: 400px;
+  max-height: 600px;
+}
+
+.extension-container.popup .app {
+  font-size: 14px;
+}
+
+.extension-container.popup h1 {
+  font-size: 1.5rem;
+}
+
+.extension-container.popup h2 {
+  font-size: 1.25rem;
+}
+
+.extension-container.popup .card {
+  padding: 0.75rem;
+}
+
+/* Side panel mode - full height */
+.extension-container.sidepanel {
+  min-height: 100vh;
+}
+
+/* New tab mode - full screen */
+.extension-container.newtab {
+  min-height: 100vh;
+  /* padding: 1rem; */
+}
+
+/* Overlay mode - floating */
+.extension-container.overlay {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Hide certain elements in popup mode to save space */
+.extension-container.popup .app-subtitle {
+  display: none;
+}
+
+.extension-container.popup .tabs-list {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.extension-container.popup .tab-trigger {
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Adjust scrollable areas for extension */
+.extension-container .tabs-content {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Make sure content fits in popup */
+.extension-container.popup .tabs-content {
+  max-height: calc(600px - 120px); /* Account for header and tabs */
+}
+
+/* Extension-specific responsive adjustments */
+@media (max-width: 400px) {
+  .extension-container.popup .tabs-list {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+}

@@ -1,41 +1,77 @@
 import React from 'react';
 
-/**
- * Study timer object with state and methods for tracking study sessions
- */
-export interface StudyTimer {
-  /** Elapsed time in seconds */
-  elapsed: number;
-  /** Whether the timer is currently running */
+interface BackgroundMessage_Tab {
+  type: 'openStudyPortalTab';
+  activeTab: string;
+}
+
+interface BackgroundMessage_TextSelected {
+  type: 'textSelected';
+  text: string;
+  url: string;
+  title: string;
+  timestamp: number;
+}
+
+interface BackgroundMessage_Timer_Start {
+  type: 'timer.start';
+  courseId: string;
+}
+
+interface BackgroundMessage_Timer_Stop {
+  type: 'timer.stop';
+}
+
+interface BackgroundMessage_Timer_Reset {
+  type: 'timer.reset';
+}
+
+interface BackgroundMessage_Timer_GetState {
+  type: 'timer.getState';
+}
+
+interface BackgroundMessage_Timer_UpdateState {
+  type: 'timer.updateState';
+  technique?: string;
+  note?: string;
+  moodStart?: number;
+  moodEnd?: number;
+  audioEnabled?: boolean;
+  audioVolume?: number;
+}
+
+interface BackgroundMessage_Timer_BroadcastState {
+  type: 'timer.broadcastState';
+  state: BackgroundTimerState;
+}
+
+export type BackgroundMessage_Timer =
+  | BackgroundMessage_Timer_Start
+  | BackgroundMessage_Timer_Stop
+  | BackgroundMessage_Timer_Reset
+  | BackgroundMessage_Timer_GetState
+  | BackgroundMessage_Timer_UpdateState
+  | BackgroundMessage_Timer_BroadcastState;
+
+export type BackgroundMessage = BackgroundMessage_Tab | BackgroundMessage_TextSelected | BackgroundMessage_Timer;
+
+export interface BackgroundTimerState {
   running: boolean;
-  /** Study technique being used */
+  elapsed: number;
   technique: string;
-  /** Function to set the study technique */
-  setTechnique: (technique: string) => void;
-  /** Starting mood rating (1-10) */
   moodStart: number;
-  /** Function to set the starting mood */
-  setMoodStart: (mood: number) => void;
-  /** Ending mood rating (1-10) */
   moodEnd: number;
-  /** Function to set the ending mood */
-  setMoodEnd: (mood: number) => void;
-  /** Session notes */
   note: string;
-  /** Function to set session notes */
-  setNote: (note: string) => void;
-  /** Function to start the timer */
-  startTimer: () => void;
-  /** Function to stop the timer with course index */
-  stopTimer: (courseId: string) => void;
-  /** Function to reset the timer */
-  resetTimer: () => void;
+  startTs?: number;
+  courseId: string;
+  audioEnabled: boolean;
+  audioVolume: number;
 }
 
 /**
  * Study session object representing a completed study session
  */
-export interface Session {
+export interface StudySession {
   /** Unique identifier for the session */
   id: string;
   /** Id of the course in the courses array */
@@ -50,12 +86,16 @@ export interface Session {
   endTs: number;
   /** Optional session notes */
   note?: string;
+  /** Mood at the start of the session (1-5 scale) */
+  moodStart?: number;
+  /** Mood at the end of the session (1-5 scale) */
+  moodEnd?: number;
 }
 
 /**
  * Session-specific task object for tracking tasks during a study session
  */
-export interface SessionTask {
+export interface StudySessionTask {
   /** Unique identifier for the task */
   id: string;
   /** Task title */
@@ -485,14 +525,14 @@ export interface FileAttachmentStore {
 }
 
 export interface AppState {
-  sessions: Session[];
   exams: Exam[];
   examGrades: ExamGrade[];
+  sessions: StudySession[];
+  sessionTasks: StudySessionTask[];
   tasks: Task[];
   schedule: ScheduleEvent[];
   timetableEvents: TimetableEvent[];
   regularEvents: RegularEvent[];
-  sessionTasks: SessionTask[];
   weeklyGoals: WeeklyGoal[];
   courses: Course[];
   selectedCourseId: string;
@@ -502,6 +542,7 @@ export interface AppState {
   degreePlan: DegreePlan;
   wellness: Wellness;
   fileAttachments: FileAttachmentStore;
+  activeTabsByMode: Record<string, string>;
 }
 
 export interface AppTab {

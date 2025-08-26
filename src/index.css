@@ -585,3 +585,41 @@
 .tiptap [style*="font-size: 48px"] {
   font-size: 48px !important;
 }
+
+/* Audio Volume Slider Styles */
+.slider {
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider::-webkit-slider-track {
+  background: hsl(var(--muted));
+  height: 8px;
+  border-radius: 4px;
+}
+
+.slider::-moz-range-track {
+  background: hsl(var(--muted));
+  height: 8px;
+  border-radius: 4px;
+}

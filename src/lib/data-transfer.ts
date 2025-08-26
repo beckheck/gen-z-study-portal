@@ -1,4 +1,4 @@
-import { DEFAULT_HYDRATION_SETTINGS, DEFAULT_MOOD_EMOJIS } from '@/store';
+import { DEFAULT_HYDRATION_SETTINGS, DEFAULT_MOOD_EMOJIS } from '@/stores/app';
 import { AppState, SoundtrackPosition } from '@/types';
 import { uid } from './utils';
 
@@ -65,6 +65,7 @@ export class DataTransfer {
           cardOpacity: state.theme.cardOpacity,
           bgImage: state.theme.bgImage,
         },
+        activeTabsByMode: state.activeTabsByMode,
       },
     };
     return data;
@@ -160,6 +161,7 @@ export class DataTransfer {
         files: {},
         metadata: {},
       },
+      activeTabsByMode: data.settings.activeTabsByMode || {},
     });
 
     this.setState({
@@ -648,6 +650,7 @@ interface ExchangeFormatV2 {
       };
       bgImage: string;
     };
+    activeTabsByMode?: Record<string, string>;
   };
 }
 
