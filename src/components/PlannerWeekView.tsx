@@ -1,4 +1,5 @@
 import { EventTooltip, EventTypeIndicator } from '@/components/PlannerSharedComponents';
+import { type ProgressData } from '@/components/TaskProgressBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,6 +60,9 @@ export function PlannerWeekView({
 
   const [goalForm, setGoalForm] = useState<{ title: string }>({ title: '' });
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
+
+  // Progress tracking for task-based notes in events
+  const [eventNotesProgress, setEventNotesProgress] = useState<Record<string, ProgressData>>({});
 
   // Calculate goal progress
   const completedGoals = weeklyGoals.filter(goal => goal.completed).length;
@@ -259,6 +263,13 @@ export function PlannerWeekView({
                             <EventTooltip
                               event={e}
                               onContentChange={newContent => handleEventContentChange(e, newContent)}
+                              progress={eventNotesProgress[e.id]}
+                              onProgressChange={progress => {
+                                setEventNotesProgress(prev => ({
+                                  ...prev,
+                                  [e.id]: progress,
+                                }));
+                              }}
                             />
                           </div>
                         </div>
@@ -301,7 +312,17 @@ export function PlannerWeekView({
                           </span>
                         </div>
                       </div>
-                      <EventTooltip event={e} onContentChange={newContent => handleEventContentChange(e, newContent)} />
+                      <EventTooltip 
+                        event={e} 
+                        onContentChange={newContent => handleEventContentChange(e, newContent)} 
+                        progress={eventNotesProgress[e.id]}
+                        onProgressChange={progress => {
+                          setEventNotesProgress(prev => ({
+                            ...prev,
+                            [e.id]: progress,
+                          }));
+                        }}
+                      />
                     </div>
                   ))}
                   {eventsForWeekdayName(dayKey).length === 0 && (

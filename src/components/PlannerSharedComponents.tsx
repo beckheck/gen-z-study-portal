@@ -1,4 +1,5 @@
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
+import { TaskProgressBar, type ProgressData } from '@/components/TaskProgressBar';
 import { useCourses } from '@/hooks/useStore';
 
 // Color chips for different event types
@@ -40,9 +41,13 @@ export const EventTypeIndicator = ({ event, size = 'sm' }: { event: any; size?: 
 export const EventTooltip = ({
   event,
   onContentChange,
+  progress,
+  onProgressChange,
 }: {
   event: any;
   onContentChange?: (newContent: string) => void;
+  progress?: ProgressData;
+  onProgressChange?: (progress: ProgressData) => void;
 }) => {
   const { getCourseTitle } = useCourses();
   return (
@@ -71,7 +76,13 @@ export const EventTooltip = ({
           {event.priority && <div>Priority: {event.priority}</div>}
           {event.notes && (
             <div className="mt-2">
-              <RichTextDisplay content={event.notes} className="text-sm" onContentChange={onContentChange} />
+              <TaskProgressBar progress={progress} className="mb-2" />
+              <RichTextDisplay
+                content={event.notes}
+                className="text-sm"
+                onContentChange={onContentChange}
+                onProgressChange={onProgressChange}
+              />
             </div>
           )}
         </div>

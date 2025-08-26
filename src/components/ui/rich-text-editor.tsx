@@ -985,9 +985,27 @@ interface RichTextDisplayProps {
   content: string;
   className?: string;
   onContentChange?: (newContent: string) => void;
+  onProgressChange?: (progress: { completed: number; total: number; percentage: number }) => void;
 }
 
-export function RichTextDisplay({ content, className, onContentChange }: RichTextDisplayProps) {
+export function RichTextDisplay({ content, className, onContentChange, onProgressChange }: RichTextDisplayProps) {
+  // Helper function to calculate checkbox progress from editor content
+  const calculateProgress = React.useCallback((editor: any) => {
+    if (!editor || !onProgressChange) return;
+
+    // Use requestAnimationFrame to ensure DOM has been updated
+    requestAnimationFrame(() => {
+      const editorElement = editor.view.dom;
+      const checkboxes = editorElement.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
+      
+      const total = checkboxes.length;
+      const completed = Array.from(checkboxes).filter(checkbox => checkbox.checked).length;
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      onProgressChange({ completed, total, percentage });
+    });
+  }, [onProgressChange]);
+
   // Handle both plain text and HTML content
   const processedContent = React.useMemo(() => {
     if (!content) return '';
@@ -1009,6 +1027,9 @@ export function RichTextDisplay({ content, className, onContentChange }: RichTex
     content: processedContent,
     editable: false, // Always read-only for display
     onCreate: ({ editor }) => {
+      // Calculate initial progress after DOM is ready
+      setTimeout(() => calculateProgress(editor), 50);
+
       if (onContentChange) {
         // Add click handlers for task items
         editor.view.dom.addEventListener('click', event => {
@@ -1057,6 +1078,8 @@ export function RichTextDisplay({ content, className, onContentChange }: RichTex
                 const updatedContent = editor.getHTML();
                 editor.setEditable(false);
                 onContentChange(updatedContent);
+                // Calculate progress after content change and state update
+                calculateProgress(editor);
               }, 0);
             } catch (error) {
               console.error('Error updating content after checkbox toggle:', error);
@@ -1091,8 +1114,17 @@ export function RichTextDisplay({ content, className, onContentChange }: RichTex
   useEffect(() => {
     if (editor && processedContent !== editor.getHTML()) {
       editor.commands.setContent(processedContent);
+      // Recalculate progress after content update
+      setTimeout(() => calculateProgress(editor), 50);
     }
-  }, [editor, processedContent]);
+  }, [editor, processedContent]); // Removed calculateProgress dependency to prevent re-renders
+
+  // Calculate progress on initial render and when editor becomes available
+  useEffect(() => {
+    if (editor) {
+      calculateProgress(editor);
+    }
+  }, [editor]); // Removed calculateProgress dependency to prevent re-renders
 
   if (!editor) {
     return null;

@@ -1,4 +1,5 @@
 import { EventDialog } from '@/components/EventDialog';
+import { TaskProgressBar, type ProgressData } from '@/components/TaskProgressBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +28,7 @@ export default function CourseManagerTab() {
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const [taskSortOrder, setTaskSortOrder] = useState<'date' | 'priority'>('date');
+  const [examNotesProgress, setExamNotesProgress] = useState<Record<string, ProgressData>>({});
   const courseTasks = tasks.filter(t => t.courseId === selectedCourseId);
   const courseExams = exams.filter(e => e.courseId === selectedCourseId);
   const upcomingExams = courseExams.filter(e => !e.completed);
@@ -416,12 +418,26 @@ export default function CourseManagerTab() {
                       eventDialog.openEditExamDialog(examEvent);
                     }}
                   >
-                    <div>
+                    <div className="w-full">
+                      <Badge variant="secondary" className="rounded-full self-start float-right">
+                        {(() => {
+                          const examDate = new Date(e.date);
+                          const today = new Date();
+                          const diffTime = examDate.getTime() - today.getTime();
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          return diffDays <= 0
+                            ? tCommon('fields.today')
+                            : diffDays === 1
+                            ? tCommon('fields.tomorrow')
+                            : tCourse('exams.timing.days', { count: diffDays });
+                        })()}
+                      </Badge>{' '}
                       <div className="font-medium">{e.title}</div>
                       <div className="text-xs text-zinc-500">
                         {formatDateDDMMYYYY(e.date)} · {e.weight}%
                         {e.notes && (
                           <div className="mt-1">
+                            <TaskProgressBar progress={examNotesProgress[e.id]} />
                             <RichTextDisplay
                               content={e.notes}
                               className="text-xs"
@@ -432,24 +448,17 @@ export default function CourseManagerTab() {
                                   notes: newContent,
                                 });
                               }}
+                              onProgressChange={progress => {
+                                setExamNotesProgress(prev => ({
+                                  ...prev,
+                                  [e.id]: progress,
+                                }));
+                              }}
                             />
                           </div>
                         )}
                       </div>
                     </div>
-                    <Badge variant="secondary" className="rounded-full self-start">
-                      {(() => {
-                        const examDate = new Date(e.date);
-                        const today = new Date();
-                        const diffTime = examDate.getTime() - today.getTime();
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        return diffDays <= 0
-                          ? tCommon('fields.today')
-                          : diffDays === 1
-                          ? tCommon('fields.tomorrow')
-                          : tCourse('exams.timing.days', { count: diffDays });
-                      })()}
-                    </Badge>
                   </div>
                 ))}
             </div>

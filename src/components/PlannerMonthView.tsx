@@ -1,10 +1,12 @@
 import { EventTypeIndicator } from '@/components/PlannerSharedComponents';
+import { TaskProgressBar, type ProgressData } from '@/components/TaskProgressBar';
 import { Badge } from '@/components/ui/badge';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
 import { useTranslation } from 'react-i18next';
 import { CalendarView } from '../types';
+import { useState } from 'react';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
@@ -36,6 +38,9 @@ export function PlannerMonthView({
   const { updateTask } = useTasks();
   const { t } = useTranslation('planner');
   const { getShortDayNames, formatDate: localizedFormatDate, formatDateDDMMYYYY } = useLocalization();
+
+  // Progress tracking for task-based notes in events
+  const [eventNotesProgress, setEventNotesProgress] = useState<Record<string, ProgressData>>({});
 
   // Helper function to handle content changes for different event types
   const handleEventContentChange = (event: any, newContent: string) => {
@@ -204,10 +209,17 @@ export function PlannerMonthView({
                           {e.notes && (
                             <div className="mt-1">
                               <span className="mr-1">📝</span>
+                              <TaskProgressBar progress={eventNotesProgress[e.id]} className="mb-1 ml-4" />
                               <RichTextDisplay
                                 content={e.notes}
                                 className="inline text-sm"
                                 onContentChange={newContent => handleEventContentChange(e, newContent)}
+                                onProgressChange={progress => {
+                                  setEventNotesProgress(prev => ({
+                                    ...prev,
+                                    [e.id]: progress,
+                                  }));
+                                }}
                               />
                             </div>
                           )}
@@ -270,12 +282,19 @@ export function PlannerMonthView({
                           {event.notes && (
                             <div onClick={event => event.stopPropagation()}>
                               <span className="mr-1">📝</span>
+                              <TaskProgressBar progress={eventNotesProgress[event.id]} className="mb-1 ml-4" />
                               <RichTextDisplay
                                 content={event.notes}
                                 className="inline text-sm"
                                 onContentChange={newContent => {
                                   // Regular events in multi-day view
                                   updateRegularEvent(event.id, { ...event, notes: newContent });
+                                }}
+                                onProgressChange={progress => {
+                                  setEventNotesProgress(prev => ({
+                                    ...prev,
+                                    [event.id]: progress,
+                                  }));
                                 }}
                               />
                             </div>
