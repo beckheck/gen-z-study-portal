@@ -104,6 +104,7 @@ const FileAttachment = Node.create<FileAttachmentOptions>({
           'data-file-name': HTMLAttributes.fileName,
           'data-file-size': HTMLAttributes.fileSize,
           contenteditable: 'false',
+          tabindex: '0', // Make focusable
         },
         this.options.HTMLAttributes,
         HTMLAttributes
@@ -131,6 +132,158 @@ const FileAttachment = Node.create<FileAttachmentOptions>({
     };
   },
 });
+
+// File attachment keyboard navigation handlers
+const handleFileAttachmentKeydown = async (fileAttachment: HTMLElement, event: KeyboardEvent, editor: any) => {
+  const fileId = fileAttachment.getAttribute('data-file-id');
+
+  switch (event.key) {
+    case 'Enter':
+      await handleFileAttachmentOpen(fileAttachment, event);
+      break;
+    case 'Backspace':
+    case 'Delete':
+      event.preventDefault();
+      event.stopPropagation();
+      // Delete the file attachment
+      if (fileId && editor) {
+        try {
+          // Simple approach: find and delete the node by its fileId
+          const { state } = editor.view;
+          let deleteSuccess = false;
+
+          // Find the file attachment node by iterating through the document
+          state.doc.descendants((node, pos) => {
+            if (node.type.name === 'fileAttachment' && node.attrs.fileId === fileId) {
+              // Create transaction to delete this node
+              const tr = state.tr.delete(pos, pos + node.nodeSize);
+              editor.view.dispatch(tr);
+              deleteSuccess = true;
+
+              return false; // Stop iteration
+            }
+          });
+
+          if (deleteSuccess) {
+            // Focus back to editor
+            setTimeout(() => {
+              editor.commands.focus();
+            }, 0);
+
+            // Clean up the stored file after a small delay
+            setTimeout(async () => {
+              try {
+                await fileAttachmentStorage.deleteFile(fileId);
+              } catch (error) {
+                console.error('Error deleting stored file:', error);
+              }
+            }, 100);
+          } else {
+            console.warn('Could not find file attachment node to delete with fileId:', fileId);
+
+            // Fallback: try to remove the DOM element
+            fileAttachment.remove();
+            editor.commands.focus();
+          }
+        } catch (error) {
+          console.error('Error during file attachment deletion:', error);
+        }
+      } else {
+        console.warn('Missing fileId or editor for deletion');
+      }
+      break;
+
+    case 'ArrowLeft':
+    case 'ArrowRight':
+    case 'ArrowUp':
+    case 'ArrowDown':
+      moveCursorFromFileAttachment(fileAttachment, event, editor);
+      break;
+  }
+};
+
+const handleArrowKeyNavigation = (event: KeyboardEvent, editor: any) => {
+  // Get current cursor position
+  const { selection } = editor.state;
+  const { $from, $to } = selection;
+
+  // Look for adjacent file attachments
+  let fileAttachmentElement: HTMLElement | null = null;
+
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    // Check for file attachment before cursor
+    const prevPos = Math.max(0, $from.pos);
+
+    // Walk backwards to find a file attachment node
+    let checkPos = prevPos;
+    while (checkPos > 0) {
+      const nodePrev = editor.state.doc.nodeAt(checkPos - 1);
+      const node = editor.state.doc.nodeAt(checkPos);
+
+      if (node && node.type.name === 'fileAttachment') {
+        try {
+          fileAttachmentElement = editor.view.nodeDOM(checkPos);
+          if (fileAttachmentElement) break;
+        } catch (error) {
+          console.error('Error finding DOM for file attachment:', error);
+        }
+        break; // Found a file attachment node, even if DOM lookup failed
+      }
+
+      // If we hit a different type of node, break
+      if (node && node.type.name !== 'text' && node.type.name !== 'fileAttachment') {
+        break;
+      }
+
+      checkPos--;
+    }
+  } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    // Check for file attachment after cursor
+    const nextPos = Math.min(editor.state.doc.content.size, $from.pos);
+
+    // Walk forwards to find a file attachment node
+    let checkPos = nextPos;
+    const maxPos = editor.state.doc.content.size;
+
+    while (checkPos < maxPos) {
+      const node = editor.state.doc.nodeAt(checkPos);
+      if (node && node.type.name === 'fileAttachment') {
+        try {
+          fileAttachmentElement = editor.view.nodeDOM(checkPos);
+        } catch (error) {
+          console.error('Error finding DOM for file attachment:', error);
+        }
+        break; // Found a file attachment node, even if DOM lookup failed
+      }
+      if (node && node.type.name !== 'text' && node.type.name !== 'fileAttachment') {
+        break;
+      }
+      checkPos++;
+    }
+  }
+
+  // Focus the file attachment if found
+  if (fileAttachmentElement) {
+    event.preventDefault();
+    event.stopPropagation();
+    fileAttachmentElement.focus();
+  }
+};
+
+const moveCursorFromFileAttachment = (fileAttachment: HTMLElement, event: KeyboardEvent, editor: any) => {
+  event.preventDefault();
+  event.stopPropagation();
+  let pos = editor.view.posAtDOM(fileAttachment, 0);
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    pos = Math.max(0, pos - 1);
+  } else {
+    pos = Math.min(editor.state.doc.content.size, pos + 1);
+  }
+  const { state } = editor.view;
+  const tr = state.tr.setSelection(state.selection.constructor.near(state.doc.resolve(pos)));
+  editor.view.dispatch(tr);
+  editor.commands.focus();
+};
 
 // Shared hierarchical checkbox handling logic
 const handleHierarchicalCheckboxClick = (
@@ -217,7 +370,7 @@ const handleHierarchicalCheckboxClick = (
 };
 
 // File attachment click handler
-const handleFileAttachmentClick = async (fileAttachment: HTMLElement, event?: Event) => {
+async function handleFileAttachmentOpen(fileAttachment: HTMLElement, event?: Event) {
   // Stop event propagation to prevent parent click handlers from firing
   if (event) {
     event.preventDefault();
@@ -299,7 +452,7 @@ const handleFileAttachmentClick = async (fileAttachment: HTMLElement, event?: Ev
       console.error('Error handling file attachment click:', error);
     }
   }
-};
+}
 
 // Shared editor extensions configuration
 const getEditorExtensions = (placeholder?: string) => [
@@ -454,13 +607,98 @@ export function RichTextEditor({
         // Handle file attachment clicks
         const fileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
         if (fileAttachment) {
-          handleFileAttachmentClick(fileAttachment, event);
+          handleFileAttachmentOpen(fileAttachment, event);
           return;
         }
 
         // Handle checkbox clicks with hierarchical behavior
         if (target.tagName === 'INPUT' && target.getAttribute('type') === 'checkbox') {
           handleHierarchicalCheckboxClick(editor, target, event);
+        }
+      });
+
+      // Add keyboard handlers for file attachment navigation
+      editor.view.dom.addEventListener('keydown', event => {
+        const target = event.target as HTMLElement;
+
+        // Handle keyboard events on focused file attachments
+        const focusedFileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
+        if (focusedFileAttachment && document.activeElement === focusedFileAttachment) {
+          handleFileAttachmentKeydown(focusedFileAttachment, event, editor);
+          return;
+        }
+
+        // Handle arrow key navigation to/from file attachments
+        if (
+          event.key === 'ArrowLeft' ||
+          event.key === 'ArrowRight' ||
+          event.key === 'ArrowUp' ||
+          event.key === 'ArrowDown'
+        ) {
+          handleArrowKeyNavigation(event, editor);
+        }
+      });
+
+      // Add direct keyboard event listeners to file attachment elements
+      const addFileAttachmentKeyboardListeners = () => {
+        const fileAttachments = editor.view.dom.querySelectorAll('[data-type="file-attachment"]');
+
+        fileAttachments.forEach((attachment: HTMLElement, index) => {
+          // Create a bound handler for this specific attachment
+          const keydownHandler = (event: KeyboardEvent) => {
+            handleFileAttachmentKeydown(attachment as HTMLElement, event, editor);
+          };
+
+          // Store the handler reference on the element for later removal
+          (attachment as any)._keydownHandler = keydownHandler;
+
+          // Remove any existing listener
+          if ((attachment as any)._previousKeydownHandler) {
+            attachment.removeEventListener('keydown', (attachment as any)._previousKeydownHandler);
+          }
+          if ((attachment as any)._previousEnterHandler) {
+            attachment.removeEventListener('keypress', (attachment as any)._previousEnterHandler);
+          }
+
+          // Add the new keyboard event listener
+          attachment.addEventListener('keydown', keydownHandler);
+
+          // Also add a backup handler that specifically listens for Enter
+          const enterHandler = (event: KeyboardEvent) => {
+            if (event.key === 'Enter') {
+              handleFileAttachmentOpen(attachment as HTMLElement, event);
+            }
+          };
+
+          attachment.addEventListener('keypress', enterHandler);
+          (attachment as any)._enterHandler = enterHandler;
+
+          // Store reference for next cleanup
+          (attachment as any)._previousKeydownHandler = keydownHandler;
+          (attachment as any)._previousEnterHandler = enterHandler;
+        });
+      };
+
+      // Add listeners initially and whenever content changes
+      addFileAttachmentKeyboardListeners();
+
+      // Re-add listeners when content updates (new file attachments added)
+      editor.on('update', addFileAttachmentKeyboardListeners);
+
+      // Add focus/blur styling for file attachments
+      editor.view.dom.addEventListener('focusin', event => {
+        const target = event.target as HTMLElement;
+        const fileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
+        if (fileAttachment) {
+          fileAttachment.classList.add('file-attachment-focused');
+        }
+      });
+
+      editor.view.dom.addEventListener('focusout', event => {
+        const target = event.target as HTMLElement;
+        const fileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
+        if (fileAttachment) {
+          fileAttachment.classList.remove('file-attachment-focused');
         }
       });
     },
@@ -474,7 +712,7 @@ export function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: cn(getEditorAttributes().class, 'focus:outline-none min-h-[100px] px-3 py-2'),
+        class: cn(getEditorAttributes().class, 'focus:outline-none min-h-[100px] px-3 py-2 rich-text-editor-content'),
       },
       handlePaste: (view, event, slice) => {
         const items = Array.from(event.clipboardData?.items || []);
@@ -521,6 +759,93 @@ export function RichTextEditor({
       editor.commands.setContent(content || '');
     }
   }, [editor, content]);
+
+  // Inject styles for file attachment focus states
+  useEffect(() => {
+    const styleId = 'rich-text-editor-file-attachment-styles';
+
+    // Check if styles are already injected
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .rich-text-editor-content .file-attachment {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgb(243 244 246);
+        border: 1px solid rgb(229 231 235);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        outline: none;
+        margin: 2px 0;
+      }
+      .rich-text-editor-content .file-attachment:hover {
+        background: rgb(229 231 235);
+        border-color: rgb(209 213 219);
+      }
+      .rich-text-editor-content .file-attachment-focused,
+      .rich-text-editor-content .file-attachment:focus {
+        background: rgb(239 246 255);
+        border-color: rgb(147 197 253);
+        box-shadow: 0 0 0 2px rgb(191 219 254);
+      }
+      .dark .rich-text-editor-content .file-attachment {
+        background: rgb(31 41 55);
+        border-color: rgb(55 65 81);
+        color: rgb(243 244 246);
+      }
+      .dark .rich-text-editor-content .file-attachment:hover {
+        background: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+      }
+      .dark .rich-text-editor-content .file-attachment-focused,
+      .dark .rich-text-editor-content .file-attachment:focus {
+        background: rgb(30 58 138);
+        border-color: rgb(37 99 235);
+        box-shadow: 0 0 0 2px rgb(30 64 175);
+      }
+      .rich-text-editor-content .file-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .rich-text-editor-content .file-icon.loading {
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+      .rich-text-editor-content .file-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .rich-text-editor-content .file-name {
+        font-weight: 500;
+        font-size: 14px;
+        color: rgb(17 24 39);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dark .rich-text-editor-content .file-name {
+        color: rgb(243 244 246);
+      }
+      .rich-text-editor-content .file-size {
+        font-size: 12px;
+        color: rgb(107 114 128);
+      }
+      .dark .rich-text-editor-content .file-size {
+        color: rgb(156 163 175);
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }, []); // Empty dependency array means this runs once on mount
 
   // Close color pickers when clicking outside
   useEffect(() => {
@@ -1141,7 +1466,7 @@ export function RichTextDisplay({ content, className, onContentChange, onProgres
         const fileAttachment = target.closest('[data-type="file-attachment"]') as HTMLElement;
 
         if (fileAttachment) {
-          handleFileAttachmentClick(fileAttachment, event);
+          handleFileAttachmentOpen(fileAttachment, event);
         }
       });
     },
