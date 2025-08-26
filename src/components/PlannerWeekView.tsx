@@ -1,5 +1,5 @@
 import { EventTooltip, EventTypeIndicator } from '@/components/PlannerSharedComponents';
-import { type ProgressData } from '@/components/TaskProgressBar';
+import { type ProgressData } from '@/components/TasksProgressBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,9 @@ import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useRegularEvents, useSchedule, useTasks, useWeeklyGoals } from '@/hooks/useStore';
 import { Plus, Target, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import ReactConfetti from 'react-confetti';
 import { useTranslation } from 'react-i18next';
+import { useConfetti } from '../hooks/useConfetti';
+import Confetti from './ui/confetti';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 type DayName = (typeof DAYS)[number];
@@ -59,7 +60,12 @@ export function PlannerWeekView({
   };
 
   const [goalForm, setGoalForm] = useState<{ title: string }>({ title: '' });
-  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+
+  // Use gradual confetti hook for goal completion
+  const allGoalsCompleted = weeklyGoals.length > 0 && weeklyGoals.every(goal => goal.completed);
+  const confetti = useConfetti({
+    trigger: allGoalsCompleted,
+  });
 
   // Progress tracking for task-based notes in events
   const [eventNotesProgress, setEventNotesProgress] = useState<Record<string, ProgressData>>({});
@@ -125,15 +131,12 @@ export function PlannerWeekView({
   function handleToggleGoal(id: string): void {
     const result = toggleGoal(id);
 
-    // Check if all goals are completed
+    // Check if all goals are completed - confetti will be handled by the hook
     if (result?.allCompleted) {
-      // Trigger confetti
-      setShowConfetti(true);
-      // Reset all goals after a short delay
+      // Reset all goals after a short delay to allow confetti to play
       setTimeout(() => {
         clearAllGoals();
-        setShowConfetti(false);
-      }, 3000);
+      }, 3500); // Slightly longer to allow full confetti sequence
     }
   }
 
@@ -312,9 +315,9 @@ export function PlannerWeekView({
                           </span>
                         </div>
                       </div>
-                      <EventTooltip 
-                        event={e} 
-                        onContentChange={newContent => handleEventContentChange(e, newContent)} 
+                      <EventTooltip
+                        event={e}
+                        onContentChange={newContent => handleEventContentChange(e, newContent)}
                         progress={eventNotesProgress[e.id]}
                         onProgressChange={progress => {
                           setEventNotesProgress(prev => ({
@@ -476,17 +479,7 @@ export function PlannerWeekView({
       </Card>
 
       {/* Confetti Animation */}
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50">
-          <ReactConfetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={200}
-            gravity={0.3}
-          />
-        </div>
-      )}
+      <Confetti confetti={confetti} />
     </div>
   );
 }

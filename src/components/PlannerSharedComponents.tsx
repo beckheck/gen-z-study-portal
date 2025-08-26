@@ -1,5 +1,5 @@
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
-import { TaskProgressBar, type ProgressData } from '@/components/TaskProgressBar';
+import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressBar';
 import { useCourses } from '@/hooks/useStore';
 
 // Color chips for different event types
@@ -76,7 +76,7 @@ export const EventTooltip = ({
           {event.priority && <div>Priority: {event.priority}</div>}
           {event.notes && (
             <div className="mt-2">
-              <TaskProgressBar progress={progress} className="mb-2" />
+              <TasksProgressBar progress={progress} className="mb-2" />
               <RichTextDisplay
                 content={event.notes}
                 className="text-sm"

@@ -1,5 +1,5 @@
 import { EventTypeIndicator } from '@/components/PlannerSharedComponents';
-import { TaskProgressBar, type ProgressData } from '@/components/TaskProgressBar';
+import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressBar';
 import { Badge } from '@/components/ui/badge';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { useLocalization } from '@/hooks/useLocalization';
@@ -209,7 +209,7 @@ export function PlannerMonthView({
                           {e.notes && (
                             <div className="mt-1">
                               <span className="mr-1">📝</span>
-                              <TaskProgressBar progress={eventNotesProgress[e.id]} className="mb-1 ml-4" />
+                              <TasksProgressBar progress={eventNotesProgress[e.id]} className="mb-1 ml-4" />
                               <RichTextDisplay
                                 content={e.notes}
                                 className="inline text-sm"
@@ -282,7 +282,7 @@ export function PlannerMonthView({
                           {event.notes && (
                             <div onClick={event => event.stopPropagation()}>
                               <span className="mr-1">📝</span>
-                              <TaskProgressBar progress={eventNotesProgress[event.id]} className="mb-1 ml-4" />
+                              <TasksProgressBar progress={eventNotesProgress[event.id]} className="mb-1 ml-4" />
                               <RichTextDisplay
                                 content={event.notes}
                                 className="inline text-sm"

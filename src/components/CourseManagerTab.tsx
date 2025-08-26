@@ -1,5 +1,5 @@
 import { EventDialog } from '@/components/EventDialog';
-import { TaskProgressBar, type ProgressData } from '@/components/TaskProgressBar';
+import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +14,9 @@ import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import { CalendarDays, Edit, ListTodo, Plus, Trash2, Undo, Check } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import ReactConfetti from 'react-confetti';
 import { useTranslation } from 'react-i18next';
+import { useConfetti } from '../hooks/useConfetti';
+import Confetti from './ui/confetti';
 
 export default function CourseManagerTab() {
   const { t: tCourse } = useTranslation('courseManager');
@@ -25,7 +26,6 @@ export default function CourseManagerTab() {
   const { tasks, toggleTask, deleteTask } = useTasks();
   const { exams, examGrades, addExam, updateExam, setExamGrades, toggleExamComplete } = useExams();
   const eventDialog = useEventDialog();
-  const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const [taskSortOrder, setTaskSortOrder] = useState<'date' | 'priority'>('date');
   const [examNotesProgress, setExamNotesProgress] = useState<Record<string, ProgressData>>({});
@@ -153,26 +153,18 @@ export default function CourseManagerTab() {
   };
 
   const progress = useMemo(() => {
-    const d = completedTasks.length;
-    const tot = courseTasks.length || 1;
-    return Math.round((d / tot) * 100);
-  }, [completedTasks, courseTasks]);
+    const completed = courseTasks.filter(t => t.done).length;
+    const total = courseTasks.length || 1;
+    return Math.round((completed / total) * 100);
+  }, [courseTasks]);
+
+  const confetti = useConfetti({
+    trigger: progress === 100 && courseTasks.length > 0,
+  });
+
   return (
     <div className="space-y-6">
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50">
-          <ReactConfetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={500}
-            gravity={0.2}
-            onConfettiComplete={() => {
-              setTimeout(() => setShowConfetti(false), 2000);
-            }}
-          />
-        </div>
-      )}
+      <Confetti confetti={confetti} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Select value={selectedCourseId} onValueChange={v => setSelectedCourse(v)}>
@@ -286,11 +278,6 @@ export default function CourseManagerTab() {
                       className="rounded-xl"
                       onClick={() => {
                         toggleTask(t.id);
-                        // Check if this was the last incomplete task
-                        const incompleteTasks = openTasks.filter(task => task.id !== t.id);
-                        if (incompleteTasks.length === 0 && courseTasks.length > 0) {
-                          setShowConfetti(true);
-                        }
                       }}
                     >
                       {tCourse('actions.done')}
@@ -437,7 +424,7 @@ export default function CourseManagerTab() {
                         {formatDateDDMMYYYY(e.date)} · {e.weight}%
                         {e.notes && (
                           <div className="mt-1">
-                            <TaskProgressBar progress={examNotesProgress[e.id]} />
+                            <TasksProgressBar progress={examNotesProgress[e.id]} />
                             <RichTextDisplay
                               content={e.notes}
                               className="text-xs"

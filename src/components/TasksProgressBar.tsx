@@ -1,5 +1,6 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useConfetti } from '../hooks/useConfetti';
+import Confetti from './ui/confetti';
 
 interface ProgressData {
   completed: number;
@@ -35,8 +36,12 @@ const getProgressColor = (percentage: number): string => {
   return `rgb(${r}, ${g}, ${b})`;
 };
 
-export function TaskProgressBar({ progress, className = 'mb-2', showLabel = true, labelText }: TaskProgressBarProps) {
+export function TasksProgressBar({ progress, className = 'mb-2', showLabel = true, labelText }: TaskProgressBarProps) {
   const { t } = useTranslation('common');
+
+  const confetti = useConfetti({
+    trigger: progress?.percentage === 100,
+  });
 
   // Don't render if no progress data or no tasks
   if (!progress || progress.total === 0) {
@@ -48,6 +53,7 @@ export function TaskProgressBar({ progress, className = 'mb-2', showLabel = true
 
   return (
     <div className={className}>
+      <Confetti confetti={confetti} />
       {showLabel && (
         <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
           <span>
