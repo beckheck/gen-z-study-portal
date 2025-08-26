@@ -143,8 +143,8 @@ const SwipeableExam = React.forwardRef<HTMLDivElement, SwipeableExamProps>(funct
         onTouchEnd={handleEnd}
         onTouchCancel={handleEnd}
         onClick={e => {
-          if (Math.abs(dragX) < 5 && onClick) {
-            // Only trigger click if not dragging
+          // Only trigger click if there was minimal drag movement and not currently dragging
+          if (!isDraggingRef.current && Math.abs(dragRef.current) < 5 && onClick) {
             onClick();
           }
         }}

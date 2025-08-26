@@ -553,7 +553,16 @@ export default function CourseManagerTab() {
                 <h4 className="font-medium text-sm text-zinc-700 dark:text-zinc-300 mb-3">
                   {tCourse('grades.examGrades')}
                 </h4>
-                {courseExams.map(exam => {
+                {courseExams
+                  .sort((a, b) => {
+                    // First sort by date (earliest first)
+                    const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+                    if (dateComparison !== 0) return dateComparison;
+                    
+                    // If dates are the same, sort alphabetically by title
+                    return a.title.localeCompare(b.title);
+                  })
+                  .map(exam => {
                   const currentGrade = courseGrades.find(g => g.examId === exam.id);
                   return (
                     <div
