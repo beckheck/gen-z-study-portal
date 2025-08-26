@@ -375,7 +375,13 @@ const moveCursorFromFileAttachment = (fileAttachment: HTMLElement, event: Keyboa
   editor.commands.focus();
 };
 
-// Shared hierarchical checkbox handling logic
+/**
+ * Shared hierarchical checkbox handling logic
+ * 
+ * - Checking a checkbox checks all descendants.
+ * - Checking a checkbox with all siblings checked checks the entire ancestor chain.
+ * - Unchecking a checkbox unchecks all descendants and the entire ancestor chain.
+ */
 const handleHierarchicalCheckboxClick = (
   editor: any,
   target: HTMLElement,
@@ -403,34 +409,133 @@ const handleHierarchicalCheckboxClick = (
     const { state } = editor.view;
     const $pos = state.doc.resolve(pos);
 
-    // Find the task item node that contains this checkbox
-    let taskItemPos = null;
+    // Find the task item node that contains this checkbox and its depth
+    let currentTaskItemPos = null;
+    let currentTaskItemDepth = null;
     for (let depth = $pos.depth; depth > 0; depth--) {
       const node = $pos.node(depth);
       if (node.type.name === 'taskItem') {
-        taskItemPos = $pos.before(depth);
+        currentTaskItemPos = $pos.before(depth);
+        currentTaskItemDepth = depth;
         break;
       }
     }
 
-    if (taskItemPos !== null) {
+    if (currentTaskItemPos !== null && currentTaskItemDepth !== null) {
       // Start building the transaction
       let tr = state.tr;
 
-      // First, update the parent task item to match the DOM checkbox state
-      tr = tr.setNodeMarkup(taskItemPos, null, { checked: newCheckedState });
+      // First, update the clicked task item to match the DOM checkbox state
+      tr = tr.setNodeMarkup(currentTaskItemPos, null, { checked: newCheckedState });
 
-      // Find the parent task list to determine the scope for child updates
-      const taskItemNode = state.doc.nodeAt(taskItemPos);
-      if (taskItemNode) {
-        // Look for nested task lists within this task item
-        taskItemNode.descendants((node: any, pos: number) => {
+      const currentTaskItemNode = state.doc.nodeAt(currentTaskItemPos);
+      if (currentTaskItemNode) {
+        // If checking a parent, check all children
+        // If unchecking a parent, uncheck all children
+        currentTaskItemNode.descendants((node: any, pos: number) => {
           if (node.type.name === 'taskItem') {
-            // This is a child task item - update it to match parent
-            const childPos = taskItemPos + pos + 1;
+            const childPos = currentTaskItemPos + pos + 1;
             tr = tr.setNodeMarkup(childPos, null, { checked: newCheckedState });
           }
         });
+
+        // Handle parent updates based on children's state
+        if (!newCheckedState) {
+          // If unchecking a child, uncheck ALL parents up the chain
+          let searchDepth = currentTaskItemDepth - 1;
+          while (searchDepth > 0) {
+            const potentialParent = $pos.node(searchDepth);
+            if (potentialParent.type.name === 'taskItem') {
+              const parentPos = $pos.before(searchDepth);
+              tr = tr.setNodeMarkup(parentPos, null, { checked: false });
+            }
+            searchDepth--;
+          }
+        } else {
+          // If checking a child, update parents based on their children's state
+          // This needs to be done recursively up the chain because each parent update
+          // can affect its own parent
+
+          // We need to track the updated states in our transaction to make accurate decisions
+          const updatedStates = new Map<number, boolean>();
+          updatedStates.set(currentTaskItemPos, newCheckedState);
+
+          // Also track all descendants that were updated
+          currentTaskItemNode.descendants((node: any, pos: number) => {
+            if (node.type.name === 'taskItem') {
+              const childPos = currentTaskItemPos + pos + 1;
+              updatedStates.set(childPos, newCheckedState);
+            }
+          });
+
+          const updateParentBasedOnChildren = (parentPos: number, parentDepth: number): boolean => {
+            const parentNode = state.doc.nodeAt(parentPos);
+            if (!parentNode || parentNode.type.name !== 'taskItem') return false;
+
+            // Find all direct children task items
+            const directChildren: { pos: number; checked: boolean }[] = [];
+
+            // Walk through the parent node to find direct children
+            parentNode.forEach((child: any, offset: number) => {
+              const childPos = parentPos + offset + 1;
+
+              // Look for task lists that are direct children
+              if (child.type.name === 'taskList') {
+                child.forEach((taskItem: any, taskOffset: number) => {
+                  if (taskItem.type.name === 'taskItem') {
+                    const taskItemPos = childPos + taskOffset + 1;
+
+                    // Use the updated state from our transaction if available,
+                    // otherwise use the original state
+                    const checkedState = updatedStates.has(taskItemPos)
+                      ? updatedStates.get(taskItemPos)!
+                      : taskItem.attrs.checked || false;
+
+                    directChildren.push({ pos: taskItemPos, checked: checkedState });
+                  }
+                });
+              }
+            });
+
+            // Update parent based on children's state
+            if (directChildren.length > 0) {
+              // If all children are checked, check the parent
+              const allChildrenChecked = directChildren.every(child => child.checked);
+              const currentParentChecked = updatedStates.has(parentPos)
+                ? updatedStates.get(parentPos)!
+                : parentNode.attrs.checked || false;
+
+              // Only update if the state needs to change
+              if (allChildrenChecked !== currentParentChecked) {
+                tr = tr.setNodeMarkup(parentPos, null, { checked: allChildrenChecked });
+                updatedStates.set(parentPos, allChildrenChecked);
+                return true; // Parent state changed
+              }
+            }
+
+            return false; // No change
+          };
+
+          // Look for parent task item by traversing up the document structure
+          // Update all parents in the chain recursively
+          let searchDepth = currentTaskItemDepth - 1;
+          let continueUpdating = true;
+
+          while (searchDepth > 0 && continueUpdating) {
+            const potentialParent = $pos.node(searchDepth);
+            if (potentialParent.type.name === 'taskItem') {
+              const parentPos = $pos.before(searchDepth);
+              const parentChanged = updateParentBasedOnChildren(parentPos, searchDepth);
+
+              // If this parent didn't change state, we can stop propagating up
+              // because higher ancestors won't be affected
+              if (!parentChanged) {
+                continueUpdating = false;
+              }
+            }
+            searchDepth--;
+          }
+        }
       }
 
       // Dispatch the transaction
