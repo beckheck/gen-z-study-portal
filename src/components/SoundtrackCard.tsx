@@ -2,142 +2,329 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SoundtrackPosition } from '@/types';
 import { Music2 } from 'lucide-react';
-import { useState } from 'react';
+import React, { RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// Global iframe management with better React integration
+let globalIframe: HTMLIFrameElement | null = null;
+let currentEmbed: string | null = null;
+let componentInstances = new Set<string>(); // Track active component instances
+let mountCounter = 0; // Generate unique IDs for component instances
+
+// Cleanup function for global iframe
+function cleanupGlobalIframe(force: boolean = false): void {
+  if ((componentInstances.size === 0 || force) && globalIframe) {
+    globalIframe.src = 'about:blank';
+    setTimeout(
+      () => {
+        if (globalIframe) {
+          globalIframe.remove();
+          globalIframe = null;
+          currentEmbed = null;
+        }
+      },
+      force ? 0 : 50
+    );
+  }
+}
+
+function createIframeElement(embed: string, title: string): HTMLIFrameElement {
+  const iframe = document.createElement('iframe');
+  iframe.src = embed;
+  iframe.className = 'border-0';
+  iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+  iframe.loading = 'lazy';
+  iframe.title = title;
+  iframe.frameBorder = '0';
+  iframe.style.position = 'fixed';
+  iframe.style.display = 'none';
+  iframe.style.zIndex = '40';
+  return iframe;
+}
+
+function ensureGlobalIframe(embed: string, title: string): void {
+  // Only recreate iframe if embed URL has changed
+  if (!globalIframe || currentEmbed !== embed) {
+    if (globalIframe && currentEmbed !== embed) {
+      globalIframe.remove();
+      globalIframe = null;
+    }
+
+    if (!globalIframe) {
+      globalIframe = createIframeElement(embed, title);
+      currentEmbed = embed;
+      document.body.appendChild(globalIframe);
+    }
+  }
+}
+
+function positionIframeForContainer(targetElement: HTMLElement, position: SoundtrackPosition): void {
+  if (!globalIframe || !targetElement) return;
+
+  const rect = targetElement.getBoundingClientRect();
+
+  // Ensure we have valid dimensions
+  if (rect.width === 0 || rect.height === 0) {
+    setTimeout(() => positionIframeForContainer(targetElement, position), 10);
+    return;
+  }
+
+  // Check if iframe is already properly positioned to avoid unnecessary updates
+  const currentLeft = parseInt(globalIframe.style.left) || 0;
+  const currentTop = parseInt(globalIframe.style.top) || 0;
+  const currentWidth = parseInt(globalIframe.style.width) || 0;
+  const currentHeight = parseInt(globalIframe.style.height) || 0;
+
+  const needsReposition =
+    Math.abs(currentLeft - rect.left) > 1 ||
+    Math.abs(currentTop - rect.top) > 1 ||
+    Math.abs(currentWidth - rect.width) > 1 ||
+    Math.abs(currentHeight - rect.height) > 1 ||
+    globalIframe.style.display === 'none';
+
+  if (!needsReposition) return;
+
+  // Apply all styles at once for better performance
+  Object.assign(globalIframe.style, {
+    display: 'block',
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+    pointerEvents: position === 'minimized' ? 'none' : 'auto',
+    opacity: position === 'minimized' ? '0' : '1',
+    borderRadius: position === 'floating' ? '0.75rem' : '1rem',
+    zIndex: position === 'floating' ? '51' : '41',
+  });
+
+  // Restore the embed URL if it was cleared
+  if (globalIframe.src === 'about:blank' && currentEmbed) {
+    globalIframe.src = currentEmbed;
+  }
+}
+
+function hideIframe(): void {
+  if (globalIframe) {
+    globalIframe.style.display = 'none';
+  }
+}
+
+function getTargetContainer(
+  position: SoundtrackPosition,
+  dashboardRef: RefObject<HTMLDivElement>,
+  floatingRef: RefObject<HTMLDivElement>
+): HTMLDivElement | null {
+  if (position === 'dashboard' && dashboardRef.current) {
+    return dashboardRef.current;
+  } else if ((position === 'floating' || position === 'minimized') && floatingRef.current) {
+    return floatingRef.current;
+  }
+  return null;
+}
+
 interface SoundtrackCardProps {
+  visible: boolean;
   embed: string;
   position?: SoundtrackPosition;
   onPositionChange?: (position: SoundtrackPosition) => void;
 }
 
-export default function SoundtrackCard({ embed, position = 'dashboard', onPositionChange }: SoundtrackCardProps) {
+export default function SoundtrackCard({
+  visible,
+  embed,
+  position = 'dashboard',
+  onPositionChange,
+}: SoundtrackCardProps) {
   const { t } = useTranslation('soundtrack');
-  const [isMinimized, setIsMinimized] = useState<boolean>(false);
+  const dashboardContainerRef = useRef<HTMLDivElement>(null);
+  const floatingContainerRef = useRef<HTMLDivElement>(null);
+  const [componentId] = useState(() => `soundtrack-${++mountCounter}`);
 
-  if (position === 'hidden' || !embed) {
-    return position === 'dashboard' ? (
-      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Music2 className="w-5 h-5" />
-            {t('title')}
-          </CardTitle>
-          <CardDescription>{t('description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-zinc-500" dangerouslySetInnerHTML={{ __html: t('empty.message') }} />
-        </CardContent>
-      </Card>
-    ) : null;
+  // Check if component should be active (consolidate visibility checks)
+  const isActive = embed && visible && position !== 'off';
+
+  // Helper function to update iframe position
+  const updateIframePosition = useCallback(() => {
+    if (!isActive) return;
+
+    const targetContainer = getTargetContainer(position, dashboardContainerRef, floatingContainerRef);
+    if (targetContainer) {
+      requestAnimationFrame(() => {
+        positionIframeForContainer(targetContainer, position);
+      });
+    } else {
+      // If no target container is ready, try again after a short delay
+      setTimeout(() => {
+        const retryContainer = getTargetContainer(position, dashboardContainerRef, floatingContainerRef);
+        if (retryContainer) {
+          requestAnimationFrame(() => {
+            positionIframeForContainer(retryContainer, position);
+          });
+        }
+      }, 10);
+    }
+  }, [isActive, position]);
+
+  // Register this component instance
+  useEffect(() => {
+    if (isActive) {
+      componentInstances.add(componentId);
+      return () => {
+        componentInstances.delete(componentId);
+        // Only hide iframe if this is a dashboard position transition to prevent playback interruption
+        // For other cases, let the main cleanup handle it
+        if (position === 'dashboard') {
+          // Small delay to allow for position transitions
+          setTimeout(() => {
+            // Only hide if no other instances are active
+            if (componentInstances.size === 0) {
+              hideIframe();
+            }
+          }, 10);
+        }
+        setTimeout(cleanupGlobalIframe, 50);
+      };
+    } else {
+      componentInstances.delete(componentId);
+      hideIframe();
+      const cleanupDelay = position === 'off' ? 0 : 50;
+      setTimeout(() => cleanupGlobalIframe(position === 'off'), cleanupDelay);
+    }
+  }, [isActive, componentId, position]);
+
+  // Handle iframe positioning and creation
+  useLayoutEffect(() => {
+    if (!isActive) {
+      hideIframe();
+      return;
+    }
+
+    ensureGlobalIframe(embed, t('accessibility.iframe'));
+
+    // Use a small delay to ensure smooth position transitions
+    const positionTimeout = setTimeout(() => {
+      updateIframePosition();
+    }, 50);
+
+    return () => {
+      clearTimeout(positionTimeout);
+    };
+  }, [isActive, embed, position, t, updateIframePosition]);
+
+  // Handle scroll and resize events
+  useEffect(() => {
+    if (!isActive) return;
+
+    window.addEventListener('scroll', updateIframePosition);
+    window.addEventListener('resize', updateIframePosition);
+    const timeoutId = setTimeout(updateIframePosition, 500);
+
+    return () => {
+      window.removeEventListener('scroll', updateIframePosition);
+      window.removeEventListener('resize', updateIframePosition);
+      clearTimeout(timeoutId);
+    };
+  }, [isActive, position, updateIframePosition]);
+
+  // Return null if component should not be rendered
+  if (!isActive) {
+    return null;
   }
 
-  if (position === 'floating') {
+  // Reusable components to reduce redundancy
+  const ControlButton = (props: React.PropsWithChildren<{ position: SoundtrackPosition; title: string }>) => (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => onPositionChange?.(props.position)}
+      className="h-6 w-6 p-0 hover:bg-white/20"
+      title={props.title}
+    >
+      {props.children}
+    </Button>
+  );
+
+  const SoundtrackTitle = ({ size = 'normal' }: { size?: 'normal' | 'small' }) => (
+    <CardTitle className={`flex items-center gap-2 ${size === 'small' ? 'text-sm' : ''}`}>
+      <Music2 className={size === 'small' ? 'w-4 h-4' : 'w-5 h-5'} />
+      {t('title')}
+    </CardTitle>
+  );
+
+  // Dashboard position
+  if (position === 'dashboard') {
     return (
-      <div
-        className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${isMinimized ? 'w-16 h-16' : 'w-80 h-48'}`}
-      >
-        <Card className="h-full rounded-2xl border-none shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur flex flex-col">
-          {!isMinimized && (
-            <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Music2 className="w-4 h-4" />
-                  {t('title')}
-                </CardTitle>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsMinimized(true)}
-                    className="h-6 w-6 p-0 hover:bg-white/20"
-                    title={t('actions.minimize')}
-                  >
-                    ➖
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onPositionChange && onPositionChange('dashboard')}
-                    className="h-6 w-6 p-0 hover:bg-white/20"
-                    title={t('actions.maximizeToDashboard')}
-                  >
-                    ⬜
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onPositionChange && onPositionChange('hidden')}
-                    className="h-6 w-6 p-0 hover:bg-white/20"
-                    title={t('actions.close')}
-                  >
-                    ✖️
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          )}
-          <CardContent className={`${isMinimized ? 'p-2' : 'p-2 pt-0'} flex-1 relative min-h-0`}>
-            {isMinimized && (
-              <Button
-                variant="ghost"
-                onClick={() => setIsMinimized(false)}
-                className="w-full h-full p-0 flex items-center justify-center absolute inset-0 z-10"
-              >
-                <Music2 className="w-6 h-6" />
-              </Button>
-            )}
-            <div className={`rounded-xl overflow-hidden h-full ${isMinimized ? 'opacity-0 pointer-events-none' : ''}`}>
-              <iframe
-                src={embed}
-                className="w-full h-full"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                title={t('accessibility.iframe')}
-              />
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <SoundtrackTitle />
+              <CardDescription>{t('description')}</CardDescription>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onPositionChange?.('floating')}
+              className="h-8 w-8 p-0 hover:bg-white/20"
+              title={t('actions.minimizeToFloating')}
+            >
+              ⬇️
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-2xl overflow-hidden">
+            <div ref={dashboardContainerRef} className="aspect-video bg-black/5" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  // Dashboard position
+  // Floating and Minimized positions
   return (
-    <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Music2 className="w-5 h-5" />
-              {t('title')}
-            </CardTitle>
-            <CardDescription>{t('description')}</CardDescription>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onPositionChange?.('floating')}
-            className="h-8 w-8 p-0 hover:bg-white/20"
-            title={t('actions.minimizeToFloating')}
-          >
-            ⬇️
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-2xl overflow-hidden">
-          <div className="aspect-video">
-            <iframe
-              src={embed}
-              className="w-full h-full"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-              title={t('accessibility.iframe')}
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${
+        position === 'minimized' ? 'w-16 h-16' : 'w-80 h-48'
+      }`}
+    >
+      <Card className="h-full rounded-2xl border-none shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur flex flex-col">
+        {position === 'floating' && (
+          <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <SoundtrackTitle size="small" />
+              <div className="flex items-center gap-1">
+                <ControlButton position="minimized" title={t('actions.minimize')}>
+                  ➖
+                </ControlButton>
+                <ControlButton position="dashboard" title={t('actions.maximizeToDashboard')}>
+                  ⬜
+                </ControlButton>
+                <ControlButton position="off" title={t('actions.close')}>
+                  ✖️
+                </ControlButton>
+              </div>
+            </div>
+          </CardHeader>
+        )}
+        <CardContent className={`${position === 'minimized' ? 'p-2' : 'p-2 pt-0'} flex-1 relative min-h-0`}>
+          {position === 'minimized' && (
+            <Button
+              variant="ghost"
+              onClick={() => onPositionChange?.('floating')}
+              className="w-full h-full p-0 flex items-center justify-center absolute inset-0 z-10"
+            >
+              <Music2 className="w-6 h-6" />
+            </Button>
+          )}
+          <div
+            ref={floatingContainerRef}
+            className={`rounded-xl overflow-hidden h-full bg-black/5 ${
+              position === 'minimized' ? 'opacity-0 pointer-events-none' : ''
+            }`}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

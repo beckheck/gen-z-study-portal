@@ -286,7 +286,8 @@ export default function SettingsTab() {
             <SelectContent>
               <SelectItem value="dashboard">{t('soundtrack.positions.dashboard')}</SelectItem>
               <SelectItem value="floating">{t('soundtrack.positions.floating')}</SelectItem>
-              <SelectItem value="hidden">{t('soundtrack.positions.hidden')}</SelectItem>
+              <SelectItem value="minimized">{t('soundtrack.positions.minimized')}</SelectItem>
+              <SelectItem value="off">{t('soundtrack.positions.off')}</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -61,9 +61,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         <CardContent className="space-y-4">
           <div
             ref={contentRef}
-            className={`transition-all duration-300 ease-in-out ${
-              isAnimating ? 'opacity-80' : 'opacity-100'
-            }`}
+            className={`transition-all duration-300 ease-in-out ${isAnimating ? 'opacity-80' : 'opacity-100'}`}
             style={{
               transform: isAnimating ? 'translateY(-2px)' : 'translateY(0)',
             }}
@@ -116,12 +114,14 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
                   className="h-8 w-8 p-0 hover:bg-white/20 rounded-full transition-all duration-300 ease-in-out disabled:opacity-50"
                   title="Collapse"
                 >
-                  <ChevronDown className={`w-4 h-4 transition-all duration-300 ease-in-out transform rotate-180 ${
-                    isAnimating ? 'scale-90' : 'scale-100'
-                  }`} />
+                  <ChevronDown
+                    className={`w-4 h-4 transition-all duration-300 ease-in-out transform rotate-180 ${
+                      isAnimating ? 'scale-90' : 'scale-100'
+                    }`}
+                  />
                 </Button>
               )}
-              
+
               {/* Expand button - shown when there are more items */}
               {hasMore && (
                 <Button
@@ -132,9 +132,11 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
                   className="h-8 w-8 p-0 hover:bg-white/20 rounded-full transition-all duration-300 ease-in-out disabled:opacity-50"
                   title="Show more"
                 >
-                  <ChevronDown className={`w-4 h-4 transition-all duration-300 ease-in-out ${
-                    isAnimating ? 'scale-90' : 'scale-100'
-                  }`} />
+                  <ChevronDown
+                    className={`w-4 h-4 transition-all duration-300 ease-in-out ${
+                      isAnimating ? 'scale-90' : 'scale-100'
+                    }`}
+                  />
                 </Button>
               )}
             </div>
@@ -142,9 +144,12 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         })()}
       </Card>
 
-      {soundtrack.position === 'dashboard' && (
-        <SoundtrackCard embed={soundtrack.embed} position={'dashboard'} onPositionChange={setSoundtrackPosition} />
-      )}
+      <SoundtrackCard
+        visible={soundtrack.position === 'dashboard'}
+        embed={soundtrack.embed}
+        position={'dashboard'}
+        onPositionChange={setSoundtrackPosition}
+      />
 
       <TipsRow />
     </div>

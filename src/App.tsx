@@ -301,9 +301,10 @@ export default function StudyPortal(): React.JSX.Element {
           </TabsContent>
         </Tabs>
 
-        {/* Floating Soundtrack - Persists across all tabs */}
-        {soundtrack.position !== 'dashboard' && soundtrack.embed && (
+        {/* Single Soundtrack Card - Always mounted, position controlled by prop */}
+        {soundtrack.embed && (
           <SoundtrackCard
+            visible={soundtrack.position !== 'dashboard'}
             embed={soundtrack.embed}
             position={soundtrack.position}
             onPositionChange={setSoundtrackPosition}

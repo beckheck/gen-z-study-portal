@@ -175,7 +175,7 @@ export interface OpenWeatherMapResponse {
 /**
  * Soundtrack position type
  */
-export type SoundtrackPosition = 'dashboard' | 'floating' | 'hidden';
+export type SoundtrackPosition = 'dashboard' | 'floating' | 'minimized' | 'off';
 
 /**
  * Regular event object for planner

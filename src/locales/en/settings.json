@@ -45,7 +45,8 @@
     "positions": {
       "dashboard": "Dashboard",
       "floating": "Floating", 
-      "hidden": "Hidden"
+      "minimized": "Minimized",
+      "off": "Off"
     },
     "placeholder": "https://open.spotify.com/embed/playlist/...",
     "preview": "Soundtrack preview"

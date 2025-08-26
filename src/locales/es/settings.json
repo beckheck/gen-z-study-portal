@@ -45,7 +45,8 @@
     "positions": {
       "dashboard": "Panel",
       "floating": "Flotante",
-      "hidden": "Oculto"
+      "minimized": "Minimizado",
+      "off": "Apagado"
     },
     "placeholder": "https://open.spotify.com/embed/playlist/...",
     "preview": "Vista previa de banda sonora"
