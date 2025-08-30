@@ -1,5 +1,5 @@
 import { useCourses, useExams, useSoundtrack, useTasks, useWeather } from '@/hooks/useStore';
-import { CalendarDays, ChevronDown } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CurrentDateTime from './CurrentDateTime';
@@ -9,6 +9,7 @@ import Upcoming from './Upcoming';
 import WeatherWidget from './WeatherWidget';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Switch } from './ui/switch';
 
 interface DashboardTabProps {
   onTabChange: (tab: string) => void;
@@ -27,6 +28,8 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
 
   const [nextUpExpanded, setNextUpExpanded] = useState<number>(0); // Number of additional "pages" shown (0 = collapsed)
   const [isAnimating, setIsAnimating] = useState(false);
+  const [hidePending, setHidePending] = useState(false);
+  const [pendingExpanded, setPendingExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const animateToExpanded = (newValue: number) => {
@@ -52,13 +55,90 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
       </div>
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="w-5 h-5" />
-            {t('dashboard.nextUp')}
-          </CardTitle>
-          <CardDescription>{t('dashboard.upcomingExamsAndTasks')}</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarDays className="w-5 h-5" />
+                {t('dashboard.nextUp')}
+              </CardTitle>
+              <CardDescription>{t('dashboard.upcomingExamsAndTasks')}</CardDescription>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span className="text-zinc-600 dark:text-zinc-400">Hide Pending</span>
+              <Switch 
+                checked={hidePending} 
+                onCheckedChange={setHidePending}
+                className="data-[state=checked]:bg-amber-600"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Pending Items Collapsed Section */}
+          {hidePending && (
+            <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4">
+              <Button
+                variant="ghost"
+                onClick={() => setPendingExpanded(!pendingExpanded)}
+                className="w-full justify-start p-2 h-auto hover:bg-white/50 dark:hover:bg-white/5 rounded-xl"
+              >
+                <div className="flex items-center gap-2">
+                  {pendingExpanded ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <span className="font-medium">Pending Items</span>
+                  <span className="text-xs text-zinc-500 ml-2">
+                    ({(() => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      
+                      const overdueExams = exams.filter(e => {
+                        if (e.completed) return false;
+                        const examDate = new Date(e.date);
+                        examDate.setHours(0, 0, 0, 0);
+                        return examDate.getTime() < today.getTime();
+                      }).length;
+                      
+                      const overdueTasks = tasks.filter(t => {
+                        if (t.done || !t.due) return false;
+                        const taskDate = new Date(t.due);
+                        taskDate.setHours(0, 0, 0, 0);
+                        return taskDate.getTime() < today.getTime();
+                      }).length;
+                      
+                      return overdueExams + overdueTasks;
+                    })()})
+                  </span>
+                </div>
+              </Button>
+              
+              {pendingExpanded && (
+                <div className="mt-3">
+                  <Upcoming
+                    expanded={0}
+                    hidePending={false}
+                    showOnlyPending={true}
+                    onTaskComplete={taskId => {
+                      const updatedTasks = tasks.map(t => (t.id === taskId ? { ...t, done: true } : t));
+                      setTasks(updatedTasks);
+                    }}
+                    onExamComplete={toggleExamComplete}
+                    onTabChange={onTabChange}
+                    onCourseSelect={setSelectedCourse}
+                    onTaskClick={task => {
+                      setSelectedCourse(task.courseId);
+                      onTabChange('courses');
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          
           <div
             ref={contentRef}
             className={`transition-all duration-300 ease-in-out ${isAnimating ? 'opacity-80' : 'opacity-100'}`}
@@ -68,6 +148,8 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
           >
             <Upcoming
               expanded={nextUpExpanded}
+              hidePending={hidePending}
+              showOnlyPending={false}
               onTaskComplete={taskId => {
                 const updatedTasks = tasks.map(t => (t.id === taskId ? { ...t, done: true } : t));
                 setTasks(updatedTasks);
@@ -84,13 +166,32 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         </CardContent>
         {(() => {
           // Calculate if there are more items to show
-          const allExams = exams.slice().sort((a, b) => a.date.localeCompare(b.date));
-          const allTasks = tasks
-            .slice()
-            .filter(t => !t.done)
-            .sort((a, b) => a.due.localeCompare(b.due));
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          let filteredExams = exams.slice().filter(e => !e.completed);
+          let filteredTasks = tasks.slice().filter(t => !t.done);
+          
+          // Filter out pending items if hidePending is true
+          if (hidePending) {
+            filteredExams = filteredExams.filter(e => {
+              const examDate = new Date(e.date);
+              examDate.setHours(0, 0, 0, 0);
+              return examDate.getTime() >= today.getTime();
+            });
+            
+            filteredTasks = filteredTasks.filter(t => {
+              if (!t.due) return true;
+              const taskDate = new Date(t.due);
+              taskDate.setHours(0, 0, 0, 0);
+              return taskDate.getTime() >= today.getTime();
+            });
+          }
+          
+          const allExams = filteredExams.sort((a, b) => a.date.localeCompare(b.date));
+          const allTasks = filteredTasks.sort((a, b) => a.due.localeCompare(b.due));
 
-          const currentExamCount = 3 + nextUpExpanded * 3;
+          const currentExamCount = 5 + nextUpExpanded * 3; // Changed from 3 to 5 to match tasks
           const currentTaskCount = 5 + nextUpExpanded * 3;
 
           const hasMoreExams = allExams.length > currentExamCount;
