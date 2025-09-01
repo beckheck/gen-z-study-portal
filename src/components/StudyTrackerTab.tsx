@@ -9,7 +9,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useStudySessions } from '@/hooks/useStore';
 import useStudyTimer from '@/hooks/useStudyTimer';
-import { getPhaseDurationSeconds, getPhaseEmoji, getTechniqueConfig, STUDY_TECHNIQUES } from '@/lib/technique-utils';
+import {
+  getPhaseDurationSeconds,
+  getPhaseEmoji,
+  getTechniqueConfig,
+  STUDY_TECHNIQUES,
+  TechniqueConfig,
+} from '@/lib/technique-utils';
 import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -113,18 +119,20 @@ export default function StudyTrackerTab() {
   /**
    * Get localized technique name
    */
+
   const getTechniqueDisplayName = useCallback(
-    (techniqueId: string): string => {
-      const techniqueConfig = STUDY_TECHNIQUES.find(tech => tech.id === techniqueId);
-      if (techniqueConfig) {
-        return t(techniqueConfig.name, {
-          studyMinutes: techniqueConfig.studyMinutes === Infinity ? '∞' : techniqueConfig.studyMinutes,
-          breakMinutes: techniqueConfig.breakMinutes,
-          longBreakMinutes: techniqueConfig.longBreakMinutes,
-          longBreakInterval: techniqueConfig.longBreakInterval,
-        });
-      }
-      return techniqueId;
+    (techniqueConfig: TechniqueConfig): string => {
+      const studyingEmoji = getPhaseEmoji(techniqueConfig.id, 'studying');
+      const breakEmoji = getPhaseEmoji(techniqueConfig.id, 'break');
+      const longBreakEmoji = getPhaseEmoji(techniqueConfig.id, 'longBreak');
+      return t(techniqueConfig.name, {
+        studyMinutes: `${studyingEmoji}${
+          techniqueConfig.studyMinutes === Infinity ? '∞' : techniqueConfig.studyMinutes
+        }`,
+        breakMinutes: `${breakEmoji}${techniqueConfig.breakMinutes}`,
+        longBreakMinutes: `${longBreakEmoji}${techniqueConfig.longBreakMinutes}`,
+        longBreakInterval: techniqueConfig.longBreakInterval,
+      });
     },
     [t]
   );
@@ -166,12 +174,7 @@ export default function StudyTrackerTab() {
                 <SelectContent>
                   {STUDY_TECHNIQUES.map(technique => (
                     <SelectItem key={technique.id} value={technique.id}>
-                      {t(technique.name, {
-                        studyMinutes: technique.studyMinutes === Infinity ? '∞' : technique.studyMinutes,
-                        breakMinutes: technique.breakMinutes,
-                        longBreakMinutes: technique.longBreakMinutes,
-                        longBreakInterval: technique.longBreakInterval,
-                      })}
+                      {getTechniqueDisplayName(technique)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -455,7 +458,7 @@ export default function StudyTrackerTab() {
                     })()}
                   </div>
                   <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                    {getTechniqueDisplayName(session.technique)}
+                    {getTechniqueDisplayName(getTechniqueConfig(session.technique))}
                   </div>
                   {session.note && <div className="text-sm mt-1 whitespace-pre-wrap">{session.note}</div>}
                 </div>

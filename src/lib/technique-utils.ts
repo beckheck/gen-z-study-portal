@@ -97,7 +97,7 @@ export function getPhaseEmoji(techniqueId: string, phase: StudyPhase): string {
   if (config.breakMinutes === 0) {
     return '⏰';
   }
-  return phase === 'studying' ? '📚' : phase === 'longBreak' ? '💤' : '⏸️';
+  return phase === 'studying' ? '📚' : phase === 'longBreak' ? '💤' : '🧘🏻'; //🧘🏻🪷💅
 }
 
 /**

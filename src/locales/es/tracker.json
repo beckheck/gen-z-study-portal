@@ -5,8 +5,8 @@
     "course": "Curso",
     "technique": "Técnica",
     "techniques": {
-      "pomodoro": "Pomodoro ({{studyMinutes}} ↔︎ {{breakMinutes}} + {{longBreakMinutes}}/{{longBreakInterval}})",
-      "deepWork": "Trabajo Profundo ({{studyMinutes}} ↔︎ {{breakMinutes}})",
+      "pomodoro": "Pomodoro: {{studyMinutes}} {{breakMinutes}} {{longBreakMinutes}}/{{longBreakInterval}}",
+      "deepWork": "Trabajo Profundo: {{studyMinutes}} {{breakMinutes}}",
       "flow": "Flujo (sin descansos)"
     },
     "moodStart": "Estado inicial",
