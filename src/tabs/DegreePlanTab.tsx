@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDegreePlan } from '@/hooks/useStore';
 import { uid } from '@/lib/utils';
+import { DegreeCourse } from '@/types';
 import { ArrowLeft, ArrowRight, Check, Edit, GraduationCap, Plus, Trash2, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DegreeCourse } from '../types';
 
 interface SemesterForm {
   acronym: string;
@@ -23,8 +23,15 @@ export default function DegreePlanTab() {
   const { t: tCommon } = useTranslation('common');
 
   // State management
-  const { degreePlan, setDegreePlan, setDegreePlanName, setSemesters, addCompletedCourse, removeCompletedCourse, removeSemester } =
-    useDegreePlan();
+  const {
+    degreePlan,
+    setDegreePlan,
+    setDegreePlanName,
+    setSemesters,
+    addCompletedCourse,
+    removeCompletedCourse,
+    removeSemester,
+  } = useDegreePlan();
   const [degreePlanDialog, setDegreePlanDialog] = useState<boolean>(false);
   const [degreePlanStep, setDegreePlanStep] = useState<'setup' | 'courses' | 'view'>('setup');
   const [currentSemester, setCurrentSemester] = useState<number>(1);
@@ -261,7 +268,7 @@ export default function DegreePlanTab() {
                 {isEditingTitle ? (
                   <Input
                     value={tempTitle}
-                    onChange={(e) => setTempTitle(e.target.value)}
+                    onChange={e => setTempTitle(e.target.value)}
                     onBlur={handleTitleSave}
                     onKeyDown={handleTitleKeyPress}
                     className="h-8 text-lg font-bold bg-white dark:bg-zinc-800 border-2 border-blue-400 rounded-xl px-3 focus:border-blue-500 focus:outline-none"

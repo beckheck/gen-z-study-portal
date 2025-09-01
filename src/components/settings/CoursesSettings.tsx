@@ -3,7 +3,6 @@ import { DeferredInput } from '@/components/ui/deferred-input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useCourses } from '@/hooks/useStore';
-import type { Course } from '@/types';
 import { Reorder } from 'framer-motion';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -110,9 +109,7 @@ export default function CoursesSettings() {
         </div>
 
         {courses.length > 0 && (
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 text-center pt-2">
-            {t('courses.dragToReorder')}
-          </div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 text-center pt-2">{t('courses.dragToReorder')}</div>
         )}
       </div>
 

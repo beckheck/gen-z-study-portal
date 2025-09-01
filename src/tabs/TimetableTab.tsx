@@ -5,12 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCourses, useTimetable } from '@/hooks/useStore';
 import { useLocalization } from '@/hooks/useLocalization';
+import { useCourses, useTimetable } from '@/hooks/useStore';
+import type { TimeBlock, TimetableEvent, TimetableEventInput } from '@/types';
 import { Plus, Trash2 } from 'lucide-react';
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
 
 export default function TimetableTab() {
   const { t } = useTranslation('timetable');
@@ -192,7 +192,7 @@ export default function TimetableTab() {
 
   const handleDrop = (e: React.DragEvent, targetDay: string, targetBlock: string) => {
     e.preventDefault();
-    
+
     if (!draggedEvent) return;
 
     // Check if the event is being dropped in a different cell
@@ -285,9 +285,9 @@ export default function TimetableTab() {
                     }`}
                     onClick={isEmpty ? () => handleCellClick(day, block) : undefined}
                     onDragOver={handleDragOver}
-                    onDragEnter={(e) => handleDragEnter(e, day, block)}
+                    onDragEnter={e => handleDragEnter(e, day, block)}
                     onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, day, block)}
+                    onDrop={e => handleDrop(e, day, block)}
                   >
                     {eventsInCell.map(event => (
                       <div
@@ -301,7 +301,7 @@ export default function TimetableTab() {
                           color: event.color ? undefined : undefined,
                         }}
                         draggable
-                        onDragStart={(e) => handleDragStart(e, event)}
+                        onDragStart={e => handleDragStart(e, event)}
                         onDragEnd={handleDragEnd}
                         onClick={e => {
                           e.stopPropagation();

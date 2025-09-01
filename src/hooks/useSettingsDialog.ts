@@ -1,8 +1,8 @@
-import CoursesSettings from '@/components/CoursesSettings';
-import FocusTimerSettings from '@/components/FocusTimerSettings';
-import HydrationSettings from '@/components/HydrationSettings';
-import SoundtrackSettings from '@/components/SoundtrackSettings';
-import WeatherApiSettings from '@/components/WeatherApiSettings';
+import CoursesSettings from '@/components/settings/CoursesSettings';
+import FocusTimerSettings from '@/components/settings/FocusTimerSettings';
+import HydrationSettings from '@/components/settings/HydrationSettings';
+import SoundtrackSettings from '@/components/settings/SoundtrackSettings';
+import WeatherApiSettings from '@/components/settings/WeatherApiSettings';
 import { BookOpen, Cloud, Droplets, Music, Timer } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

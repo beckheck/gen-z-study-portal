@@ -1,6 +1,6 @@
-import SettingsDialog from '@/components/SettingsDialog';
 import { useSettingsDialog } from '@/hooks/useSettingsDialog';
 import React, { createContext, useContext } from 'react';
+import SettingsDialog from './SettingsDialog';
 
 interface SettingsDialogContextValue {
   openDialog: (id: string) => void;

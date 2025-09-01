@@ -1,5 +1,7 @@
 import { EventDialog } from '@/components/EventDialog';
 import { EventDialogTrigger } from '@/components/EventDialogTrigger';
+import { PlannerMonthView } from '@/components/PlannerMonthView';
+import { PlannerWeekView } from '@/components/PlannerWeekView';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,12 +9,10 @@ import { Switch } from '@/components/ui/switch';
 import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
+import { CalendarView } from '@/types';
 import { CalendarDays, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarView } from '../types';
-import { PlannerMonthView } from './PlannerMonthView';
-import { PlannerWeekView } from './PlannerWeekView';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
@@ -101,9 +101,7 @@ export default function PlannerTab() {
 
         // Include if: within range AND (single-day event OR multi-day event with toggle on)
         return (
-          isInRange &&
-          (filterCourse === 'all' || e.courseId === filterCourse) &&
-          (!isMultiDay || showMultiDayEvents)
+          isInRange && (filterCourse === 'all' || e.courseId === filterCourse) && (!isMultiDay || showMultiDayEvents)
         );
       })
       .map(e => ({
@@ -166,9 +164,7 @@ export default function PlannerTab() {
         const endDate = e.endDate ? new Date(e.endDate) : startDate;
         const currentDate = new Date(dateStr);
         return (
-          currentDate >= startDate &&
-          currentDate <= endDate &&
-          (filterCourse === 'all' || e.courseId === filterCourse)
+          currentDate >= startDate && currentDate <= endDate && (filterCourse === 'all' || e.courseId === filterCourse)
         );
       })
       .map(e => ({

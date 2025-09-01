@@ -1,16 +1,16 @@
+import CurrentDateTime from '@/components/CurrentDateTime';
+import SoundtrackCard from '@/components/SoundtrackCard';
+import TipsRow from '@/components/TipsRow';
+import Upcoming from '@/components/Upcoming';
+import WeatherWidget from '@/components/WeatherWidget';
+import { useSettingsDialogContext } from '@/components/settings/SettingsDialogProvider';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { useCourses, useExams, useSoundtrack, useTasks, useWeather } from '@/hooks/useStore';
-import { CalendarDays, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
-import { useSettingsDialogContext } from '@/components/SettingsDialogProvider';
-import { useState, useRef } from 'react';
+import { AlertTriangle, CalendarDays, ChevronDown, ChevronRight } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import CurrentDateTime from './CurrentDateTime';
-import SoundtrackCard from './SoundtrackCard';
-import TipsRow from './TipsRow';
-import Upcoming from './Upcoming';
-import WeatherWidget from './WeatherWidget';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Switch } from './ui/switch';
 
 interface DashboardTabProps {
   onTabChange: (tab: string) => void;
@@ -52,8 +52,8 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start mb-4">
-        <WeatherWidget 
-          apiKey={weather.apiKey} 
+        <WeatherWidget
+          apiKey={weather.apiKey}
           location={weather.location}
           onWeatherClick={() => openDialog('weatherApi')}
         />
@@ -72,8 +72,8 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
             <div className="flex items-center gap-2 text-sm">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
               <span className="text-zinc-600 dark:text-zinc-400">Hide Pending</span>
-              <Switch 
-                checked={hidePending} 
+              <Switch
+                checked={hidePending}
                 onCheckedChange={setHidePending}
                 className="data-[state=checked]:bg-amber-600"
               />
@@ -90,38 +90,36 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
                 className="w-full justify-start p-2 h-auto hover:bg-white/50 dark:hover:bg-white/5 rounded-xl"
               >
                 <div className="flex items-center gap-2">
-                  {pendingExpanded ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
+                  {pendingExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                   <span className="font-medium">Pending Items</span>
                   <span className="text-xs text-zinc-500 ml-2">
-                    ({(() => {
+                    (
+                    {(() => {
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
-                      
+
                       const overdueExams = exams.filter(e => {
                         if (e.completed) return false;
                         const examDate = new Date(e.date);
                         examDate.setHours(0, 0, 0, 0);
                         return examDate.getTime() < today.getTime();
                       }).length;
-                      
+
                       const overdueTasks = tasks.filter(t => {
                         if (t.done || !t.due) return false;
                         const taskDate = new Date(t.due);
                         taskDate.setHours(0, 0, 0, 0);
                         return taskDate.getTime() < today.getTime();
                       }).length;
-                      
+
                       return overdueExams + overdueTasks;
-                    })()})
+                    })()}
+                    )
                   </span>
                 </div>
               </Button>
-              
+
               {pendingExpanded && (
                 <div className="mt-3">
                   <Upcoming
@@ -144,7 +142,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
               )}
             </div>
           )}
-          
+
           <div
             ref={contentRef}
             className={`transition-all duration-300 ease-in-out ${isAnimating ? 'opacity-80' : 'opacity-100'}`}
@@ -174,10 +172,10 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
           // Calculate if there are more items to show
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          
+
           let filteredExams = exams.slice().filter(e => !e.completed);
           let filteredTasks = tasks.slice().filter(t => !t.done);
-          
+
           // Filter out pending items if hidePending is true
           if (hidePending) {
             filteredExams = filteredExams.filter(e => {
@@ -185,7 +183,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
               examDate.setHours(0, 0, 0, 0);
               return examDate.getTime() >= today.getTime();
             });
-            
+
             filteredTasks = filteredTasks.filter(t => {
               if (!t.due) return true;
               const taskDate = new Date(t.due);
@@ -193,7 +191,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
               return taskDate.getTime() >= today.getTime();
             });
           }
-          
+
           const allExams = filteredExams.sort((a, b) => a.date.localeCompare(b.date));
           const allTasks = filteredTasks.sort((a, b) => a.due.localeCompare(b.due));
 

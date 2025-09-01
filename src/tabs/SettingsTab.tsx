@@ -1,3 +1,4 @@
+import StorageInfoCard from '@/components/StorageInfoCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ColorPicker from '@/components/ui/color-picker';
@@ -9,20 +10,9 @@ import { useScrollToTop } from '@/hooks/useScrollToTop';
 import { SettingsDialog, useSettingsDialog } from '@/hooks/useSettingsDialog';
 import { useTheme } from '@/hooks/useStore';
 import { dataTransfer, persistStore } from '@/stores/app';
-import {
-  BookOpen,
-  Brush,
-  Download,
-  Github,
-  Image,
-  Info,
-  Layers,
-  MousePointer,
-  Palette,
-} from 'lucide-react';
+import { Brush, Download, Github, Image, Info, Layers, MousePointer, Palette } from 'lucide-react';
 import { ChangeEvent, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import StorageInfoCard from './StorageInfoCard';
 
 export default function SettingsTab() {
   const { isExtension } = useAppContext();

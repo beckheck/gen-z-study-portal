@@ -1,23 +1,23 @@
 import { EventDialog } from '@/components/EventDialog';
+import { useSettingsDialogContext } from '@/components/settings/SettingsDialogProvider';
 import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Confetti from '@/components/ui/confetti';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useConfetti } from '@/hooks/useConfetti';
 import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
-import { useSettingsDialogContext } from '@/components/SettingsDialogProvider';
 import { motion } from 'framer-motion';
-import { CalendarDays, Edit, ListTodo, Plus, Settings, Trash2, Undo, Check } from 'lucide-react';
+import { CalendarDays, Check, Edit, ListTodo, Plus, Settings, Trash2, Undo } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useConfetti } from '../hooks/useConfetti';
-import Confetti from './ui/confetti';
 
 export default function CourseManagerTab() {
   const { t: tCourse } = useTranslation('courseManager');
@@ -399,7 +399,9 @@ export default function CourseManagerTab() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {upcomingExams.length === 0 && <div className="text-sm text-zinc-500">{tCourse('exams.upcoming.empty')}</div>}
+            {upcomingExams.length === 0 && (
+              <div className="text-sm text-zinc-500">{tCourse('exams.upcoming.empty')}</div>
+            )}
             <div className="space-y-2 max-h-[420px] overflow-auto">
               {upcomingExams
                 .sort((a, b) => a.date.localeCompare(b.date))
@@ -464,9 +466,7 @@ export default function CourseManagerTab() {
             {/* Completed Exams Section */}
             {completedExams.length > 0 && (
               <>
-                <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">
-                  {tCommon('status.completed')}
-                </div>
+                <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">{tCommon('status.completed')}</div>
                 <div className="space-y-2">
                   {completedExams
                     .sort((a, b) => b.date.localeCompare(a.date))
@@ -488,9 +488,7 @@ export default function CourseManagerTab() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <Check className="w-4 h-4 text-green-600" />
-                            <span className="font-medium text-green-700 dark:text-green-400">
-                              {e.title}
-                            </span>
+                            <span className="font-medium text-green-700 dark:text-green-400">{e.title}</span>
                           </div>
                           <div className="text-xs text-zinc-500 ml-6">
                             {formatDateDDMMYYYY(e.date)} · {e.weight}% · Completed
@@ -565,45 +563,47 @@ export default function CourseManagerTab() {
                     // First sort by date (earliest first)
                     const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
                     if (dateComparison !== 0) return dateComparison;
-                    
+
                     // If dates are the same, sort alphabetically by title
                     return a.title.localeCompare(b.title);
                   })
                   .map(exam => {
-                  const currentGrade = courseGrades.find(g => g.examId === exam.id);
-                  return (
-                    <div
-                      key={exam.id}
-                      className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
-                      onClick={() => {
-                        // Create exam event with proper format
-                        const examEvent = {
-                          ...exam,
-                          date: exam.date, // Keep the exam date format
-                        };
-                        eventDialog.openEditExamDialog(examEvent);
-                      }}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{exam.title}</div>
-                        <div className="text-xs text-zinc-500">{tCourse('grades.weight', { weight: exam.weight })}</div>
+                    const currentGrade = courseGrades.find(g => g.examId === exam.id);
+                    return (
+                      <div
+                        key={exam.id}
+                        className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
+                        onClick={() => {
+                          // Create exam event with proper format
+                          const examEvent = {
+                            ...exam,
+                            date: exam.date, // Keep the exam date format
+                          };
+                          eventDialog.openEditExamDialog(examEvent);
+                        }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{exam.title}</div>
+                          <div className="text-xs text-zinc-500">
+                            {tCourse('grades.weight', { weight: exam.weight })}
+                          </div>
+                        </div>
+                        <div className="ml-3">
+                          <Input
+                            type="number"
+                            min="1"
+                            max="7"
+                            step="0.1"
+                            placeholder={tCourse('tasks.placeholders.grade')}
+                            value={currentGrade?.grade?.toString() || ''}
+                            onChange={e => updateExamGrade(exam.id, e.target.value)}
+                            onClick={e => e.stopPropagation()} // Prevent opening dialog when clicking input
+                            className="w-20 h-8 text-center rounded-lg"
+                          />
+                        </div>
                       </div>
-                      <div className="ml-3">
-                        <Input
-                          type="number"
-                          min="1"
-                          max="7"
-                          step="0.1"
-                          placeholder={tCourse('tasks.placeholders.grade')}
-                          value={currentGrade?.grade?.toString() || ''}
-                          onChange={e => updateExamGrade(exam.id, e.target.value)}
-                          onClick={e => e.stopPropagation()} // Prevent opening dialog when clicking input
-                          className="w-20 h-8 text-center rounded-lg"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
 
               {/* Right Column - Course Average Display */}

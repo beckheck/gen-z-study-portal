@@ -15,7 +15,6 @@ export default function FocusTimerSettings() {
     <div className="space-y-6">
       {/* Audio Settings Section */}
       <div className="space-y-4">
-
         {/* Audio Notifications Toggle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -39,9 +38,7 @@ export default function FocusTimerSettings() {
                 onChange={e => studyTimer.setAudioVolume(parseFloat(e.target.value))}
                 className="flex-1 h-2 bg-white/70 dark:bg-white/10 rounded-lg appearance-none slider"
               />
-              <span className="text-sm text-zinc-500 min-w-[3rem]">
-                {Math.round(timerState.audioVolume * 100)}%
-              </span>
+              <span className="text-sm text-zinc-500 min-w-[3rem]">{Math.round(timerState.audioVolume * 100)}%</span>
             </div>
           </div>
         )}
