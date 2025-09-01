@@ -1,6 +1,7 @@
 import { useSettingsDialogContext } from '@/components/SettingsDialogProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAppContext } from '@/contexts/AppContext';
 import { SoundtrackPosition } from '@/types';
 import { ArrowDownToLine, Maximize, Minimize, Music2, Settings, X } from 'lucide-react';
 import React, { RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -240,6 +241,12 @@ export default function SoundtrackCard({
       clearTimeout(timeoutId);
     };
   }, [isActive, position, updateIframePosition]);
+
+  const appContext = useAppContext();
+
+  if (appContext.mode === 'popup') {
+    return null;
+  }
 
   if (position === 'dashboard' && !embed) {
     return (
