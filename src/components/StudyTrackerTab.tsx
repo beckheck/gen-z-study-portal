@@ -204,6 +204,31 @@ export default function StudyTrackerTab() {
             )}
 
             <div className="relative z-10 py-12">
+              {/* Completed Study Phases Display */}
+              {
+                <div className="mb-2">
+                  {(() => {
+                    const maxEmojisToShow = 4;
+                    const completedPhases = timerState.studyPhasesCompleted;
+                    const studyEmojis = Array(Math.min(completedPhases || 0, maxEmojisToShow))
+                      .fill(getPhaseEmoji(timerState.technique, 'studying'))
+                      .join(' ');
+
+                    if (completedPhases == 0) {
+                      return <div className="text-center text-lg">&nbsp;</div>;
+                    } else if (completedPhases <= maxEmojisToShow) {
+                      return <div className="text-center text-lg">{studyEmojis}</div>;
+                    } else {
+                      return (
+                        <div className="text-center text-lg">
+                          {studyEmojis} +{completedPhases - maxEmojisToShow}
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
+              }
+
               <div
                 className="text-5xl font-extrabold tracking-wider tabular-nums cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors select-none"
                 onClick={() => studyTimer.setShowCountdown(!timerState.showCountdown)}
