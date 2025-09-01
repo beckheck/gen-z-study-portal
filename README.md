@@ -7,7 +7,6 @@ A modern, interactive study portal built specifically for Generation Z students,
 - Modern and responsive user interface using Tailwind CSS
 - Interactive components powered by shadcn/ui and Radix UI
 - Beautiful icons from Lucide React
-- Data visualization with Recharts
 - Smooth animations with Framer Motion
 
 ## 🛠️ Tech Stack
@@ -17,7 +16,6 @@ A modern, interactive study portal built specifically for Generation Z students,
 - **Styling:** Tailwind CSS
 - **UI Components:** shadcn/ui + Radix UI
 - **Icons:** Lucide React
-- **Charts:** Recharts
 - **Animations:** Framer Motion
 
 ## 📦 Installation

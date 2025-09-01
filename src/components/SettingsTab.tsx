@@ -244,7 +244,7 @@ export default function SettingsTab() {
         target="_blank"
         rel="noopener noreferrer"
         className="absolute -top-3 -right-3 z-20 group"
-        aria-label="View source on GitHub"
+        aria-label={t('about.viewSourceOnGitHub')}
       >
         {/* Ribbon Background */}
         <div className="w-20 h-20 relative">
@@ -262,52 +262,48 @@ export default function SettingsTab() {
       <CardContent className="space-y-4 text-sm text-zinc-600 dark:text-zinc-400">
         <div className="space-y-2">
           <p>{t('about.localFirst')}</p>
-          <p>{t('about.builtWith')}</p>
           <p>{t('about.proTip')}</p>
         </div>
         <div className="grid gap-2">
+          <BuyMeACoffeeButton id="" />
           <Button variant="outline" onClick={() => dataTransfer.exportFile()} className="w-full rounded-xl">
             <Download className="w-4 h-4 mr-2" />
             {t('about.exportData')}
           </Button>
-          <div className="space-y-2">
-            <div className="space-y-2">
-              <Button variant="outline" asChild className="w-full rounded-xl">
-                <label>
-                  <Input
-                    type="file"
-                    accept=".json"
-                    onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          const success = await dataTransfer.importFile(file);
-                          if (success) {
-                            await persistStore();
-                            setTimeout(() => {
-                              alert(t('about.importSuccess'));
-                              window.location.reload();
-                            }, 100);
-                          } else {
-                            alert(t('about.importError'));
-                          }
-                        } catch (error) {
-                          console.error('Import error:', error);
-                          alert(t('about.importErrorGeneral'));
-                        }
-                        e.target.value = '';
+          <Button variant="outline" asChild className="w-full rounded-xl">
+            <label>
+              <Input
+                type="file"
+                accept=".json"
+                onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const success = await dataTransfer.importFile(file);
+                      if (success) {
+                        await persistStore();
+                        setTimeout(() => {
+                          alert(t('about.importSuccess'));
+                          window.location.reload();
+                        }, 100);
+                      } else {
+                        alert(t('about.importError'));
                       }
-                    }}
-                    className="hidden"
-                  />
-                  <span className="flex items-center justify-center gap-2">
-                    <Download className="w-4 h-4 rotate-180" />
-                    {t('about.importData')}
-                  </span>
-                </label>
-              </Button>
-            </div>
-          </div>
+                    } catch (error) {
+                      console.error('Import error:', error);
+                      alert(t('about.importErrorGeneral'));
+                    }
+                    e.target.value = '';
+                  }
+                }}
+                className="hidden"
+              />
+              <span className="flex items-center justify-center gap-2">
+                <Download className="w-4 h-4 rotate-180" />
+                {t('about.importData')}
+              </span>
+            </label>
+          </Button>
         </div>
         <StorageInfoCard />
       </CardContent>
@@ -802,5 +798,21 @@ export default function SettingsTab() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function BuyMeACoffeeButton({ id }: { id: string }) {
+  const { i18n, t } = useTranslation('settings');
+  const primaryLanguageCode = i18n.language.split('-')[0];
+  return (
+    <a
+      className="buy-me-a-coffee-button"
+      target="_blank"
+      href={`https://buymeacoffee.com/${id}?l=${primaryLanguageCode}`}
+      rel="noreferrer"
+    >
+      <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt={t('about.buyMeACoffee')} />
+      <span>{t('about.buyMeACoffee')}</span>
+    </a>
   );
 }

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "StudyHub ✨ – React + Vite + Tailwind + shadcn/ui + Lucide + Recharts",
+  "description": "StudyHub ✨ – React + Vite + Tailwind + shadcn/ui + Lucide",
   "scripts": {
     "dev": "vite",
     "dev:ext": "wxt",
