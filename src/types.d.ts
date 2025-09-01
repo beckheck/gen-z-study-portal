@@ -38,6 +38,7 @@ interface BackgroundMessage_Timer_UpdateState {
   moodEnd?: number;
   audioEnabled?: boolean;
   audioVolume?: number;
+  showCountdown?: boolean;
 }
 
 interface BackgroundMessage_Timer_BroadcastState {
@@ -55,6 +56,8 @@ export type BackgroundMessage_Timer =
 
 export type BackgroundMessage = BackgroundMessage_Tab | BackgroundMessage_TextSelected | BackgroundMessage_Timer;
 
+export type StudyPhase = 'studying' | 'break' | 'longBreak';
+
 export interface BackgroundTimerState {
   running: boolean;
   elapsed: number;
@@ -66,6 +69,11 @@ export interface BackgroundTimerState {
   courseId: string;
   audioEnabled: boolean;
   audioVolume: number;
+  phase: StudyPhase;
+  phaseElapsed: number;
+  phaseStartTs?: number;
+  studyPhasesCompleted: number; // Counter for completed study phases
+  showCountdown: boolean;
 }
 
 /**

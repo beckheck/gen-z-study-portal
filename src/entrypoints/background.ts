@@ -1,12 +1,13 @@
 import { StudySessionTimerManager } from '@/lib/study-session-timer-manager';
-import { BackgroundMessage } from '@/types';
+import { getPhaseDurationSeconds } from '@/lib/technique-utils';
+import { BackgroundMessage, BackgroundTimerState } from '@/types';
 import { browser } from 'wxt/browser';
 
 declare function defineBackground(fn: () => void): any;
 
 export default defineBackground(() => {
-  // Initialize timer manager
-  const timerManager = new StudySessionTimerManager();
+  // Initialize timer manager with state update callback
+  const timerManager = new StudySessionTimerManager(updateBadgeFromTimerState);
 
   // Check if we're in the extension environment
   if (browser.runtime.onInstalled) {
@@ -56,7 +57,6 @@ export default defineBackground(() => {
 
     // Handle messages from content script and popup/sidepanel
     browser.runtime.onMessage.addListener((message: BackgroundMessage, sender, sendResponse) => {
-      // Handle other message types
       if (message.type === 'textSelected') {
         saveSelectedText(message.text, message.url, message.title, message.timestamp);
         sendResponse({ success: true });
@@ -138,4 +138,83 @@ const toggleOverlay = () => {
       browser.tabs.sendMessage(tabs[0].id, { action: 'toggleOverlay' });
     }
   });
+};
+
+// Badge management functions
+const updateExtensionBadge = (text: string, color: string) => {
+  try {
+    browser.action.setBadgeText({ text });
+    browser.action.setBadgeBackgroundColor({ color });
+  } catch (error) {
+    console.error('[Background] Failed to update extension badge:', error);
+  }
+};
+
+const clearExtensionBadge = () => {
+  try {
+    browser.action.setBadgeText({ text: '' });
+  } catch (error) {
+    console.error('[Background] Failed to clear extension badge:', error);
+  }
+};
+
+// Update badge based on timer state
+const updateBadgeFromTimerState = (timerState: BackgroundTimerState) => {
+  if (timerState.running) {
+    const remainingTime = getRemainingTimeForCurrentPhase(timerState);
+    const badgeText = formatBadgeText(remainingTime, timerState.phase, timerState.technique);
+    const badgeColor = getBadgeColor(timerState.phase);
+    updateExtensionBadge(badgeText, badgeColor);
+  } else {
+    clearExtensionBadge();
+  }
+};
+
+// Helper functions for badge formatting
+const getRemainingTimeForCurrentPhase = (timerState: BackgroundTimerState): number => {
+  const phaseDuration = getPhaseDurationSeconds(timerState.technique, timerState.phase);
+
+  if (phaseDuration === Infinity) {
+    // For flow technique, return elapsed time instead
+    return timerState.phaseElapsed;
+  }
+
+  return Math.max(0, phaseDuration - timerState.phaseElapsed);
+};
+
+const formatBadgeText = (timeInSeconds: number, phase: string, technique: string): string => {
+  // For flow technique, show elapsed time with "F" prefix
+  if (getPhaseDurationSeconds(technique, phase as any) === Infinity) {
+    const minutes = Math.floor(timeInSeconds / 60);
+    if (minutes < 100) {
+      return `⏰${minutes}`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      return `⏰${hours}h`;
+    }
+  }
+
+  // For timed techniques, show remaining time
+  const minutes = Math.ceil(timeInSeconds / 60);
+  const phasePrefix = phase === 'studying' ? '🧠' : phase === 'longBreak' ? '💤' : '⏸️';
+
+  if (minutes < 100) {
+    return `${phasePrefix}${minutes}`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    return `${phasePrefix}${hours}h`;
+  }
+};
+
+const getBadgeColor = (phase: string): string => {
+  switch (phase) {
+    case 'studying':
+      return '#4CAF50'; // Green for study
+    case 'break':
+      return '#FF9800'; // Orange for break
+    case 'longBreak':
+      return '#2196F3'; // Blue for long break
+    default:
+      return '#757575'; // Gray default
+  }
 };

@@ -1,19 +1,20 @@
 import { browserRuntime } from '@/lib/browser-runtime-stub';
 import { BrowserStorageAdapter, HybridStorage, InMemoryAdapter, LocalStorageAdapter } from '@/lib/hybrid-storage';
+import { getNextPhase, shouldTransitionPhase } from '@/lib/technique-utils';
 import { uid } from '@/lib/utils';
 import { BackgroundMessage_Timer, BackgroundTimerState, StudySession } from '@/types';
 import { AudioKey, playAudio } from './audio';
 
 const STORAGE_KEY = 'sp:studySessionTimerState';
 
-// const storage = new HybridStorage([BrowserStorageAdapter, LocalStorageAdapter]);
-const storage = new InMemoryAdapter();
+const storage = new HybridStorage([BrowserStorageAdapter, LocalStorageAdapter]);
+// const storage = new InMemoryAdapter();
 
 export class StudySessionTimerManager {
   private timerState: BackgroundTimerState = {
     running: false,
     elapsed: 0,
-    technique: 'Pomodoro 25/5',
+    technique: 'pomodoro-25-5',
     moodStart: 3,
     moodEnd: 3,
     note: '',
@@ -21,11 +22,16 @@ export class StudySessionTimerManager {
     courseId: '',
     audioEnabled: true,
     audioVolume: 0.6,
+    phase: 'studying',
+    phaseElapsed: 0,
+    phaseStartTs: null,
+    studyPhasesCompleted: 0,
+    showCountdown: false,
   };
 
   private timerInterval: NodeJS.Timeout | null = null;
 
-  constructor() {
+  constructor(private readonly onStateChange?: (state: BackgroundTimerState) => void) {
     this.initializeTimerState();
   }
 
@@ -69,9 +75,17 @@ export class StudySessionTimerManager {
     }
 
     this.timerInterval = setInterval(() => {
-      if (this.timerState.running && this.timerState.startTs) {
-        this.timerState.elapsed = Math.floor((Date.now() - this.timerState.startTs) / 1000);
-        this.saveTimerState();
+      if (this.timerState.running && this.timerState.startTs && this.timerState.phaseStartTs) {
+        const now = Date.now();
+        this.timerState.elapsed = Math.floor((now - this.timerState.startTs) / 1000);
+        this.timerState.phaseElapsed = Math.floor((now - this.timerState.phaseStartTs) / 1000);
+
+        // Check if we need to transition to the next phase
+        if (shouldTransitionPhase(this.timerState.technique, this.timerState.phase, this.timerState.phaseElapsed)) {
+          this.transitionToNextPhase();
+        } else {
+          this.saveTimerState();
+        }
       }
     }, 1000);
   }
@@ -83,12 +97,42 @@ export class StudySessionTimerManager {
     }
   }
 
+  private async transitionToNextPhase() {
+    const currentPhase = this.timerState.phase;
+    const nextPhase = getNextPhase(currentPhase, this.timerState.technique, this.timerState.studyPhasesCompleted);
+    const now = Date.now();
+
+    // Increment study phases counter when completing a studying phase
+    if (currentPhase === 'studying') {
+      this.timerState.studyPhasesCompleted++;
+    }
+
+    // Play sound when transitioning phases
+    if (this.timerState.audioEnabled) {
+      if (nextPhase === 'break' || nextPhase === 'longBreak') {
+        await playNotificationSound('break', this.timerState.audioVolume);
+      } else if (nextPhase === 'studying') {
+        await playNotificationSound('start', this.timerState.audioVolume);
+      }
+    }
+
+    // Update phase
+    this.timerState.phase = nextPhase;
+    this.timerState.phaseElapsed = 0;
+    this.timerState.phaseStartTs = now;
+
+    this.saveTimerState();
+  }
+
   private async saveTimerState() {
     await storage.setItem(STORAGE_KEY, this.timerState);
     this.broadcastTimerState();
   }
 
   private broadcastTimerState() {
+    this.onStateChange?.(this.timerState);
+
+    // Send message to other extension contexts (popup, sidepanel, etc.)
     sendBackgroundMessage({
       type: 'timer.broadcastState',
       state: this.timerState,
@@ -96,10 +140,14 @@ export class StudySessionTimerManager {
   }
 
   public async startTimer(courseId: string) {
+    const now = Date.now();
     this.timerState.running = true;
     this.timerState.elapsed = 0;
-    this.timerState.startTs = Date.now();
+    this.timerState.startTs = now;
     this.timerState.courseId = courseId;
+    this.timerState.phase = 'studying';
+    this.timerState.phaseElapsed = 0;
+    this.timerState.phaseStartTs = now;
 
     // Play start sound if audio is enabled
     if (this.timerState.audioEnabled) {
@@ -118,10 +166,7 @@ export class StudySessionTimerManager {
     const endTs = Date.now();
     const durationMin = Math.max(1, Math.round(this.timerState.elapsed / 60));
 
-    // Play completion sound if audio is enabled
-    if (this.timerState.audioEnabled) {
-      await playNotificationSound('complete', this.timerState.audioVolume);
-    }
+    // No completion sound when manually stopping - only play break sound during phase transitions
 
     const session: StudySession = {
       id: uid(),
@@ -140,6 +185,10 @@ export class StudySessionTimerManager {
     this.timerState.elapsed = 0;
     this.timerState.startTs = null;
     this.timerState.note = '';
+    this.timerState.phase = 'studying';
+    this.timerState.phaseElapsed = 0;
+    this.timerState.phaseStartTs = null;
+    this.timerState.studyPhasesCompleted = 0;
 
     this.stopTimerInterval();
     this.saveTimerState();
@@ -148,9 +197,15 @@ export class StudySessionTimerManager {
   }
 
   public resetTimer() {
+    const now = Date.now();
     this.timerState.elapsed = 0;
+    this.timerState.phaseElapsed = 0;
+    this.timerState.phase = 'studying';
+    this.timerState.studyPhasesCompleted = 0;
+
     if (this.timerState.running && this.timerState.startTs) {
-      this.timerState.startTs = Date.now();
+      this.timerState.startTs = now;
+      this.timerState.phaseStartTs = now;
     }
     this.saveTimerState();
   }
@@ -189,7 +244,7 @@ export class StudySessionTimerManager {
         break;
 
       case 'timer.updateState':
-        const { technique, note, moodStart, moodEnd, audioEnabled, audioVolume } = message;
+        const { technique, note, moodStart, moodEnd, audioEnabled, audioVolume, showCountdown } = message;
         this.updateTimerSettings({
           ...(technique && { technique }),
           ...(note !== undefined && { note }),
@@ -197,6 +252,7 @@ export class StudySessionTimerManager {
           ...(moodEnd !== undefined && { moodEnd }),
           ...(audioEnabled !== undefined && { audioEnabled }),
           ...(audioVolume !== undefined && { audioVolume }),
+          ...(showCountdown !== undefined && { showCountdown }),
         });
         sendResponse({ success: true, state: this.getTimerState() });
         break;

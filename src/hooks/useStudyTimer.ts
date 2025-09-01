@@ -49,6 +49,8 @@ interface StudyTimer {
   setAudioEnabled: (enabled: boolean) => void;
   /** Function to set audio notification volume */
   setAudioVolume: (volume: number) => void;
+  /** Function to set countdown display mode */
+  setShowCountdown: (showCountdown: boolean) => void;
   /** Function to start the timer */
   startTimer: () => void;
   /** Function to stop the timer with course index */
@@ -69,14 +71,18 @@ export default function useStudyTimer(
   const [timerState, setTimerState] = useState<BackgroundTimerState>({
     running: false,
     elapsed: 0,
-    technique: 'Pomodoro 25/5',
+    technique: 'pomodoro-25-5',
     moodStart: 3,
     moodEnd: 3,
     note: '',
-    startTime: null,
+    startTs: null,
     courseId: '',
     audioEnabled: true,
     audioVolume: 0.6,
+    phase: 'studying',
+    phaseElapsed: 0,
+    phaseStartTs: null,
+    showCountdown: false,
   });
 
   // Initialize timer state from background on mount
@@ -193,6 +199,13 @@ export default function useStudyTimer(
     );
   }, []);
 
+  const setShowCountdown = useCallback((showCountdown: boolean): void => {
+    handleBackgroundResponse(
+      sendBackgroundMessage({ type: 'timer.updateState', showCountdown }),
+      'update showCountdown'
+    );
+  }, []);
+
   return {
     // State
     timerState,
@@ -204,6 +217,7 @@ export default function useStudyTimer(
     setNote,
     setAudioEnabled,
     setAudioVolume,
+    setShowCountdown,
 
     // Actions
     startTimer,

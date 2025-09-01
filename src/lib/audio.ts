@@ -1,10 +1,10 @@
 import { browserRuntime, isExtension } from '@/lib/browser-runtime-stub';
 
-export type AudioKey = 'start' | 'complete';
+export type AudioKey = 'start' | 'break';
 
 const AUDIO_FILES: Record<AudioKey, string> = {
   start: '/sounds/timer-start.wav',
-  complete: '/sounds/timer-complete.wav',
+  break: '/sounds/timer-break.wav',
 };
 
 // Store audio elements to reuse them

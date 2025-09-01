@@ -5,8 +5,8 @@
     "course": "Curso",
     "technique": "Técnica",
     "techniques": {
-      "pomodoro": "Pomodoro 25/5",
-      "deepWork": "Trabajo Profundo 50/10",
+      "pomodoro": "Pomodoro ({{studyMinutes}} ↔︎ {{breakMinutes}} + {{longBreakMinutes}}/{{longBreakInterval}})",
+      "deepWork": "Trabajo Profundo ({{studyMinutes}} ↔︎ {{breakMinutes}})",
       "flow": "Flujo (sin descansos)"
     },
     "moodStart": "Estado inicial",
@@ -17,14 +17,22 @@
     },
     "status": {
       "studying": "Estudiando…",
+      "break": "Descanso…",
+      "longBreak": "Descanso largo…",
       "ready": "Listo"
     },
     "buttons": {
       "start": "Iniciar",
-      "stop": "Detener",
+      "stop": "Parar",
       "reset": "Reiniciar"
     },
-    "sessionNotes": "Notas de sesión",
+    "timer": {
+      "totalSession": "Total",
+      "phaseGoal": "por {{minutes}} min.",
+      "tooltipElapsed": "Clic para mostrar tiempo transcurrido",
+      "tooltipCountdown": "Clic para mostrar cuenta regresiva"
+    },
+    "sessionNotes": "Notas de la sesión",
     "notesPlaceholder": "¿Qué cubriste? ¿Algún obstáculo?"
   },
   "sessionTasks": {

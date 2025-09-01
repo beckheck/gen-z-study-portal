@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useCourses, useStudySessions } from '@/hooks/useStore';
 import useStudyTimer from '@/hooks/useStudyTimer';
+import { getPhaseDurationSeconds, getTechniqueConfig, STUDY_TECHNIQUES } from '@/lib/technique-utils';
 import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,14 +35,51 @@ export default function StudyTrackerTab() {
   }, selectedCourseId);
   const { timerState } = studyTimer;
 
-  const elapsedMin = Math.floor(timerState.elapsed / 60)
-    .toString()
-    .padStart(2, '0');
-  const elapsedSec = (timerState.elapsed % 60).toString().padStart(2, '0');
-  const elapsedMinSec = `${elapsedMin}:${elapsedSec}`;
+  // Get phase duration for progress indication
+  const phaseDurationSeconds = getPhaseDurationSeconds(timerState.technique, timerState.phase);
+  const phaseProgress =
+    phaseDurationSeconds === Infinity ? 0 : Math.min(100, (timerState.phaseElapsed / phaseDurationSeconds) * 100);
+
+  // Get technique configuration for goal time display
+  const techniqueConfig = getTechniqueConfig(timerState.technique);
+  const phaseGoalMinutes =
+    timerState.phase === 'studying'
+      ? techniqueConfig.studyMinutes
+      : timerState.phase === 'break'
+      ? techniqueConfig.breakMinutes
+      : techniqueConfig.longBreakMinutes;
 
   // Session-only tasks
   const [sessionTaskTitle, setSessionTaskTitle] = useState<string>('');
+
+  // Calculate display time (use phase time for techniques with breaks, total time for flow)
+  const displayElapsed = techniqueConfig.breakMinutes === 0 ? timerState.elapsed : timerState.phaseElapsed;
+
+  // Calculate countdown time (time remaining in current phase)
+  const phaseRemainingSeconds =
+    phaseDurationSeconds === Infinity ? 0 : Math.max(0, phaseDurationSeconds - timerState.phaseElapsed);
+
+  // Determine what time to show based on mode and conditions
+  const timeToShow =
+    timerState.showCountdown && phaseDurationSeconds !== Infinity && timerState.running
+      ? phaseRemainingSeconds
+      : displayElapsed;
+
+  const elapsedMin = Math.floor(timeToShow / 60)
+    .toString()
+    .padStart(2, '0');
+  const elapsedSec = (timeToShow % 60).toString().padStart(2, '0');
+  const elapsedMinSec =
+    timerState.showCountdown && phaseDurationSeconds !== Infinity && timerState.running
+      ? `-${elapsedMin}:${elapsedSec}`
+      : `${elapsedMin}:${elapsedSec}`;
+
+  // Calculate total session time for display
+  const totalMin = Math.floor(timerState.elapsed / 60)
+    .toString()
+    .padStart(2, '0');
+  const totalSec = (timerState.elapsed % 60).toString().padStart(2, '0');
+  const totalMinSec = `${totalMin}:${totalSec}`;
 
   /**
    * Add a new session task
@@ -88,9 +126,16 @@ export default function StudyTrackerTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Pomodoro 25/5">{t('focusTimer.techniques.pomodoro')}</SelectItem>
-                  <SelectItem value="Deep Work 50/10">{t('focusTimer.techniques.deepWork')}</SelectItem>
-                  <SelectItem value="Flow (no breaks)">{t('focusTimer.techniques.flow')}</SelectItem>
+                  {STUDY_TECHNIQUES.map(technique => (
+                    <SelectItem key={technique.id} value={technique.id}>
+                      {t(technique.name, {
+                        studyMinutes: technique.studyMinutes === Infinity ? '∞' : technique.studyMinutes,
+                        breakMinutes: technique.breakMinutes,
+                        longBreakMinutes: technique.longBreakMinutes,
+                        longBreakInterval: technique.longBreakInterval,
+                      })}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -106,10 +151,67 @@ export default function StudyTrackerTab() {
           </div>
 
           <div className="text-center p-6 bg-white/70 dark:bg-white/5 rounded-2xl">
-            <div className="text-5xl font-extrabold tracking-wider tabular-nums">{elapsedMinSec}</div>
-            <div className="text-xs text-zinc-500 mt-1">
-              {timerState.running ? t('focusTimer.status.studying') : t('focusTimer.status.ready')}
+            <div
+              className="text-5xl font-extrabold tracking-wider tabular-nums cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors select-none"
+              onClick={() => studyTimer.setShowCountdown(!timerState.showCountdown)}
+              title={
+                timerState.showCountdown ? t('focusTimer.timer.tooltipElapsed') : t('focusTimer.timer.tooltipCountdown')
+              }
+            >
+              {elapsedMinSec}
             </div>
+            <div className="text-xs text-zinc-500 mt-1">
+              {!timerState.running ? (
+                t('focusTimer.status.ready')
+              ) : timerState.phase === 'studying' ? (
+                <>
+                  {t('focusTimer.status.studying')}
+                  {phaseGoalMinutes !== Infinity && (
+                    <span className="ml-2 opacity-70">
+                      {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
+                    </span>
+                  )}
+                </>
+              ) : timerState.phase === 'break' ? (
+                <>
+                  {t('focusTimer.status.break')}
+                  {phaseGoalMinutes !== Infinity && (
+                    <span className="ml-2 opacity-70">
+                      {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  {t('focusTimer.status.longBreak')}
+                  {phaseGoalMinutes !== Infinity && (
+                    <span className="ml-2 opacity-70">
+                      {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Show progress bar for techniques with breaks */}
+            {timerState.running && phaseDurationSeconds !== Infinity && (
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-2">
+                <div
+                  className={`h-1 rounded-full transition-all duration-1000 ${
+                    timerState.phase === 'studying' ? 'bg-blue-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${phaseProgress}%` }}
+                />
+              </div>
+            )}
+
+            {/* Show total time for multi-phase techniques */}
+            {timerState.running && techniqueConfig.breakMinutes > 0 && (
+              <div className="text-xs text-zinc-400 mt-1">
+                {t('focusTimer.timer.totalSession')}: {totalMinSec}
+              </div>
+            )}
+
             <div className="flex items-center justify-center gap-2 mt-4">
               {!timerState.running ? (
                 <Button onClick={studyTimer.startTimer} className="rounded-xl">
