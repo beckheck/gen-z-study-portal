@@ -43,7 +43,7 @@
     "title": "Session Log",
     "description": "Your recent sessions",
     "noSessions": "No sessions yet. Let's cook. 👨‍🍳",
-    "duration": "{{duration}}m",
-    "sessionInfo": "{{course}} · {{duration}}m"
+    "duration": "{{duration}}",
+    "sessionInfo": "{{course}} · {{duration}}"
   }
 }

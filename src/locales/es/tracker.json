@@ -43,7 +43,7 @@
     "title": "Registro de Sesiones",
     "description": "Tus sesiones recientes",
     "noSessions": "Aún no hay sesiones. Vamos a cocinar. 👨‍🍳",
-    "duration": "{{duration}}m",
-    "sessionInfo": "{{course}} · {{duration}}m"
+    "duration": "{{duration}}",
+    "sessionInfo": "{{course}} · {{duration}}"
   }
 }

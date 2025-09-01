@@ -24,7 +24,7 @@ export default function StudyTrackerTab() {
   // Translation hooks
   const { t } = useTranslation('tracker');
   const { t: tCommon } = useTranslation('common');
-  const { formatDate, formatTime } = useLocalization();
+  const { formatDate, formatTime, formatDurationSeconds, formatDurationMinutes } = useLocalization();
 
   // Settings dialog context
   const { openDialog } = useSettingsDialogContext();
@@ -105,11 +105,7 @@ export default function StudyTrackerTab() {
       : `${elapsedMin}:${elapsedSec}`;
 
   // Calculate total session time for display
-  const totalMin = Math.floor(timerState.elapsed / 60)
-    .toString()
-    .padStart(2, '0');
-  const totalSec = (timerState.elapsed % 60).toString().padStart(2, '0');
-  const totalMinSec = `${totalMin}:${totalSec}`;
+  const totalMinSec = formatDurationSeconds(timerState.elapsed);
 
   /**
    * Add a new session task
@@ -449,7 +445,7 @@ export default function StudyTrackerTab() {
                   <div className="font-medium">
                     {t('sessionLog.sessionInfo', {
                       course: getCourseTitle(session.courseId),
-                      duration: session.durationMin,
+                      duration: formatDurationMinutes(session.durationMin),
                     })}
                   </div>
                   <div className="text-xs text-zinc-500">
