@@ -135,8 +135,9 @@ export function useEventDialog() {
     setOpen(false);
   };
 
-  const handleSave = () => {
-    handleSaveEvent(form, editingEvent);
+  const handleSave = (validatedData?: any) => {
+    const dataToSave = validatedData || form;
+    handleSaveEvent(dataToSave, editingEvent);
     closeDialog();
   };
 

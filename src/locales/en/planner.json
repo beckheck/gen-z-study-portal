@@ -78,5 +78,15 @@
     "regularEventTitle": "e.g., Math Olympics Week",
     "examTitle": "e.g., Midterm Exam",
     "taskTitle": "e.g., Submit Assignment"
+  },
+  "validation": {
+    "titleRequired": "Title is required",
+    "titleTooLong": "Title must be less than 200 characters",
+    "startDateRequired": "Start date is required",
+    "locationTooLong": "Location must be less than 500 characters",
+    "weightMin": "Weight must be at least 0",
+    "weightMax": "Weight must be at most 100",
+    "invalidColorFormat": "Invalid color format",
+    "endDateAfterStart": "End date must be after or equal to start date"
   }
 }

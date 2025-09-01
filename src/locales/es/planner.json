@@ -78,5 +78,15 @@
     "regularEventTitle": "ej., Semana de Olimpiadas Matemáticas",
     "examTitle": "ej., Examen Semestral",
     "taskTitle": "ej., Entregar Tarea"
+  },
+  "validation": {
+    "titleRequired": "El título es requerido",
+    "titleTooLong": "El título debe tener menos de 200 caracteres",
+    "startDateRequired": "La fecha de inicio es requerida",
+    "locationTooLong": "La ubicación debe tener menos de 500 caracteres",
+    "weightMin": "La ponderación debe ser al menos 0",
+    "weightMax": "La ponderación debe ser como máximo 100",
+    "invalidColorFormat": "Formato de color inválido",
+    "endDateAfterStart": "La fecha de fin debe ser posterior o igual a la fecha de inicio"
   }
 }
