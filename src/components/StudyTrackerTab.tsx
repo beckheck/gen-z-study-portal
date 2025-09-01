@@ -65,8 +65,10 @@ export default function StudyTrackerTab() {
   // Get phase duration for progress indication
   const phaseDurationSeconds = getPhaseDurationSeconds(timerState.technique, timerState.phase);
   const statusEmoji = !timerState.running ? '' : getPhaseEmoji(timerState.technique, timerState.phase);
+
+  // Calculate progress with a buffer to ensure it reaches 100%
   const phaseProgress =
-    phaseDurationSeconds === Infinity ? 0 : Math.min(100, (timerState.phaseElapsed / phaseDurationSeconds) * 100);
+    phaseDurationSeconds === Infinity ? 0 : (timerState.phaseElapsed / (phaseDurationSeconds - 1)) * 100;
 
   // Get technique configuration for goal time display
   const techniqueConfig = getTechniqueConfig(timerState.technique);
@@ -153,17 +155,138 @@ export default function StudyTrackerTab() {
               </CardTitle>
               <CardDescription>{t('focusTimer.description')}</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => openDialog('focusTimer')}
-              className="rounded-xl h-8 w-8"
-            >
+            <Button variant="ghost" size="icon" onClick={() => openDialog('focusTimer')} className="rounded-xl h-8 w-8">
               <Settings className="w-4 h-4" />
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Timer Display with Circular Progress */}
+          <div className="text-center p-7 bg-white/70 dark:bg-white/5 rounded-3xl relative">
+            {/* Circular Progress Ring */}
+            {timerState.running && phaseDurationSeconds !== Infinity && (
+              <div className="absolute inset-1 flex items-center justify-center">
+                <svg
+                  className="w-full h-full transform -rotate-90"
+                  viewBox="0 0 200 200"
+                  style={{ maxWidth: '500px', maxHeight: '500px' }}
+                >
+                  {/* Background circle */}
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="90"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="6"
+                    className="text-gray-200 dark:text-gray-700 opacity-30"
+                  />
+                  {/* Progress circle */}
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="90"
+                    fill="none"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    className={`${phaseProgress > 0 ? 'transition-all duration-1000' : 'transition-none'} ${
+                      timerState.phase === 'studying'
+                        ? 'text-orange-500'
+                        : timerState.phase === 'break'
+                        ? 'text-green-500'
+                        : 'text-blue-500'
+                    }`}
+                    strokeDasharray={`${2 * Math.PI * 90}`}
+                    strokeDashoffset={`${2 * Math.PI * 90 * (1 - phaseProgress / 100)}`}
+                    style={{
+                      filter: 'drop-shadow(0 0 8px currentColor)',
+                    }}
+                  />
+                </svg>
+              </div>
+            )}
+
+            <div className="relative z-10 py-12">
+              <div
+                className="text-5xl font-extrabold tracking-wider tabular-nums cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors select-none"
+                onClick={() => studyTimer.setShowCountdown(!timerState.showCountdown)}
+                title={
+                  timerState.showCountdown
+                    ? t('focusTimer.timer.tooltipElapsed')
+                    : t('focusTimer.timer.tooltipCountdown')
+                }
+              >
+                {elapsedMinSec}
+              </div>
+              <div className="text-xs text-zinc-500 mt-1">
+                {statusEmoji}{' '}
+                {!timerState.running ? (
+                  t('focusTimer.status.ready')
+                ) : timerState.phase === 'studying' ? (
+                  <>
+                    {t('focusTimer.status.studying')}
+                    {phaseGoalMinutes !== Infinity && (
+                      <span className="ml-2 opacity-70">
+                        {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
+                      </span>
+                    )}
+                  </>
+                ) : timerState.phase === 'break' ? (
+                  <>
+                    {t('focusTimer.status.break')}
+                    {phaseGoalMinutes !== Infinity && (
+                      <span className="ml-2 opacity-70">
+                        {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {t('focusTimer.status.longBreak')}
+                    {phaseGoalMinutes !== Infinity && (
+                      <span className="ml-2 opacity-70">
+                        {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Show total time for multi-phase techniques */}
+              {timerState.running && techniqueConfig.breakMinutes > 0 && (
+                <div className="text-xs text-zinc-400 mt-1">
+                  {t('focusTimer.timer.totalSession')}: {totalMinSec}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Control Buttons - Outside the circle */}
+          <div className="flex items-center justify-center gap-2">
+            {!timerState.running ? (
+              <Button onClick={studyTimer.startTimer} className="rounded-xl">
+                <Flame className="w-4 h-4 mr-2" />
+                {t('focusTimer.buttons.start')}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={() => studyTimer.stopTimer(selectedCourseId)}
+                  variant="secondary"
+                  className="rounded-xl"
+                >
+                  <HeartHandshake className="w-4 h-4 mr-2" />
+                  {t('focusTimer.buttons.stop')}
+                </Button>
+                <Button onClick={studyTimer.resetTimer} variant="ghost" className="rounded-xl">
+                  <TimerReset className="w-4 h-4 mr-2" />
+                  {t('focusTimer.buttons.reset')}
+                </Button>
+              </>
+            )}
+          </div>
+
           <div className="grid md:grid-cols-2 gap-3">
             <div>
               <Label>{t('focusTimer.course')}</Label>
@@ -210,98 +333,6 @@ export default function StudyTrackerTab() {
               value={timerState.moodEnd}
               onChange={studyTimer.setMoodEnd}
             />
-          </div>
-
-          <div className="text-center p-6 bg-white/70 dark:bg-white/5 rounded-2xl">
-            <div
-              className="text-5xl font-extrabold tracking-wider tabular-nums cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors select-none"
-              onClick={() => studyTimer.setShowCountdown(!timerState.showCountdown)}
-              title={
-                timerState.showCountdown ? t('focusTimer.timer.tooltipElapsed') : t('focusTimer.timer.tooltipCountdown')
-              }
-            >
-              {elapsedMinSec}
-            </div>
-            <div className="text-xs text-zinc-500 mt-1">
-              {statusEmoji}{' '}
-              {!timerState.running ? (
-                t('focusTimer.status.ready')
-              ) : timerState.phase === 'studying' ? (
-                <>
-                  {t('focusTimer.status.studying')}
-                  {phaseGoalMinutes !== Infinity && (
-                    <span className="ml-2 opacity-70">
-                      {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
-                    </span>
-                  )}
-                </>
-              ) : timerState.phase === 'break' ? (
-                <>
-                  {t('focusTimer.status.break')}
-                  {phaseGoalMinutes !== Infinity && (
-                    <span className="ml-2 opacity-70">
-                      {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  {t('focusTimer.status.longBreak')}
-                  {phaseGoalMinutes !== Infinity && (
-                    <span className="ml-2 opacity-70">
-                      {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Show progress bar for techniques with breaks */}
-            {timerState.running && phaseDurationSeconds !== Infinity && (
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-2">
-                <div
-                  className={`h-1 rounded-full transition-all duration-1000 ${
-                    timerState.phase === 'studying'
-                      ? 'bg-orange-500'
-                      : timerState.phase === 'break'
-                      ? 'bg-green-500'
-                      : 'bg-blue-500'
-                  }`}
-                  style={{ width: `${phaseProgress}%` }}
-                />
-              </div>
-            )}
-
-            {/* Show total time for multi-phase techniques */}
-            {timerState.running && techniqueConfig.breakMinutes > 0 && (
-              <div className="text-xs text-zinc-400 mt-1">
-                {t('focusTimer.timer.totalSession')}: {totalMinSec}
-              </div>
-            )}
-
-            <div className="flex items-center justify-center gap-2 mt-4">
-              {!timerState.running ? (
-                <Button onClick={studyTimer.startTimer} className="rounded-xl">
-                  <Flame className="w-4 h-4 mr-2" />
-                  {t('focusTimer.buttons.start')}
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    onClick={() => studyTimer.stopTimer(selectedCourseId)}
-                    variant="secondary"
-                    className="rounded-xl"
-                  >
-                    <HeartHandshake className="w-4 h-4 mr-2" />
-                    {t('focusTimer.buttons.stop')}
-                  </Button>
-                  <Button onClick={studyTimer.resetTimer} variant="ghost" className="rounded-xl">
-                    <TimerReset className="w-4 h-4 mr-2" />
-                    {t('focusTimer.buttons.reset')}
-                  </Button>
-                </>
-              )}
-            </div>
           </div>
 
           <div>
