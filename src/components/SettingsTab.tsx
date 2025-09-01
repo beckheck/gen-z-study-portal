@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useAppContext } from '@/contexts/AppContext';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
 import { useCourses, useSoundtrack, useTheme, useWeather } from '@/hooks/useStore';
 import { dataTransfer, persistStore } from '@/stores/app';
@@ -32,6 +33,8 @@ import { useTranslation } from 'react-i18next';
 import StorageInfoCard from './StorageInfoCard';
 
 export default function SettingsTab() {
+  const { isExtension } = useAppContext();
+
   // Translation hooks
   const { t } = useTranslation('settings');
   const { t: tCommon } = useTranslation('common');
@@ -262,10 +265,9 @@ export default function SettingsTab() {
       <CardContent className="space-y-4 text-sm text-zinc-600 dark:text-zinc-400">
         <div className="space-y-2">
           <p>{t('about.localFirst')}</p>
-          <p>{t('about.proTip')}</p>
+          <p>{t(isExtension ? 'about.proTipExtension' : 'about.proTip')}</p>
         </div>
-        <div className="grid gap-2">
-          <BuyMeACoffeeButton id="" />
+        <div className="grid gap-2 lg:grid-cols-3 lg:gap-3">
           <Button variant="outline" onClick={() => dataTransfer.exportFile()} className="w-full rounded-xl">
             <Download className="w-4 h-4 mr-2" />
             {t('about.exportData')}
@@ -304,6 +306,7 @@ export default function SettingsTab() {
               </span>
             </label>
           </Button>
+          <BuyMeACoffeeButton id="" />
         </div>
         <StorageInfoCard />
       </CardContent>
@@ -702,22 +705,29 @@ export default function SettingsTab() {
     </Card>
   );
 
+  type MenuItem = {
+    id: string;
+    title: string;
+    icon: (props: any) => any;
+    render: () => any;
+  };
+
   // Menu items configuration
-  const menuItems = [
-    { id: 'about', label: t('about.title'), icon: Info, render: renderAboutCard },
-    { id: 'courses', label: t('courses.title'), icon: BookOpen, render: renderCoursesCard },
-    { id: 'soundtrack', label: t('soundtrack.title'), icon: Music, render: renderSoundtrackCard },
-    { id: 'background', label: t('background.title'), icon: Image, render: renderBackgroundCard },
-    { id: 'customCursor', label: t('customCursor.title'), icon: MousePointer, render: renderCustomCursorCard },
-    { id: 'accentColor', label: t('accentColor.title'), icon: Palette, render: renderAccentColorCard },
-    { id: 'cardOpacity', label: t('cardOpacity.title'), icon: Layers, render: renderCardOpacityCard },
+  const menuItems: MenuItem[] = [
+    { id: 'about', title: t('about.title'), icon: Info, render: renderAboutCard },
+    { id: 'courses', title: t('courses.title'), icon: BookOpen, render: renderCoursesCard },
+    { id: 'soundtrack', title: t('soundtrack.title'), icon: Music, render: renderSoundtrackCard },
+    { id: 'background', title: t('background.title'), icon: Image, render: renderBackgroundCard },
+    { id: 'customCursor', title: t('customCursor.title'), icon: MousePointer, render: renderCustomCursorCard },
+    { id: 'accentColor', title: t('accentColor.title'), icon: Palette, render: renderAccentColorCard },
+    { id: 'cardOpacity', title: t('cardOpacity.title'), icon: Layers, render: renderCardOpacityCard },
     {
       id: 'backgroundGradient',
-      label: t('backgroundGradient.title'),
+      title: t('backgroundGradient.title'),
       icon: Brush,
       render: renderBackgroundGradientCard,
     },
-    { id: 'weatherApi', label: t('weatherApi.title'), icon: Cloud, render: renderWeatherApiCard },
+    { id: 'weatherApi', title: t('weatherApi.title'), icon: Cloud, render: renderWeatherApiCard },
   ];
 
   return (
@@ -743,7 +753,7 @@ export default function SettingsTab() {
                     }`}
                   >
                     <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <span className="font-medium">{item.title}</span>
                   </button>
                 );
               })}
@@ -755,8 +765,8 @@ export default function SettingsTab() {
       {/* Right Content Area */}
       <div className="flex-1">
         <div className="space-y-6 pb-24 md:pb-6">
-          {menuItems.map(item => (
-            <div key={item.id}>{item.render()}</div>
+          {menuItems.map(({ id, render }) => (
+            <div key={id}>{render()}</div>
           ))}
         </div>
       </div>

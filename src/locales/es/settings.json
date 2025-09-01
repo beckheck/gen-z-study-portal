@@ -28,8 +28,9 @@
   "about": {
     "title": "Acerca de",
     "description": "Local · Privado · Súper lindo",
-    "localFirst": "Todo se almacena en tu navegador.",
-    "proTip": "Consejo pro: guarda esta pestaña y vive tu mejor vida de estudio ✨",
+    "localFirst": "💾 Todo se almacena en tu navegador.",
+    "proTip": "💡 Consejo pro: Fija 📌 esta pestaña y vive tu mejor vida de estudio ✨",
+    "proTipExtension": "💡 Consejo pro: Fija 📌 esta extensión y vive tu mejor vida de estudio ✨",
     "buyMeACoffee": "Cómprame un café",
     "viewSourceOnGitHub": "Ver código fuente en GitHub",
     "exportData": "Exportar Datos",

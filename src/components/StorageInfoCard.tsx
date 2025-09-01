@@ -28,7 +28,10 @@ export const StorageInfoCard: React.FC = () => {
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    const formattedNumber = formatNumber(bytes / Math.pow(k, i), { maximumFractionDigits: 2, minimumFractionDigits: 0 });
+    const formattedNumber = formatNumber(bytes / Math.pow(k, i), {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+    });
     return `${formattedNumber} ${sizes[i]}`;
   };
 
@@ -90,6 +93,8 @@ export const StorageInfoCard: React.FC = () => {
   const usagePercentage = getUsagePercentage(storageInfo.used, storageInfo.quota);
   const statusColor = getStatusColor(usagePercentage);
   const statusText = getStatusText(storageInfo.adapter, usagePercentage);
+
+  if (storageInfo.adapter === 'Browser') return null;
 
   return (
     <Card className="p-4 space-y-3">

@@ -28,8 +28,9 @@
   "about": {
     "title": "About",
     "description": "Local-first · Private · Cute af",
-    "localFirst": "Everything saves to your browser.",
-    "proTip": "Pro tip: pin this tab and live your best study life ✨",
+    "localFirst": "💾 Everything saves to your browser.",
+    "proTip": "💡 Pro tip: Pin 📌 this tab and live your best study life ✨",
+    "proTipExtension": "💡 Pro tip: Pin 📌 this extension and live your best study life ✨",
     "buyMeACoffee": "Buy me a coffee",
     "viewSourceOnGitHub": "View source on GitHub",
     "exportData": "Export Data",
