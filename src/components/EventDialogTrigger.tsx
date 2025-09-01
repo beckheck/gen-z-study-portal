@@ -6,11 +6,10 @@ import { useTranslation } from 'react-i18next';
 interface EventDialogTriggerProps {
   onOpenDialog: () => void;
   children?: ReactNode;
-  namespace?: string;
 }
 
-export function EventDialogTrigger({ onOpenDialog, children, namespace = 'planner' }: EventDialogTriggerProps) {
-  const { t } = useTranslation(namespace);
+export function EventDialogTrigger({ onOpenDialog, children}: EventDialogTriggerProps) {
+  const { t } = useTranslation('planner');
 
   if (children) {
     return <div onClick={onOpenDialog}>{children}</div>;

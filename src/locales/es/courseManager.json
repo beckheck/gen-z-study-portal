@@ -2,12 +2,10 @@
   "actions": {
     "addTask": "Agregar tarea",
     "addExam": "Agregar examen",
-    "updateExam": "Actualizar examen",
     "done": "Hecho",
     "undo": "Deshacer",
     "edit": "Editar",
-    "clearCourseData": "Limpiar Datos del Curso",
-    "cancelEdit": "Cancelar Edición"
+    "clearCourseData": "Limpiar Datos del Curso"
   },
   "tasks": {
     "title": "Tareas",
@@ -64,44 +62,6 @@
     "examsSummary": "{{graded}} de {{total}} exámenes calificados",
     "addExamsFirst": "Agrega exámenes primero para registrar calificaciones",
     "weight": "peso {{weight}}%"
-  },
-  "events": {
-    "addEvent": "Agregar Tarea",
-    "editEvent": "Editar Tarea",
-    "addExam": "Agregar Examen",
-    "editExam": "Editar Examen"
-  },
-  "forms": {
-    "eventCategory": "Categoría de Evento",
-    "courseOptional": "Curso",
-    "title": "Título",
-    "startDate": "Fecha de Inicio",
-    "endDate": "Fecha de Fin",
-    "location": "Ubicación",
-    "color": "Color",
-    "weight": "Ponderación (%)",
-    "priority": "Prioridad",
-    "notes": "Notas"
-  },
-  "eventTypes": {
-    "regular": "Evento Regular",
-    "exam": "Examen",
-    "task": "Tarea"
-  },
-  "messages": {
-    "modifyEventDetails": "Modifica los detalles de la tarea a continuación",
-    "createEventDescription": "Crear una nueva tarea",
-    "modifyExamDetails": "Modifica los detalles del examen a continuación",
-    "createExamDescription": "Crear un nuevo examen",
-    "eventDetailsAgenda": "Detalles del evento, agenda, etc.",
-    "examTopicsChapters": "Capítulos, temas, materiales permitidos...",
-    "taskDetails": "Detalles adicionales de la tarea..."
-  },
-  "placeholders": {
-    "regularEventTitle": "ej., Semana de Olimpiadas de Matemáticas",
-    "examTitle": "ej., Examen Parcial",
-    "taskTitle": "ej., Enviar Tarea",
-    "locationExample": "ej., Auditorio Principal"
   },
   "confirmations": {
     "clearData": {

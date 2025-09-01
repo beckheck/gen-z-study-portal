@@ -308,7 +308,6 @@ export default function PlannerTab() {
             editingEvent={eventDialog.editingEvent}
             onSave={eventDialog.handleSave}
             onDelete={eventDialog.handleDelete}
-            namespace="planner"
           />
         </div>
       </div>

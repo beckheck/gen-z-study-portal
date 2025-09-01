@@ -32,7 +32,6 @@ interface EventDialogProps {
   setForm?: Dispatch<SetStateAction<EventForm>>; // Keep for backwards compatibility
   onSave: (data?: EventFormData) => void;
   onDelete: () => void;
-  namespace?: string; // Translation namespace (e.g., 'planner', 'tracker')
   disableEventCategory?: boolean; // Make event category readonly
   disableCourse?: boolean; // Make course selection readonly
 }
@@ -45,11 +44,10 @@ export function EventDialog({
   setForm,
   onSave,
   onDelete,
-  namespace = 'planner',
   disableEventCategory = false,
   disableCourse = false,
 }: EventDialogProps) {
-  const { t } = useTranslation(namespace);
+  const { t } = useTranslation('planner');
   const { t: tCommon } = useTranslation('common');
   const { courses } = useCourses();
 
@@ -131,20 +129,28 @@ export function EventDialog({
         <DialogHeader className="">
           <DialogTitle className="text-gray-900 dark:text-gray-100">
             {editingEvent
-              ? namespace === 'courseManager' && watchedEventCategory === 'exam'
+              ? watchedEventCategory === 'exam'
                 ? t('events.editExam')
+                : watchedEventCategory === 'task'
+                ? t('events.editTask')
                 : t('events.editEvent')
-              : namespace === 'courseManager' && watchedEventCategory === 'exam'
+              : watchedEventCategory === 'exam'
               ? t('events.addExam')
+              : watchedEventCategory === 'task'
+              ? t('events.addTask')
               : t('events.addEvent')}
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-300">
             {editingEvent
-              ? namespace === 'courseManager' && watchedEventCategory === 'exam'
+              ? watchedEventCategory === 'exam'
                 ? t('messages.modifyExamDetails')
+                : watchedEventCategory === 'task'
+                ? t('messages.modifyTaskDetails')
                 : t('messages.modifyEventDetails')
-              : namespace === 'courseManager' && watchedEventCategory === 'exam'
+              : watchedEventCategory === 'exam'
               ? t('messages.createExamDescription')
+              : watchedEventCategory === 'task'
+              ? t('messages.createTaskDescription')
               : t('messages.createEventDescription')}
           </DialogDescription>
         </DialogHeader>
@@ -451,40 +457,41 @@ export function EventDialog({
   );
 }
 
-export const eventFormSchema = (t: (key: string) => string) => z
-  .object({
-    eventCategory: z.enum(['regular', 'exam', 'task']),
-    courseId: z.string().optional(),
-    type: z.string(),
-    title: z.string().min(1, t('validation.titleRequired')).max(200, t('validation.titleTooLong')),
-    startDate: z.string().min(1, t('validation.startDateRequired')),
-    endDate: z.string(),
-    day: z.string(),
-    start: z.string(),
-    end: z.string(),
-    location: z.string().refine(val => {
-      if (val && val.length > 500) {
-        return false;
+export const eventFormSchema = (t: (key: string) => string) =>
+  z
+    .object({
+      eventCategory: z.enum(['regular', 'exam', 'task']),
+      courseId: z.string().optional(),
+      type: z.string(),
+      title: z.string().min(1, t('validation.titleRequired')).max(200, t('validation.titleTooLong')),
+      startDate: z.string().min(1, t('validation.startDateRequired')),
+      endDate: z.string(),
+      day: z.string(),
+      start: z.string(),
+      end: z.string(),
+      location: z.string().refine(val => {
+        if (val && val.length > 500) {
+          return false;
+        }
+        return true;
+      }, t('validation.locationTooLong')),
+      weight: z.number().min(0, t('validation.weightMin')).max(100, t('validation.weightMax')),
+      priority: z.enum(['low', 'normal', 'high']),
+      notes: z.string(),
+      color: z.string().regex(/^#[0-9A-F]{6}$/i, t('validation.invalidColorFormat')),
+    })
+    .refine(
+      data => {
+        // If endDate is provided and we're dealing with a regular event, it should be after or equal to startDate
+        if (data.eventCategory === 'regular' && data.endDate && data.startDate) {
+          return new Date(data.endDate) >= new Date(data.startDate);
+        }
+        return true;
+      },
+      {
+        message: t('validation.endDateAfterStart'),
+        path: ['endDate'],
       }
-      return true;
-    }, t('validation.locationTooLong')),
-    weight: z.number().min(0, t('validation.weightMin')).max(100, t('validation.weightMax')),
-    priority: z.enum(['low', 'normal', 'high']),
-    notes: z.string(),
-    color: z.string().regex(/^#[0-9A-F]{6}$/i, t('validation.invalidColorFormat')),
-  })
-  .refine(
-    data => {
-      // If endDate is provided and we're dealing with a regular event, it should be after or equal to startDate
-      if (data.eventCategory === 'regular' && data.endDate && data.startDate) {
-        return new Date(data.endDate) >= new Date(data.startDate);
-      }
-      return true;
-    },
-    {
-      message: t('validation.endDateAfterStart'),
-      path: ['endDate'],
-    }
-  );
+    );
 
 export type EventFormData = z.infer<ReturnType<typeof eventFormSchema>>;

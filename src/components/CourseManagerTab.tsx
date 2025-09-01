@@ -678,7 +678,6 @@ export default function CourseManagerTab() {
         setForm={eventDialog.setForm}
         onSave={eventDialog.handleSave}
         onDelete={eventDialog.handleDelete}
-        namespace="courseManager"
         disableEventCategory={true}
         disableCourse={true}
       />
