@@ -51,6 +51,7 @@ export class DataTransfer {
       settings: {
         selectedCourseId: state.selectedCourseId,
         soundtrackEmbed: state.soundtrack.embed,
+        soundtrackPosition: state.soundtrack.position,
         weather: state.weather,
         theme: {
           darkMode: state.theme.darkMode,
@@ -140,7 +141,7 @@ export class DataTransfer {
       },
       soundtrack: {
         embed: data.settings.soundtrackEmbed,
-        position: 'dashboard' as SoundtrackPosition,
+        position: data.settings.soundtrackPosition,
       },
       weather: {
         apiKey: data.settings.weather.apiKey,
@@ -615,6 +616,7 @@ interface ExchangeFormatV2 {
   settings: {
     selectedCourseId: string;
     soundtrackEmbed: string;
+    soundtrackPosition: SoundtrackPosition;
     weather: {
       apiKey: string;
       location: {

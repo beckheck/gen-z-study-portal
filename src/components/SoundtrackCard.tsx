@@ -104,6 +104,10 @@ function positionIframeForContainer(targetElement: HTMLElement, position: Soundt
 }
 
 function hideIframe(): void {
+  // Only hide if no other instances are active
+  if (componentInstances.size !== 0) {
+    return;
+  }
   if (globalIframe) {
     globalIframe.style.display = 'none';
   }
@@ -176,19 +180,19 @@ export default function SoundtrackCard({
         if (position === 'dashboard') {
           // Small delay to allow for position transitions
           setTimeout(() => {
-            // Only hide if no other instances are active
-            if (componentInstances.size === 0) {
-              hideIframe();
-            }
+            hideIframe();
           }, 10);
+        } else {
+          // setTimeout(cleanupGlobalIframe, 50);
         }
-        setTimeout(cleanupGlobalIframe, 50);
       };
     } else {
       componentInstances.delete(componentId);
       hideIframe();
       const cleanupDelay = position === 'off' ? 0 : 50;
-      setTimeout(() => cleanupGlobalIframe(position === 'off'), cleanupDelay);
+      if (position === 'off') {
+        cleanupGlobalIframe(true);
+      }
     }
   }, [isActive, componentId, position]);
 
