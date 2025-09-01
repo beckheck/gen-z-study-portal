@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SoundtrackPosition } from '@/types';
-import { Music2 } from 'lucide-react';
+import { ArrowDownToLine, Maximize, Minimize, Music2, Settings, X } from 'lucide-react';
 import React, { RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -235,6 +235,23 @@ export default function SoundtrackCard({
     };
   }, [isActive, position, updateIframePosition]);
 
+  if (position === 'dashboard' && !embed) {
+    return (
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Music2 className="w-5 h-5" />
+            {t('title')}
+          </CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-zinc-500" dangerouslySetInnerHTML={{ __html: t('empty.message') }} />
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Return null if component should not be rendered
   if (!isActive) {
     return null;
@@ -270,15 +287,26 @@ export default function SoundtrackCard({
               <SoundtrackTitle />
               <CardDescription>{t('description')}</CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onPositionChange?.('floating')}
-              className="h-8 w-8 p-0 hover:bg-white/20"
-              title={t('actions.minimizeToFloating')}
-            >
-              ⬇️
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => (window.location.hash = '#settings/soundtrack')}
+                className="h-8 w-8 p-0 hover:bg-white/20"
+                title={t('actions.configure')}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onPositionChange?.('floating')}
+                className="h-8 w-8 p-0 hover:bg-white/20"
+                title={t('actions.minimizeToFloating')}
+              >
+                <ArrowDownToLine className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -303,14 +331,23 @@ export default function SoundtrackCard({
             <div className="flex items-center justify-between">
               <SoundtrackTitle size="small" />
               <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => (window.location.hash = '#settings/soundtrack')}
+                  className="h-6 w-6 p-0 hover:bg-white/20"
+                  title={t('actions.configure')}
+                >
+                  <Settings className="w-3 h-3" />
+                </Button>
                 <ControlButton position="minimized" title={t('actions.minimize')}>
-                  ➖
+                  <Minimize className="w-3 h-3" />
                 </ControlButton>
                 <ControlButton position="dashboard" title={t('actions.maximizeToDashboard')}>
-                  ⬜
+                  <Maximize className="w-3 h-3" />
                 </ControlButton>
                 <ControlButton position="off" title={t('actions.close')}>
-                  ✖️
+                  <X className="w-3 h-3" />
                 </ControlButton>
               </div>
             </div>

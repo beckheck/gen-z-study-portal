@@ -50,7 +50,14 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start mb-4">
-        <WeatherWidget apiKey={weather.apiKey} location={weather.location} />
+        <WeatherWidget 
+          apiKey={weather.apiKey} 
+          location={weather.location}
+          onWeatherClick={() => {
+            window.history.pushState(null, '', '#settings/weatherApi');
+            onTabChange('settings');
+          }}
+        />
         <CurrentDateTime />
       </div>
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">

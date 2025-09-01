@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next';
 interface WeatherWidgetProps {
   apiKey?: string;
   location?: WeatherLocation;
+  onWeatherClick?: () => void;
 }
 
-export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) {
+export default function WeatherWidget({ apiKey, location, onWeatherClick }: WeatherWidgetProps) {
   const { t, i18n } = useTranslation('common');
   const [weather, setWeather] = useState<Weather>({
     condition: 'loading',
@@ -194,9 +195,9 @@ export default function WeatherWidget({ apiKey, location }: WeatherWidgetProps) 
   };
 
   return (
-    <div className="text-left">
+    <div className="text-left cursor-pointer" onClick={onWeatherClick}>
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-2xl weather-icon-3d cursor-pointer">
+        <span className="text-2xl weather-icon-3d">
           {weather.condition === 'loading' ? '⏳' : weather.icon}
         </span>
         <div>

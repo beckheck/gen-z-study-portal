@@ -27,7 +27,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StorageInfoCard from './StorageInfoCard';
 
@@ -61,6 +61,14 @@ export default function SettingsTab() {
   } = useTheme();
   const { scrollToTop } = useScrollToTop();
 
+  // Hash navigation for settings sections
+  const parseHashSection = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash;
+    const parts = hash.split('/');
+    return parts.length > 1 ? parts[1] : null;
+  }, []);
+
   // Map menu items to their refs for scroll-to functionality
   const refMap = {
     courses: useRef<HTMLDivElement>(null),
@@ -75,19 +83,54 @@ export default function SettingsTab() {
   };
 
   // Scroll to section function
-  const scrollToSection = (menuId: string) => {
-    if (menuItems[0].id === menuId) {
-      scrollToTop();
-      return;
-    }
-    const ref = refMap[menuId as keyof typeof refMap];
-    if (ref?.current) {
-      ref.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-  };
+  const scrollToSection = useCallback(
+    (menuId: string) => {
+      // Update URL hash for deep linking
+      const parts = window.location.hash.split('/');
+      const mainRoute = parts[0];
+      const newHash = menuItems[0].id === menuId ? mainRoute : `${mainRoute}/${menuId}`;
+      // const newHash = mainRoute
+      if (window.location.hash !== newHash) {
+        window.history.replaceState(null, '', newHash);
+      }
+
+      const ref = refMap[menuId as keyof typeof refMap];
+      if (ref?.current) {
+        const el = ref.current as HTMLDivElement;
+
+        if (menuItems[0].id === menuId) {
+          scrollToTop();
+        } else {
+          el.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }
+
+        el.tabIndex = -1; // Make it focusable for screen readers
+        el.focus({ preventScroll: true });
+      }
+    },
+    [scrollToTop]
+  );
+
+  // Handle initial hash navigation and hash changes
+  useEffect(() => {
+    const handleHashNavigation = () => {
+      const sectionId = parseHashSection();
+      if (sectionId) {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => scrollToSection(sectionId), 100);
+      }
+    };
+
+    // Handle initial load
+    handleHashNavigation();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashNavigation);
+    return () => window.removeEventListener('hashchange', handleHashNavigation);
+  }, [parseHashSection, scrollToSection]);
 
   // Render functions for each settings card
   const renderCoursesCard = () => {
@@ -118,7 +161,7 @@ export default function SettingsTab() {
 
     return (
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-        <div ref={refMap.courses} />
+        <div ref={refMap.courses} className="scroll-mt-section" />
         <CardHeader>
           <CardTitle>{t('courses.title')}</CardTitle>
           <CardDescription>{t('courses.description')}</CardDescription>
@@ -194,7 +237,7 @@ export default function SettingsTab() {
 
   const renderAboutCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <div ref={refMap.about} />
+      <div ref={refMap.about} className="scroll-mt-section" />
       {/* GitHub Corner Ribbon */}
       <a
         href="https://github.com/beckheck/gen-z-study-portal"
@@ -273,7 +316,7 @@ export default function SettingsTab() {
 
   const renderSoundtrackCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <div ref={refMap.soundtrack} />
+      <div ref={refMap.soundtrack} className="scroll-mt-section" />
       <CardHeader>
         <CardTitle>{t('soundtrack.title')}</CardTitle>
         <CardDescription>{t('soundtrack.description')}</CardDescription>
@@ -318,7 +361,7 @@ export default function SettingsTab() {
 
   const renderBackgroundCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <div ref={refMap.background} />
+      <div ref={refMap.background} className="scroll-mt-section" />
       <CardHeader>
         <CardTitle>{t('background.title')}</CardTitle>
         <CardDescription>{t('background.description')}</CardDescription>
@@ -355,7 +398,7 @@ export default function SettingsTab() {
 
   const renderCustomCursorCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <div ref={refMap.customCursor} />
+      <div ref={refMap.customCursor} className="scroll-mt-section" />
       <CardHeader>
         <CardTitle>{t('customCursor.title')}</CardTitle>
         <CardDescription>{t('customCursor.description')}</CardDescription>
@@ -410,7 +453,7 @@ export default function SettingsTab() {
 
   const renderAccentColorCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <div ref={refMap.accentColor} />
+      <div ref={refMap.accentColor} className="scroll-mt-section" />
       <CardHeader>
         <CardTitle>{t('accentColor.title')}</CardTitle>
         <CardDescription>{t('accentColor.description')}</CardDescription>
@@ -447,7 +490,7 @@ export default function SettingsTab() {
 
   const renderCardOpacityCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <div ref={refMap.cardOpacity} />
+      <div ref={refMap.cardOpacity} className="scroll-mt-section" />
       <CardHeader>
         <CardTitle>{t('cardOpacity.title')}</CardTitle>
         <CardDescription>{t('cardOpacity.description')}</CardDescription>
@@ -505,7 +548,7 @@ export default function SettingsTab() {
 
   const renderBackgroundGradientCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <div ref={refMap.backgroundGradient} />
+      <div ref={refMap.backgroundGradient} className="scroll-mt-section" />
       <CardHeader>
         <CardTitle>{t('backgroundGradient.title')}</CardTitle>
         <CardDescription>{t('backgroundGradient.description')}</CardDescription>
@@ -583,7 +626,7 @@ export default function SettingsTab() {
 
   const renderWeatherApiCard = () => (
     <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-      <div ref={refMap.weatherApi} />
+      <div ref={refMap.weatherApi} className="scroll-mt-section" />
       <CardHeader>
         <CardTitle>{t('weatherApi.title')}</CardTitle>
         <CardDescription>{t('weatherApi.description')}</CardDescription>

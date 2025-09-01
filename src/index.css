@@ -65,6 +65,42 @@
   body {
     @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
   }
+  
+  /* Anchor link styling using accent color */
+  a {
+    color: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  a:hover {
+    color: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) * 0.8));
+    text-decoration-thickness: 2px;
+    text-decoration-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+  }
+  
+  a:focus {
+    outline: 2px solid hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  
+  a:active {
+    color: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) * 0.9));
+  }
+  
+  /* Special styling for links in dark mode */
+  .dark a {
+    color: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) + 10%));
+  }
+  
+  .dark a:hover {
+    color: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) + 20%));
+  }
 }
 
 /* Custom animations */
@@ -622,4 +658,11 @@
   background: hsl(var(--muted));
   height: 8px;
   border-radius: 4px;
+}
+
+/* Custom scroll utilities */
+@layer utilities {
+  .scroll-mt-section {
+    scroll-margin-top: 50px;
+  }
 }

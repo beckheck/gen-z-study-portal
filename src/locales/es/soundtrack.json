@@ -2,9 +2,10 @@
   "title": "Banda Sonora",
   "description": "Concéntrate con tu propia vibra",
   "empty": {
-    "message": "Añade una URL de inserción en <strong>Configuración → Banda Sonora</strong> (ej. enlace de inserción de Spotify/YouTube) y aparecerá aquí."
+    "message": "Añade una URL de inserción en <a href=\"#settings/soundtrack\">Configuración → Banda Sonora</a> (ej. enlace de inserción de Spotify/YouTube) y aparecerá aquí."
   },
   "actions": {
+    "configure": "Configurar",
     "minimize": "Minimizar",
     "maximizeToDashboard": "Maximizar al Panel",
     "close": "Cerrar",

@@ -37,6 +37,15 @@ export function useModeAwareTab({ validValues, defaultValue }: UseModeAwareTabOp
   const getHashValue = useCallback((): string | null => {
     if (typeof window === 'undefined') return null;
     const hashValue = window.location.hash.replace('#', '');
+
+    // Handle subroutes (e.g., #settings/soundtrack -> settings)
+    const parts = hashValue.split('/');
+    const mainRoute = parts[0];
+
+    if (mainRoute && validValues.includes(mainRoute)) {
+      return mainRoute;
+    }
+
     return hashValue && validValues.includes(hashValue) ? hashValue : null;
   }, [validValues]);
 
@@ -72,10 +81,15 @@ export function useModeAwareTab({ validValues, defaultValue }: UseModeAwareTabOp
         store.activeTabsByMode[mode] = value;
 
         // Update hash navigation
-        if (typeof window !== 'undefined') {
+        // Check if there's an existing subroute for this tab
+        const currentHash = window.location.hash.replace('#', '');
+        const parts = currentHash.split('/');
+        const mainRoute = parts[0];
+
+        if (mainRoute !== value || parts.length === 1) {
           window.history.pushState(null, '', `#${value}`);
-          setCurrentHashValue(value);
         }
+        setCurrentHashValue(value);
       } else {
         console.warn(`useModeAwareTab: Invalid value "${value}". Valid values are: ${validValues.join(', ')}`);
       }

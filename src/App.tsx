@@ -21,6 +21,7 @@ import useDarkModeStyles from '@/hooks/useDarkModeStyles';
 import useModeAwareTab from '@/hooks/useModeAwareTab';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
 import { useSoundtrack, useStoreLoading, useTheme } from '@/hooks/useStore';
+import { handleNavigationClick } from '@/lib/navigation-utils';
 import { motion } from 'framer-motion';
 import {
   Brain,
@@ -39,7 +40,7 @@ import {
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { browser } from 'wxt/browser';
-import { AppTab } from './types';
+import { AppTab, SoundtrackPosition } from './types';
 
 function AppSubtitle() {
   const { t } = useTranslation('common');
@@ -69,6 +70,17 @@ export default function StudyPortal(): React.JSX.Element {
   const { theme, setDarkMode } = useTheme();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
   const { isLoading, error, status } = useStoreLoading();
+
+  const onSoundtrackPositionChange = useCallback(
+    (position: SoundtrackPosition) => {
+      setSoundtrackPosition(position);
+      if (position === 'dashboard') {
+        // If moving to dashboard, also switch to dashboard tab
+        setActiveTab('dashboard');
+      }
+    },
+    [setSoundtrackPosition]
+  );
 
   // Localized tabs array
   const tabs: AppTab[] = [
@@ -201,10 +213,11 @@ export default function StudyPortal(): React.JSX.Element {
                 {/* Navigation */}
                 <div className="flex flex-col space-y-2">
                   {tabs.map(({ value, label, icon: Icon }) => (
-                    <button
+                    <a
                       key={value}
-                      onClick={() => handleTabChange(value)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+                      href={`#${value}`}
+                      onClick={e => handleNavigationClick(e, () => handleTabChange(value))}
+                      className={`flex items-center justify-start gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 no-underline cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-white/30 ${
                         activeTab === value
                           ? 'bg-white/90 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-md scale-105 font-semibold border border-white/40'
                           : 'hover:bg-white/50 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
@@ -219,7 +232,7 @@ export default function StudyPortal(): React.JSX.Element {
                     >
                       <Icon className={`w-5 h-5 flex-shrink-0 ${activeTab === value ? 'text-current' : ''}`} />
                       <span className={`font-medium ${activeTab === value ? 'font-semibold' : ''}`}>{label}</span>
-                    </button>
+                    </a>
                   ))}
                 </div>
               </div>
@@ -326,7 +339,7 @@ export default function StudyPortal(): React.JSX.Element {
             visible={soundtrack.position !== 'dashboard'}
             embed={soundtrack.embed}
             position={soundtrack.position}
-            onPositionChange={setSoundtrackPosition}
+            onPositionChange={onSoundtrackPositionChange}
           />
         )}
 

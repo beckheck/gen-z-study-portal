@@ -4,7 +4,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsList } from '@/components/ui/tabs';
+import { handleNavigationClick } from '@/lib/navigation-utils';
 import { AppTab } from '@/types';
 import { MoreHorizontal } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ interface OverflowTabsProps {
 export default function OverflowTabs({ tabs, activeTab, onTabChange, className, style }: OverflowTabsProps) {
   const [visibleTabs, setVisibleTabs] = useState<AppTab[]>(tabs);
   const [overflowTabs, setOverflowTabs] = useState<AppTab[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const outerContainerRef = useRef<HTMLDivElement>(null);
   const tabsListRef = useRef<HTMLDivElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
@@ -93,7 +95,8 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
     };
 
     // Initial check after render
-    const timeoutId = setTimeout(checkOverflow, 200);
+    checkOverflow(); // Run immediately
+    const timeoutId = setTimeout(checkOverflow, 0); // Fallback
 
     // Resize handler
     const handleResize = () => {
@@ -106,12 +109,6 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
       clearTimeout(timeoutId);
       window.removeEventListener('resize', handleResize);
     };
-  }, [tabs]);
-
-  // Reset to show all tabs when tabs prop changes
-  useEffect(() => {
-    setVisibleTabs(tabs);
-    setOverflowTabs([]);
   }, [tabs]);
 
   return (
@@ -140,31 +137,23 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
         <div className="flex items-center justify-center gap-2">
           <TabsList ref={tabsListRef} className={className} style={style}>
             {visibleTabs.map(({ value, label, icon: Icon }) => (
-              <TabsTrigger
+              <a
                 key={value}
-                value={value}
-                className={`rounded-xl px-4 transition-all duration-200 ${
+                href={`#${value}`}
+                onClick={e => handleNavigationClick(e, () => onTabChange(value))}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-xl px-4 py-0.5 text-sm font-medium transition-all duration-200 no-underline cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-white/30 ${
                   activeTab === value
                     ? 'bg-white/75 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-lg scale-105 font-semibold border border-white/40'
                     : 'hover:bg-white/60 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
                 }`}
-                style={{
-                  '--tab-accent': 'hsl(var(--accent-h) var(--accent-s) var(--accent-l))',
-                  transform: activeTab === value ? 'translateY(-3px) scale(1.05)' : 'translateY(-2px)',
-                  boxShadow:
-                    activeTab === value
-                      ? '0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.3)'
-                      : undefined,
-                }}
-                onClick={() => onTabChange(value)}
               >
                 <Icon className={`w-4 h-4 mr-2 ${activeTab === value ? 'text-current' : ''}`} />
                 {label}
-              </TabsTrigger>
+              </a>
             ))}
 
             {overflowTabs.length > 0 && (
-              <DropdownMenu>
+              <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <button
                     className="p-1 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur hover:bg-white/80 dark:hover:bg-white/20 transition-colors shadow-lg"
@@ -181,24 +170,26 @@ export default function OverflowTabs({ tabs, activeTab, onTabChange, className, 
                   className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-white/20 dark:border-white/10"
                 >
                   {overflowTabs.map(({ value, label, icon: Icon }) => (
-                    <DropdownMenuItem
-                      key={value}
-                      onClick={() => onTabChange(value)}
-                      className={`flex items-center gap-2 transition-all duration-200 ${
-                        activeTab === value
-                          ? 'bg-white/75 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-lg scale-105 font-semibold border border-white/40'
-                          : 'hover:bg-white/50 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
-                      }`}
-                      style={{
-                        transform: activeTab === value ? 'scale(1.02)' : 'scale(1)',
-                        boxShadow:
+                    <DropdownMenuItem key={value} asChild>
+                      <a
+                        href={`#${value}`}
+                        onClick={e => handleNavigationClick(e, () => onTabChange(value))}
+                        className={`flex items-center gap-2 px-2 py-1.5 transition-all duration-200 no-underline cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/30 rounded ${
                           activeTab === value
-                            ? '0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.3)'
-                            : undefined,
-                      }}
-                    >
-                      <Icon className={`w-4 h-4 ${activeTab === value ? 'text-current' : ''}`} />
-                      <span className={activeTab === value ? 'font-semibold' : 'font-medium'}>{label}</span>
+                            ? 'bg-white/75 dark:bg-white/20 text-zinc-900 dark:text-zinc-100 shadow-lg scale-105 font-semibold border border-white/40'
+                            : 'hover:bg-white/50 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300'
+                        }`}
+                        style={{
+                          transform: activeTab === value ? 'scale(1.02)' : 'scale(1)',
+                          boxShadow:
+                            activeTab === value
+                              ? '0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.3)'
+                              : undefined,
+                        }}
+                      >
+                        <Icon className={`w-4 h-4 ${activeTab === value ? 'text-current' : ''}`} />
+                        <span className={activeTab === value ? 'font-semibold' : 'font-medium'}>{label}</span>
+                      </a>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

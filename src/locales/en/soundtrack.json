@@ -2,9 +2,10 @@
   "title": "Soundtrack",
   "description": "Focus with your own vibe",
   "empty": {
-    "message": "Add an embed URL in <strong>Settings → Soundtrack</strong> (e.g., Spotify/YouTube embed link) and it will show up here."
+    "message": "Add an embed URL in <a href=\"#settings/soundtrack\">Settings → Soundtrack</a> (e.g., Spotify/YouTube embed link) and it will show up here."
   },
   "actions": {
+    "configure": "Configure",
     "minimize": "Minimize",
     "maximizeToDashboard": "Maximize to Dashboard",
     "close": "Close",
