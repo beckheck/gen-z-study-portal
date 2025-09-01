@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourses, useTimetable } from '@/hooks/useStore';
+import { useLocalization } from '@/hooks/useLocalization';
 import { Plus, Trash2 } from 'lucide-react';
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +15,7 @@ import type { TimeBlock, TimetableEvent, TimetableEventInput } from '../types';
 export default function TimetableTab() {
   const { t } = useTranslation('timetable');
   const { t: tCommon } = useTranslation('common');
+  const { getDayNames, getShortDayNames } = useLocalization();
   const { courses, getCourseTitle } = useCourses();
   const { timetableEvents, addTimetableEvent, updateTimetableEvent, deleteTimetableEvent } = useTimetable();
   const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
@@ -26,28 +28,25 @@ export default function TimetableTab() {
   // Days of the week - use English as keys, translate for display
   const weekDays: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-  // Helper function to get translated day name
-  const getTranslatedDayName = (englishDay: string): string => {
-    const dayMap: { [key: string]: string } = {
-      Monday: t('days.monday'),
-      Tuesday: t('days.tuesday'),
-      Wednesday: t('days.wednesday'),
-      Thursday: t('days.thursday'),
-      Friday: t('days.friday'),
-    };
-    return dayMap[englishDay] || englishDay;
+  // Get localized day and short day names using useLocalization
+  const dayNames = getDayNames();
+  const shortDayNames = getShortDayNames();
+
+  // Helper function to convert to title case
+  const toTitleCase = (str: string): string => {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   };
 
-  // Helper function to get translated short day name
+  // Helper function to get translated day name in title case
+  const getTranslatedDayName = (englishDay: string): string => {
+    const dayIndex = weekDays.indexOf(englishDay);
+    return dayIndex !== -1 ? toTitleCase(dayNames[dayIndex]) : englishDay;
+  };
+
+  // Helper function to get translated short day name in title case
   const getTranslatedShortDayName = (englishDay: string): string => {
-    const shortDayMap: { [key: string]: string } = {
-      Monday: t('days.mon'),
-      Tuesday: t('days.tue'),
-      Wednesday: t('days.wed'),
-      Thursday: t('days.thu'),
-      Friday: t('days.fri'),
-    };
-    return shortDayMap[englishDay] || englishDay.slice(0, 3);
+    const dayIndex = weekDays.indexOf(englishDay);
+    return dayIndex !== -1 ? toTitleCase(shortDayNames[dayIndex]) : englishDay.slice(0, 3);
   };
 
   // Event types - get from translations

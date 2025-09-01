@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 import React from 'react';
 
 interface BackgroundMessage_Tab {
@@ -32,6 +34,7 @@ interface BackgroundMessage_Timer_GetState {
 
 interface BackgroundMessage_Timer_UpdateState {
   type: 'timer.updateState';
+  courseId?: string;
   technique?: string;
   note?: string;
   moodStart?: number;

@@ -1,5 +1,5 @@
 import { browserRuntime } from '@/lib/browser-runtime-stub';
-import { BrowserStorageAdapter, HybridStorage, InMemoryAdapter, LocalStorageAdapter } from '@/lib/hybrid-storage';
+import { BrowserStorageAdapter, HybridStorage, LocalStorageAdapter } from '@/lib/hybrid-storage';
 import { getNextPhase, shouldTransitionPhase } from '@/lib/technique-utils';
 import { uid } from '@/lib/utils';
 import { BackgroundMessage_Timer, BackgroundTimerState, StudySession } from '@/types';
@@ -189,14 +189,16 @@ export class StudySessionTimerManager {
     this.timerState.phaseElapsed = 0;
     this.timerState.phaseStartTs = null;
     this.timerState.studyPhasesCompleted = 0;
+    this.timerState.moodStart = 3;
+    this.timerState.moodEnd = 3;
 
     this.stopTimerInterval();
-    this.saveTimerState();
+    await this.saveTimerState();
 
     return { session };
   }
 
-  public resetTimer() {
+  public async resetTimer() {
     const now = Date.now();
     this.timerState.elapsed = 0;
     this.timerState.phaseElapsed = 0;
@@ -207,7 +209,7 @@ export class StudySessionTimerManager {
       this.timerState.startTs = now;
       this.timerState.phaseStartTs = now;
     }
-    this.saveTimerState();
+    await this.saveTimerState();
   }
 
   public updateTimerSettings(settings: Partial<BackgroundTimerState>) {
@@ -235,8 +237,9 @@ export class StudySessionTimerManager {
         break;
 
       case 'timer.reset':
-        this.resetTimer();
-        sendResponse({ success: true, state: this.getTimerState() });
+        this.resetTimer().then(() => {
+          sendResponse({ success: true, state: this.getTimerState() });
+        });
         break;
 
       case 'timer.getState':
@@ -244,8 +247,9 @@ export class StudySessionTimerManager {
         break;
 
       case 'timer.updateState':
-        const { technique, note, moodStart, moodEnd, audioEnabled, audioVolume, showCountdown } = message;
+        const { technique, note, moodStart, moodEnd, audioEnabled, audioVolume, showCountdown, courseId } = message;
         this.updateTimerSettings({
+          ...(courseId !== undefined && { courseId }),
           ...(technique && { technique }),
           ...(note !== undefined && { note }),
           ...(moodStart !== undefined && { moodStart }),

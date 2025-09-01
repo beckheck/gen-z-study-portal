@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface Language {
   code: string;
@@ -39,116 +39,82 @@ export function useLocalization() {
 
   const formatDate = useCallback(
     (date: Date, options?: Intl.DateTimeFormatOptions) => {
-      const locale = i18n.language === 'es' ? 'es-ES' : 'en-GB'; // Use en-GB for DD/MM/YYYY format
       const defaultOptions: Intl.DateTimeFormatOptions = {
         day: '2-digit',
-        month: '2-digit', 
+        month: '2-digit',
         year: 'numeric',
-        ...options
+        ...options,
       };
-      return date.toLocaleDateString(locale, defaultOptions);
+      return date.toLocaleDateString(i18n.language, defaultOptions);
     },
     [i18n.language]
   );
 
   const formatTime = useCallback(
     (date: Date, options?: Intl.DateTimeFormatOptions) => {
-      const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
-      return date.toLocaleTimeString(locale, options);
+      return date.toLocaleTimeString(i18n.language, options);
     },
     [i18n.language]
   );
 
   const formatNumber = useCallback(
     (number: number, options?: Intl.NumberFormatOptions) => {
-      const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
-      return number.toLocaleString(locale, options);
+      return number.toLocaleString(i18n.language, options);
     },
     [i18n.language]
   );
 
   const formatRelativeTime = useCallback(
     (value: number, unit: Intl.RelativeTimeFormatUnit) => {
-      const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
-      const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+      const rtf = new Intl.RelativeTimeFormat(i18n.language, { numeric: 'auto' });
       return rtf.format(value, unit);
     },
     [i18n.language]
   );
 
   // Format date as DD-MM-YYYY or DD/MM/YYYY
-  const formatDateDDMMYYYY = useCallback(
-    (date: Date | string, separator: string = '-') => {
-      const d = typeof date === 'string' ? new Date(date) : date;
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}${separator}${month}${separator}${year}`;
-    },
-    []
-  );
+  const formatDateDDMMYYYY = useCallback((date: Date | string, separator: string = '-') => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}${separator}${month}${separator}${year}`;
+  }, []);
 
-  // Get localized day names
-  const getDayNames = useCallback(() => {
-    return [
-      t('time.days.monday'),
-      t('time.days.tuesday'),
-      t('time.days.wednesday'),
-      t('time.days.thursday'),
-      t('time.days.friday'),
-      t('time.days.saturday'),
-      t('time.days.sunday'),
-    ];
-  }, [t]);
+  // Helper function to generate day names array
+  const getDayNamesArray = useCallback((format: 'long' | 'short') => {
+    const formatter = new Intl.DateTimeFormat(i18n.language, { weekday: format });
+    const days = [];
+    // Start from Monday (1) to Sunday (0) - JavaScript Date uses 0=Sunday, 1=Monday, etc.
+    for (let i = 1; i <= 7; i++) {
+      const date = new Date(2023, 0, i + 1); // January 2nd, 2023 was a Monday
+      days.push(formatter.format(date));
+    }
+    return days;
+  }, [i18n.language]);
 
-  // Get localized short day names
-  const getShortDayNames = useCallback(() => {
-    return [
-      t('time.days.mon'),
-      t('time.days.tue'),
-      t('time.days.wed'),
-      t('time.days.thu'),
-      t('time.days.fri'),
-      t('time.days.sat'),
-      t('time.days.sun'),
-    ];
-  }, [t]);
+  // Helper function to generate month names array
+  const getMonthNamesArray = useCallback((format: 'long' | 'short') => {
+    const formatter = new Intl.DateTimeFormat(i18n.language, { month: format });
+    const months = [];
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(2023, i, 1);
+      months.push(formatter.format(date));
+    }
+    return months;
+  }, [i18n.language]);
 
-  // Get localized month names
-  const getMonthNames = useCallback(() => {
-    return [
-      t('time.months.january'),
-      t('time.months.february'),
-      t('time.months.march'),
-      t('time.months.april'),
-      t('time.months.may'),
-      t('time.months.june'),
-      t('time.months.july'),
-      t('time.months.august'),
-      t('time.months.september'),
-      t('time.months.october'),
-      t('time.months.november'),
-      t('time.months.december'),
-    ];
-  }, [t]);
+  // Get localized day names using Intl API
+  const getDayNames = useCallback(() => getDayNamesArray('long'), [getDayNamesArray]);
 
-  // Get localized short month names
-  const getShortMonthNames = useCallback(() => {
-    return [
-      t('time.months.jan'),
-      t('time.months.feb'),
-      t('time.months.mar'),
-      t('time.months.apr'),
-      t('time.months.may_short'),
-      t('time.months.jun'),
-      t('time.months.jul'),
-      t('time.months.aug'),
-      t('time.months.sep'),
-      t('time.months.oct'),
-      t('time.months.nov'),
-      t('time.months.dec'),
-    ];
-  }, [t]);
+  // Get localized short day names using Intl API
+  const getShortDayNames = useCallback(() => getDayNamesArray('short'), [getDayNamesArray]);
+
+  // Get localized month names using Intl API
+  const getMonthNames = useCallback(() => getMonthNamesArray('long'), [getMonthNamesArray]);
+
+  // Get localized short month names using Intl API
+  const getShortMonthNames = useCallback(() => getMonthNamesArray('short'), [getMonthNamesArray]);
 
   return {
     t,

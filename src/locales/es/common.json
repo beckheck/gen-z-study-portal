@@ -44,7 +44,9 @@
     "required": "Requerido",
     "untitled": "Sin título",
     "none": "Ninguno",
-    "all": "Todos"
+    "all": "Todos",
+    "low": "bajo",
+    "high": "alto"
   },
   "loadingScreen": {
     "loadingData": "Cargando tus datos de estudio...",
@@ -60,50 +62,6 @@
     "updatingApplicationState": "Actualizando estado de la aplicación...",
     "ready": "Listo",
     "errorOccurred": "Error ocurrido"
-  },
-  "time": {
-    "days": {
-      "monday": "Lunes",
-      "tuesday": "Martes",
-      "wednesday": "Miércoles",
-      "thursday": "Jueves",
-      "friday": "Viernes",
-      "saturday": "Sábado",
-      "sunday": "Domingo",
-      "mon": "Lun",
-      "tue": "Mar",
-      "wed": "Mié",
-      "thu": "Jue",
-      "fri": "Vie",
-      "sat": "Sáb",
-      "sun": "Dom"
-    },
-    "months": {
-      "january": "Enero",
-      "february": "Febrero",
-      "march": "Marzo",
-      "april": "Abril",
-      "may": "Mayo",
-      "june": "Junio",
-      "july": "Julio",
-      "august": "Agosto",
-      "september": "Septiembre",
-      "october": "Octubre",
-      "november": "Noviembre",
-      "december": "Diciembre",
-      "jan": "Ene",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Abr",
-      "may_short": "May",
-      "jun": "Jun",
-      "jul": "Jul",
-      "aug": "Ago",
-      "sep": "Sep",
-      "oct": "Oct",
-      "nov": "Nov",
-      "dec": "Dic"
-    }
   },
   "navigation": {
     "dashboard": "Panel",
@@ -125,10 +83,6 @@
       "genZ": "Gen Z",
       "portal": "Portal"
     }
-  },
-  "moodSlider": {
-    "low": "bajo",
-    "high": "alto"
   },
   "upcoming": {
     "exams": "Exámenes",

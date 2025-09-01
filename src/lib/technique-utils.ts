@@ -37,15 +37,19 @@ export const STUDY_TECHNIQUES: TechniqueConfig[] = [
     studyMinutes: Infinity,
     breakMinutes: 0,
   },
-  {
+];
+
+// if in dev environment, add test technique
+if (import.meta.env.DEV) {
+  STUDY_TECHNIQUES.push({
     id: 'test',
     name: 'focusTimer.techniques.pomodoro',
     studyMinutes: 0.1,
-    breakMinutes: 0.1,
-    longBreakMinutes: 0.2,
-    longBreakInterval: 3,
-  },
-];
+    breakMinutes: 0.2,
+    longBreakMinutes: 0.3,
+    longBreakInterval: 4,
+  });
+}
 
 /**
  * Get technique configuration by ID
@@ -86,6 +90,14 @@ export function getPhaseDurationSeconds(techniqueId: string, phase: StudyPhase):
   }
 
   return minutes * 60; // Convert to seconds
+}
+
+export function getPhaseEmoji(techniqueId: string, phase: StudyPhase): string {
+  const config = getTechniqueConfig(techniqueId);
+  if (config.breakMinutes === 0) {
+    return '⏰';
+  }
+  return phase === 'studying' ? '📚' : phase === 'longBreak' ? '💤' : '⏸️';
 }
 
 /**

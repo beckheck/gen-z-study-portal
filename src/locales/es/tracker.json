@@ -48,6 +48,6 @@
     "description": "Tus sesiones recientes",
     "noSessions": "Aún no hay sesiones. Vamos a cocinar. 👨‍🍳",
     "duration": "{{duration}}m",
-    "sessionInfo": "{{course}} · {{duration}}m · {{technique}}"
+    "sessionInfo": "{{course}} · {{duration}}m"
   }
 }

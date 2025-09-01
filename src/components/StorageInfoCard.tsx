@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocalization } from '../hooks/useLocalization';
 import { hybridStorage } from '../lib/hybrid-storage';
 import { Card } from './ui/card';
 
@@ -17,6 +18,7 @@ interface StorageInfo {
 
 export const StorageInfoCard: React.FC = () => {
   const { t } = useTranslation('settings');
+  const { formatNumber } = useLocalization();
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,7 +28,8 @@ export const StorageInfoCard: React.FC = () => {
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    const formattedNumber = formatNumber(bytes / Math.pow(k, i), { maximumFractionDigits: 2, minimumFractionDigits: 0 });
+    return `${formattedNumber} ${sizes[i]}`;
   };
 
   const getUsagePercentage = (used: number, quota: number): number => {

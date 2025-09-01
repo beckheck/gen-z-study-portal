@@ -37,6 +37,8 @@ function handleBackgroundResponse(
  */
 interface StudyTimer {
   timerState: BackgroundTimerState;
+  /** Function to set the course ID for the current session */
+  setCourseId: (courseId: string) => void;
   /** Function to set the study technique */
   setTechnique: (technique: string) => void;
   /** Function to set the starting mood */
@@ -148,6 +150,11 @@ export default function useStudyTimer(
           onSessionComplete(response.session);
         }
       });
+
+      await handleBackgroundResponse(
+        sendBackgroundMessage({ type: 'timer.updateState', moodStart: 3, moodEnd: 3 }),
+        'reset moods after stop'
+      );
     },
     [onSessionComplete]
   );
@@ -157,6 +164,13 @@ export default function useStudyTimer(
       sendBackgroundMessage({ type: 'timer.reset' }),
       'reset timer',
       response => response.state && setTimerState(response.state)
+    );
+  }, []);
+
+  const setCourseId = useCallback((courseId: string): void => {
+    handleBackgroundResponse(
+      sendBackgroundMessage({ type: 'timer.updateState', courseId }),
+      'update courseId'
     );
   }, []);
 
@@ -211,6 +225,7 @@ export default function useStudyTimer(
     timerState,
 
     // Setters
+    setCourseId,
     setTechnique,
     setMoodStart,
     setMoodEnd,

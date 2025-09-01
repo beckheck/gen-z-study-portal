@@ -1,4 +1,4 @@
-import MoodSlider from '@/components/MoodSlider';
+import LevelsSlider from '@/components/LevelsSlider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,17 +6,28 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useStudySessions } from '@/hooks/useStore';
 import useStudyTimer from '@/hooks/useStudyTimer';
-import { getPhaseDurationSeconds, getTechniqueConfig, STUDY_TECHNIQUES } from '@/lib/technique-utils';
+import { getPhaseDurationSeconds, getPhaseEmoji, getTechniqueConfig, STUDY_TECHNIQUES } from '@/lib/technique-utils';
 import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2, Volume2, VolumeX } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function StudyTrackerTab() {
   // Translation hooks
   const { t } = useTranslation('tracker');
   const { t: tCommon } = useTranslation('common');
+  const { formatDate, formatTime } = useLocalization();
+
+  // Mood levels configuration
+  const moodLabels = ['💀', '😕', '😐', '🙂', '🔥'];
+
+  // Helper function to get mood emoji
+  const getMoodEmoji = (moodValue: number): string => {
+    return moodLabels[moodValue - 1] || '😐';
+  };
+
   const { courses, selectedCourseId, getCourseTitle, setSelectedCourse } = useCourses();
   const {
     sessions,
@@ -35,8 +46,16 @@ export default function StudyTrackerTab() {
   }, selectedCourseId);
   const { timerState } = studyTimer;
 
+  // Update timer's course ID when selected course changes during running session
+  useEffect(() => {
+    if (timerState.running && timerState.courseId !== selectedCourseId) {
+      studyTimer.setCourseId(selectedCourseId);
+    }
+  }, [selectedCourseId, timerState.running, timerState.courseId, studyTimer]);
+
   // Get phase duration for progress indication
   const phaseDurationSeconds = getPhaseDurationSeconds(timerState.technique, timerState.phase);
+  const statusEmoji = !timerState.running ? '' : getPhaseEmoji(timerState.technique, timerState.phase);
   const phaseProgress =
     phaseDurationSeconds === Infinity ? 0 : Math.min(100, (timerState.phaseElapsed / phaseDurationSeconds) * 100);
 
@@ -91,6 +110,25 @@ export default function StudyTrackerTab() {
     setSessionTaskTitle('');
   }, [sessionTaskTitle, addSessionTask]);
 
+  /**
+   * Get localized technique name
+   */
+  const getTechniqueDisplayName = useCallback(
+    (techniqueId: string): string => {
+      const techniqueConfig = STUDY_TECHNIQUES.find(tech => tech.id === techniqueId);
+      if (techniqueConfig) {
+        return t(techniqueConfig.name, {
+          studyMinutes: techniqueConfig.studyMinutes === Infinity ? '∞' : techniqueConfig.studyMinutes,
+          breakMinutes: techniqueConfig.breakMinutes,
+          longBreakMinutes: techniqueConfig.longBreakMinutes,
+          longBreakInterval: techniqueConfig.longBreakInterval,
+        });
+      }
+      return techniqueId;
+    },
+    [t]
+  );
+
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       {/* Focus Timer */}
@@ -142,12 +180,18 @@ export default function StudyTrackerTab() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-3">
-            <MoodSlider
+            <LevelsSlider
               label={t('focusTimer.moodStart')}
+              labels={moodLabels}
               value={timerState.moodStart}
               onChange={studyTimer.setMoodStart}
             />
-            <MoodSlider label={t('focusTimer.moodEnd')} value={timerState.moodEnd} onChange={studyTimer.setMoodEnd} />
+            <LevelsSlider
+              label={t('focusTimer.moodEnd')}
+              labels={moodLabels}
+              value={timerState.moodEnd}
+              onChange={studyTimer.setMoodEnd}
+            />
           </div>
 
           <div className="text-center p-6 bg-white/70 dark:bg-white/5 rounded-2xl">
@@ -161,6 +205,7 @@ export default function StudyTrackerTab() {
               {elapsedMinSec}
             </div>
             <div className="text-xs text-zinc-500 mt-1">
+              {statusEmoji}{' '}
               {!timerState.running ? (
                 t('focusTimer.status.ready')
               ) : timerState.phase === 'studying' ? (
@@ -198,7 +243,11 @@ export default function StudyTrackerTab() {
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-2">
                 <div
                   className={`h-1 rounded-full transition-all duration-1000 ${
-                    timerState.phase === 'studying' ? 'bg-blue-500' : 'bg-green-500'
+                    timerState.phase === 'studying'
+                      ? 'bg-orange-500'
+                      : timerState.phase === 'break'
+                      ? 'bg-green-500'
+                      : 'bg-blue-500'
                   }`}
                   style={{ width: `${phaseProgress}%` }}
                 />
@@ -383,13 +432,32 @@ export default function StudyTrackerTab() {
                     {t('sessionLog.sessionInfo', {
                       course: getCourseTitle(session.courseId),
                       duration: session.durationMin,
-                      technique: session.technique,
                     })}
                   </div>
                   <div className="text-xs text-zinc-500">
-                    {new Date(session.startTs).toLocaleString()} → {new Date(session.endTs).toLocaleString()}
+                    {(() => {
+                      const startDate = new Date(session.startTs);
+                      const endDate = new Date(session.endTs);
+                      const startDateStr = formatDate(startDate);
+                      const endDateStr = formatDate(endDate);
+                      const startTimeStr = formatTime(startDate, { hour: '2-digit', minute: '2-digit' });
+                      const endTimeStr = formatTime(endDate, { hour: '2-digit', minute: '2-digit' });
+
+                      // Get mood emojis
+                      const startMoodEmoji = getMoodEmoji(session.moodStart || 3);
+                      const endMoodEmoji = getMoodEmoji(session.moodEnd || 3);
+
+                      // If same day, show: "date 😐time1 → 🙂time2"
+                      // If different days, show: "😐date1 time1 → 🙂date2 time2"
+                      return startDateStr === endDateStr
+                        ? `${startDateStr} ${startMoodEmoji} ${startTimeStr} → ${endMoodEmoji} ${endTimeStr}`
+                        : `${startMoodEmoji} ${startDateStr} ${startTimeStr} → ${endMoodEmoji} ${endDateStr} ${endTimeStr}`;
+                    })()}
                   </div>
-                  {session.note && <div className="text-sm mt-1">{session.note}</div>}
+                  <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                    {getTechniqueDisplayName(session.technique)}
+                  </div>
+                  {session.note && <div className="text-sm mt-1 whitespace-pre-wrap">{session.note}</div>}
                 </div>
                 <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSession(session.id)}>
                   <Trash2 className="w-4 h-4" />

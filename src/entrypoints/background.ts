@@ -1,6 +1,6 @@
 import { StudySessionTimerManager } from '@/lib/study-session-timer-manager';
-import { getPhaseDurationSeconds } from '@/lib/technique-utils';
-import { BackgroundMessage, BackgroundTimerState } from '@/types';
+import { getPhaseDurationSeconds, getPhaseEmoji } from '@/lib/technique-utils';
+import { BackgroundMessage, BackgroundTimerState, StudyPhase } from '@/types';
 import { browser } from 'wxt/browser';
 
 declare function defineBackground(fn: () => void): any;
@@ -182,21 +182,22 @@ const getRemainingTimeForCurrentPhase = (timerState: BackgroundTimerState): numb
   return Math.max(0, phaseDuration - timerState.phaseElapsed);
 };
 
-const formatBadgeText = (timeInSeconds: number, phase: string, technique: string): string => {
+const formatBadgeText = (timeInSeconds: number, phase: StudyPhase, technique: string): string => {
+  const phasePrefix = getPhaseEmoji(technique, phase);
+
   // For flow technique, show elapsed time with "F" prefix
-  if (getPhaseDurationSeconds(technique, phase as any) === Infinity) {
+  if (getPhaseDurationSeconds(technique, phase) === Infinity) {
     const minutes = Math.floor(timeInSeconds / 60);
     if (minutes < 100) {
-      return `⏰${minutes}`;
+      return `${phasePrefix}${minutes}`;
     } else {
       const hours = Math.floor(minutes / 60);
-      return `⏰${hours}h`;
+      return `${phasePrefix}${hours}h`;
     }
   }
 
   // For timed techniques, show remaining time
   const minutes = Math.ceil(timeInSeconds / 60);
-  const phasePrefix = phase === 'studying' ? '🧠' : phase === 'longBreak' ? '💤' : '⏸️';
 
   if (minutes < 100) {
     return `${phasePrefix}${minutes}`;
@@ -209,12 +210,12 @@ const formatBadgeText = (timeInSeconds: number, phase: string, technique: string
 const getBadgeColor = (phase: string): string => {
   switch (phase) {
     case 'studying':
-      return '#4CAF50'; // Green for study
+      return '#FF9800';
     case 'break':
-      return '#FF9800'; // Orange for break
+      return '#4CAF50';
     case 'longBreak':
-      return '#2196F3'; // Blue for long break
+      return '#2196F3';
     default:
-      return '#757575'; // Gray default
+      return '#757575';
   }
 };

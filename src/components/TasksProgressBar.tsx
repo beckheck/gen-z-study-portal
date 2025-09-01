@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useLocalization } from '../hooks/useLocalization';
 import { useConfetti } from '../hooks/useConfetti';
 import Confetti from './ui/confetti';
 
@@ -38,6 +39,7 @@ const getProgressColor = (percentage: number): string => {
 
 export function TasksProgressBar({ progress, className = 'mb-2', showLabel = true, labelText }: TaskProgressBarProps) {
   const { t } = useTranslation('common');
+  const { formatNumber } = useLocalization();
 
   const confetti = useConfetti({
     trigger: progress?.percentage === 100,
@@ -59,7 +61,7 @@ export function TasksProgressBar({ progress, className = 'mb-2', showLabel = tru
           <span>
             {displayLabel}: {progress.completed}/{progress.total}
           </span>
-          <span>{progress.percentage}%</span>
+          <span>{formatNumber(progress.percentage / 100, { style: 'percent', maximumFractionDigits: 0, minimumFractionDigits: 0 })}</span>
         </div>
       )}
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
