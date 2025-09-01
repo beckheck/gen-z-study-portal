@@ -497,33 +497,21 @@ export default function SettingsTab() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label>{t('cardOpacity.lightMode', { value: theme.cardOpacity.light })}</Label>
+          <Label>
+            {t('cardOpacity.mode', {
+              mode: theme.darkMode ? t('accentColor.dark') : t('accentColor.light'),
+              value: theme.darkMode ? theme.cardOpacity.dark : theme.cardOpacity.light,
+            })}
+          </Label>
           <input
             type="range"
-            min="10"
+            min={theme.darkMode ? '5' : '10'}
             max="100"
-            value={theme.cardOpacity.light}
+            value={theme.darkMode ? theme.cardOpacity.dark : theme.cardOpacity.light}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
               const newCardOpacity = {
                 ...theme.cardOpacity,
-                light: parseInt(e.target.value),
-              };
-              setCardOpacity(newCardOpacity);
-            }}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
-          />
-        </div>
-        <div>
-          <Label>{t('cardOpacity.darkMode', { value: theme.cardOpacity.dark })}</Label>
-          <input
-            type="range"
-            min="5"
-            max="100"
-            value={theme.cardOpacity.dark}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              const newCardOpacity = {
-                ...theme.cardOpacity,
-                dark: parseInt(e.target.value),
+                [theme.darkMode ? 'dark' : 'light']: parseInt(e.target.value),
               };
               setCardOpacity(newCardOpacity);
             }}
@@ -534,10 +522,11 @@ export default function SettingsTab() {
           variant="outline"
           className="rounded-xl w-full"
           onClick={() => {
-            setCardOpacity({
-              light: 80,
-              dark: 25,
-            });
+            const newCardOpacity = {
+              ...theme.cardOpacity,
+              [theme.darkMode ? 'dark' : 'light']: theme.darkMode ? 25 : 80,
+            };
+            setCardOpacity(newCardOpacity);
           }}
         >
           {t('cardOpacity.reset')}

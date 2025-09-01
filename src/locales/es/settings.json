@@ -77,8 +77,7 @@
   "cardOpacity": {
     "title": "Opacidad de Tarjetas",
     "description": "Ajusta la transparencia de las tarjetas para mejor visibilidad",
-    "lightMode": "Opacidad Modo Claro: {{value}}%",
-    "darkMode": "Opacidad Modo Oscuro: {{value}}%",
+    "mode": "Opacidad de Tarjetas {{mode}}: {{value}}%",
     "reset": "Restablecer por Defecto"
   },
   "backgroundGradient": {

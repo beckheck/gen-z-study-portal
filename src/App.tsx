@@ -36,6 +36,7 @@ import {
   NotebookPen,
   Settings as SettingsIcon,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -296,7 +297,7 @@ export default function StudyPortal(): React.JSX.Element {
               title={t('navigation.openInTab')}
               aria-label={t('navigation.openInTab')}
             >
-              <Expand className="w-5 h-5" />
+              <ExternalLink className="w-5 h-5" />
             </button>
           </div>
         )}

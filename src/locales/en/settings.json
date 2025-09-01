@@ -77,8 +77,7 @@
   "cardOpacity": {
     "title": "Card Opacity",
     "description": "Adjust card transparency for better visibility",
-    "lightMode": "Light Mode Opacity: {{value}}%",
-    "darkMode": "Dark Mode Opacity: {{value}}%",
+    "mode": "Card Opacity {{mode}}: {{value}}%",
     "reset": "Reset to Default"
   },
   "backgroundGradient": {

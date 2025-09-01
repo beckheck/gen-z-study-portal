@@ -161,9 +161,9 @@ export default function StudyTrackerTab() {
                 <div className="flex items-center gap-3">
                   <input
                     type="range"
-                    min="0"
+                    min="0.1"
                     max="1"
-                    step="0.1"
+                    step="0.05"
                     value={timerState.audioVolume}
                     onChange={e => studyTimer.setAudioVolume(parseFloat(e.target.value))}
                     className="flex-1 h-2 bg-white/70 dark:bg-white/10 rounded-lg appearance-none slider"
