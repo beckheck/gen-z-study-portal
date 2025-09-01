@@ -7,6 +7,7 @@ import MoonSunToggle from '@/components/MoonSunToggle';
 import OverflowTabs from '@/components/OverflowTabs';
 import PlannerTab from '@/components/PlannerTab';
 import SettingsTab from '@/components/SettingsTab';
+import SettingsDialogProvider from '@/components/SettingsDialogProvider';
 import SoundtrackCard from '@/components/SoundtrackCard';
 import StudyTrackerTab from '@/components/StudyTrackerTab';
 import TimetableTab from '@/components/TimetableTab';
@@ -164,20 +165,21 @@ export default function StudyPortal(): React.JSX.Element {
   }
 
   return (
-    <div
-      className="min-h-screen relative text-zinc-900 dark:text-zinc-100"
-      style={
-        theme.gradientEnabled
-          ? {
-              background: `linear-gradient(to bottom right, ${
-                theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light
-              }, ${theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light}, ${
-                theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light
-              })`,
-            }
-          : {}
-      }
-    >
+    <SettingsDialogProvider>
+      <div
+        className="min-h-screen relative text-zinc-900 dark:text-zinc-100"
+        style={
+          theme.gradientEnabled
+            ? {
+                background: `linear-gradient(to bottom right, ${
+                  theme.darkMode ? theme.gradientStart.dark : theme.gradientStart.light
+                }, ${theme.darkMode ? theme.gradientMiddle.dark : theme.gradientMiddle.light}, ${
+                  theme.darkMode ? theme.gradientEnd.dark : theme.gradientEnd.light
+                })`,
+              }
+            : {}
+        }
+      >
       {theme.bgImage && (
         <div
           className="pointer-events-none absolute inset-0 bg-center bg-cover bg-no-repeat opacity-60 mix-blend-luminosity"
@@ -376,5 +378,6 @@ export default function StudyPortal(): React.JSX.Element {
         )}
       </div>
     </div>
+    </SettingsDialogProvider>
   );
 }

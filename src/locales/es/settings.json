@@ -91,6 +91,10 @@
     "endColor": "Color Final {{mode}}",
     "reset": "Restablecer por Defecto"
   },
+  "hydration": {
+    "title": "Hidratación",
+    "description": "Personaliza tus preferencias de seguimiento de ingesta de agua"
+  },
   "weatherApi": {
     "title": "API del Clima",
     "description": "Obtén datos meteorológicos reales para tu ubicación",

@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
+import { useSettingsDialogContext } from '@/components/SettingsDialogProvider';
 import { motion } from 'framer-motion';
-import { CalendarDays, Edit, ListTodo, Plus, Trash2, Undo, Check } from 'lucide-react';
+import { CalendarDays, Edit, ListTodo, Plus, Settings, Trash2, Undo, Check } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConfetti } from '../hooks/useConfetti';
@@ -26,6 +27,7 @@ export default function CourseManagerTab() {
   const { tasks, toggleTask, deleteTask } = useTasks();
   const { exams, examGrades, addExam, updateExam, setExamGrades, toggleExamComplete } = useExams();
   const eventDialog = useEventDialog();
+  const { openDialog: openSettingsDialog } = useSettingsDialogContext();
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const [taskSortOrder, setTaskSortOrder] = useState<'date' | 'priority'>('date');
   const [examNotesProgress, setExamNotesProgress] = useState<Record<string, ProgressData>>({});
@@ -179,6 +181,15 @@ export default function CourseManagerTab() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            onClick={() => openSettingsDialog('courses')}
+            title="Manage courses"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
           <Button
             variant="outline"
             size="sm"

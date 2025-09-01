@@ -1,3 +1,4 @@
+import { useSettingsDialogContext } from '@/components/SettingsDialogProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,14 +10,15 @@ import { useLocalization } from '@/hooks/useLocalization';
 import { useWellness } from '@/hooks/useStore';
 import { CalendarView, MonthlyMood, MoodEmoji } from '@/types';
 import { motion } from 'framer-motion';
-import { Edit } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function WellnessTab() {
   // Translation hooks
   const { t } = useTranslation('wellness');
-  const { formatDate, formatDateDDMMYYYY } = useLocalization();
+  const { formatDate } = useLocalization();
+  const { openDialog: openSettingsDialog } = useSettingsDialogContext();
 
   const {
     wellness,
@@ -37,7 +39,6 @@ export default function WellnessTab() {
   // Local state for UI only (not persisted)
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState<boolean>(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null); // Track which mood is showing emoji picker
-  const [hydrationDialogOpen, setHydrationDialogOpen] = useState<boolean>(false);
 
   // Emoji library for picker
   const emojiLibrary: string[] = [
@@ -353,11 +354,11 @@ export default function WellnessTab() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setHydrationDialogOpen(true)}
+                onClick={() => openSettingsDialog('hydration')}
                 className="rounded-xl p-2 h-8 w-8"
                 title="Edit hydration settings"
               >
-                <Edit className="h-4 w-4" />
+                <Settings className="h-4 w-4" />
               </Button>
             </div>
           </CardHeader>
@@ -817,143 +818,6 @@ export default function WellnessTab() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Hydration Settings Dialog */}
-      <Dialog open={hydrationDialogOpen} onOpenChange={setHydrationDialogOpen}>
-        <DialogContent className="rounded-2xl max-w-md bg-white dark:bg-white border border-gray-200 dark:border-gray-700">
-          <DialogHeader className="">
-            <DialogTitle>Hydration Settings</DialogTitle>
-            <DialogDescription>Customize your water intake tracking preferences</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Measurement Unit */}
-            <div className="space-y-2">
-              <Label className="font-medium">Measurement Unit</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={hydrationSettings.unit === 'metric' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setHydrationSettings({ ...hydrationSettings, unit: 'metric' })}
-                  className="rounded-xl flex-1"
-                >
-                  Metric (mL)
-                </Button>
-                <Button
-                  variant={hydrationSettings.unit === 'imperial' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setHydrationSettings({ ...hydrationSettings, unit: 'imperial' })}
-                  className="rounded-xl flex-1"
-                >
-                  Imperial (oz)
-                </Button>
-              </div>
-            </div>
-
-            {/* Tracking Method */}
-            <div className="space-y-2">
-              <Label className="font-medium">Tracking Method</Label>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800">
-                <Label>Use cups instead of direct volume</Label>
-                <Switch
-                  checked={hydrationSettings.useCups}
-                  onCheckedChange={checked => {
-                    const currentUseCups = hydrationSettings.useCups;
-                    const cupSize =
-                      hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ;
-
-                    if (currentUseCups && !checked) {
-                      // Converting from cups to direct volume
-                      const volumeAmount = water * cupSize;
-                      setWater(volumeAmount);
-                    } else if (!currentUseCups && checked) {
-                      // Converting from direct volume to cups
-                      const cupsAmount = Math.round(water / cupSize);
-                      setWater(cupsAmount);
-                    }
-
-                    setHydrationSettings({ ...hydrationSettings, useCups: checked });
-                  }}
-                  className="data-[state=checked]:bg-blue-600"
-                />
-              </div>
-            </div>
-
-            {/* Serving/Cup Size */}
-            <div className="space-y-2">
-              <Label className="font-medium">
-                {hydrationSettings.useCups ? 'Cup Size' : 'Serving Size'} (
-                {hydrationSettings.unit === 'metric' ? 'mL' : 'oz'})
-              </Label>
-              <Input
-                type="number"
-                value={hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ}
-                onChange={e => {
-                  const value = parseFloat(e.target.value) || 0;
-                  setHydrationSettings({
-                    ...hydrationSettings,
-                    ...(hydrationSettings.unit === 'metric' ? { cupSizeML: value } : { cupSizeOZ: value }),
-                  });
-                }}
-                className="rounded-xl"
-                placeholder={hydrationSettings.unit === 'metric' ? '250' : '8.5'}
-              />
-              <div className="text-xs text-zinc-500">
-                {hydrationSettings.useCups
-                  ? 'Volume per cup when tracking by cups'
-                  : 'Amount added/removed with each +/- button press'}
-              </div>
-            </div>
-
-            {/* Daily Goal */}
-            <div className="space-y-2">
-              <Label className="font-medium">Daily Goal ({hydrationSettings.unit === 'metric' ? 'mL' : 'oz'})</Label>
-              <Input
-                type="number"
-                value={
-                  hydrationSettings.unit === 'metric' ? hydrationSettings.dailyGoalML : hydrationSettings.dailyGoalOZ
-                }
-                onChange={e => {
-                  const value = parseFloat(e.target.value) || 0;
-                  setHydrationSettings({
-                    ...hydrationSettings,
-                    ...(hydrationSettings.unit === 'metric' ? { dailyGoalML: value } : { dailyGoalOZ: value }),
-                  });
-                }}
-                className="rounded-xl"
-                placeholder={hydrationSettings.unit === 'metric' ? '2000' : '67.6'}
-              />
-            </div>
-
-            {/* Preview */}
-            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20">
-              <div className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">Preview</div>
-              <div className="text-xs text-blue-700 dark:text-blue-300">
-                Goal: {getDisplayGoal()}
-                <span className="block">
-                  {hydrationSettings.useCups
-                    ? `(${
-                        hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ
-                      }${hydrationSettings.unit === 'metric' ? 'mL' : 'oz'} per cup)`
-                    : `(${
-                        hydrationSettings.unit === 'metric' ? hydrationSettings.cupSizeML : hydrationSettings.cupSizeOZ
-                      }${hydrationSettings.unit === 'metric' ? 'mL' : 'oz'} per serving)`}
-                </span>
-              </div>
-            </div>
-
-            <Button
-              onClick={() => {
-                setHydrationDialogOpen(false);
-                // Reset water counter when settings change significantly
-                setWater(0);
-              }}
-              className="w-full rounded-xl mt-4"
-            >
-              Save Settings
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Customize Dialog */}
       <Dialog open={customizeDialogOpen} onOpenChange={setCustomizeDialogOpen}>

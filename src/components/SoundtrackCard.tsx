@@ -1,3 +1,4 @@
+import { useSettingsDialogContext } from '@/components/SettingsDialogProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SoundtrackPosition } from '@/types';
@@ -140,6 +141,7 @@ export default function SoundtrackCard({
   onPositionChange,
 }: SoundtrackCardProps) {
   const { t } = useTranslation('soundtrack');
+  const { openDialog } = useSettingsDialogContext();
   const dashboardContainerRef = useRef<HTMLDivElement>(null);
   const floatingContainerRef = useRef<HTMLDivElement>(null);
   const [componentId] = useState(() => `soundtrack-${++mountCounter}`);
@@ -295,7 +297,7 @@ export default function SoundtrackCard({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => (window.location.hash = '#settings/soundtrack')}
+                onClick={() => openDialog('soundtrack')}
                 className="h-8 w-8 p-0 hover:bg-white/20"
                 title={t('actions.configure')}
               >
@@ -338,7 +340,7 @@ export default function SoundtrackCard({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => (window.location.hash = '#settings/soundtrack')}
+                  onClick={() => openDialog('soundtrack')}
                   className="h-6 w-6 p-0 hover:bg-white/20"
                   title={t('actions.configure')}
                 >

@@ -1,5 +1,6 @@
 import { useCourses, useExams, useSoundtrack, useTasks, useWeather } from '@/hooks/useStore';
 import { CalendarDays, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
+import { useSettingsDialogContext } from '@/components/SettingsDialogProvider';
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CurrentDateTime from './CurrentDateTime';
@@ -25,6 +26,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
   const { exams, toggleExamComplete } = useExams();
   const { weather } = useWeather();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
+  const { openDialog } = useSettingsDialogContext();
 
   const [nextUpExpanded, setNextUpExpanded] = useState<number>(0); // Number of additional "pages" shown (0 = collapsed)
   const [isAnimating, setIsAnimating] = useState(false);
@@ -53,10 +55,7 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         <WeatherWidget 
           apiKey={weather.apiKey} 
           location={weather.location}
-          onWeatherClick={() => {
-            window.history.pushState(null, '', '#settings/weatherApi');
-            onTabChange('settings');
-          }}
+          onWeatherClick={() => openDialog('weatherApi')}
         />
         <CurrentDateTime />
       </div>

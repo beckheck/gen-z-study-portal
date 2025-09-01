@@ -91,6 +91,10 @@
     "endColor": "End Color {{mode}}",
     "reset": "Reset to Default"
   },
+  "hydration": {
+    "title": "Hydration",
+    "description": "Customize your water intake tracking preferences"
+  },
   "weatherApi": {
     "title": "Weather API",
     "description": "Get real weather data for your location",
