@@ -1,10 +1,10 @@
 import LevelsSlider from '@/components/LevelsSlider';
+import { useSettingsDialogContext } from '@/components/SettingsDialogProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useStudySessions } from '@/hooks/useStore';
@@ -16,7 +16,7 @@ import {
   STUDY_TECHNIQUES,
   TechniqueConfig,
 } from '@/lib/technique-utils';
-import { Brain, Flame, HeartHandshake, ListTodo, Plus, TimerReset, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { Flame, HeartHandshake, ListTodo, Plus, Settings, Timer, TimerReset, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -25,6 +25,9 @@ export default function StudyTrackerTab() {
   const { t } = useTranslation('tracker');
   const { t: tCommon } = useTranslation('common');
   const { formatDate, formatTime } = useLocalization();
+
+  // Settings dialog context
+  const { openDialog } = useSettingsDialogContext();
 
   // Mood levels configuration
   const moodLabels = ['💀', '😕', '😐', '🙂', '🔥'];
@@ -142,11 +145,23 @@ export default function StudyTrackerTab() {
       {/* Focus Timer */}
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5" />
-            {t('focusTimer.title')}
-          </CardTitle>
-          <CardDescription>{t('focusTimer.description')}</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Timer className="w-5 h-5" />
+                {t('focusTimer.title')}
+              </CardTitle>
+              <CardDescription>{t('focusTimer.description')}</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openDialog('focusTimer')}
+              className="rounded-xl h-8 w-8"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-3">
@@ -297,37 +312,6 @@ export default function StudyTrackerTab() {
               className="rounded-xl"
               placeholder={t('focusTimer.notesPlaceholder')}
             />
-          </div>
-
-          {/* Audio Settings */}
-          <div className="bg-white/50 dark:bg-white/5 p-4 rounded-xl space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {timerState.audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                <Label className="text-sm font-medium">{t('focusTimer.audio.notifications')}</Label>
-              </div>
-              <Switch checked={timerState.audioEnabled} onCheckedChange={studyTimer.setAudioEnabled} />
-            </div>
-
-            {timerState.audioEnabled && (
-              <div className="space-y-2">
-                <Label className="text-xs text-zinc-500 uppercase tracking-wide">{t('focusTimer.audio.volume')}</Label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1"
-                    step="0.05"
-                    value={timerState.audioVolume}
-                    onChange={e => studyTimer.setAudioVolume(parseFloat(e.target.value))}
-                    className="flex-1 h-2 bg-white/70 dark:bg-white/10 rounded-lg appearance-none slider"
-                  />
-                  <span className="text-sm text-zinc-500 min-w-[3rem]">
-                    {Math.round(timerState.audioVolume * 100)}%
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>

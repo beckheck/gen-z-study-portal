@@ -11,10 +11,6 @@
     },
     "moodStart": "Estado inicial",
     "moodEnd": "Estado final",
-    "audio": {
-      "notifications": "Notificaciones de audio",
-      "volume": "Volumen"
-    },
     "status": {
       "studying": "Estudiando…",
       "break": "Descanso…",

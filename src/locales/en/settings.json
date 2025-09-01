@@ -121,6 +121,14 @@
       "manualLocationNote": "Enter a city name to get weather for that location"
     }
   },
+  "focusTimer": {
+    "title": "Focus Timer",
+    "description": "Configure your focus timer preferences and notifications",
+    "audio": {
+      "notifications": "Audio notifications",
+      "volume": "Volume"
+    }
+  },
   "storage": {
     "title": "Storage Status",
     "status": {

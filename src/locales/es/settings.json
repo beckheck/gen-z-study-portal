@@ -121,6 +121,14 @@
       "manualLocationNote": "Ingresa el nombre de una ciudad para obtener el clima de esa ubicación"
     }
   },
+  "focusTimer": {
+    "title": "Temporizador de Concentración",
+    "description": "Configura las preferencias y notificaciones de tu temporizador de concentración",
+    "audio": {
+      "notifications": "Notificaciones de audio",
+      "volume": "Volumen"
+    }
+  },
   "storage": {
     "title": "Estado del Almacenamiento",
     "status": {
