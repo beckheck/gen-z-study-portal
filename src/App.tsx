@@ -144,6 +144,19 @@ export default function StudyPortal(): React.JSX.Element {
     return () => clearTimeout(timeoutId);
   }, []); // Run only once on mount
 
+  // Update page title with selected tab
+  useEffect(() => {
+    const activeTabInfo = tabs.find(tab => tab.value === activeTab);
+    const baseTitle = t('app.title');
+    const tabTitle = activeTabInfo?.label || '';
+
+    if (tabTitle) {
+      document.title = `${tabTitle} · ${baseTitle}`;
+    } else {
+      document.title = baseTitle;
+    }
+  }, [activeTab, tabs, t]);
+
   // Show loading screen until state is ready
   if (isLoading || error) {
     return <LoadingScreen error={error} status={status} />;
