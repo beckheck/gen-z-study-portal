@@ -80,7 +80,15 @@ export class DataTransfer {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'study_portal_export.json';
+      const now = new Date();
+      const yyyymmdd_hhmm =
+        now.getFullYear() +
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0') +
+        '_' +
+        String(now.getHours()).padStart(2, '0') +
+        String(now.getMinutes()).padStart(2, '0');
+      a.download = `studyhub_${yyyymmdd_hhmm}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
