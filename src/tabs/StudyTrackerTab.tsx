@@ -161,9 +161,9 @@ export default function StudyTrackerTab() {
           <div className="text-center p-7 bg-white/70 dark:bg-white/5 rounded-3xl relative">
             {/* Circular Progress Ring */}
             {timerState.running && phaseDurationSeconds !== Infinity && (
-              <div className="absolute inset-1 flex items-center justify-center">
+              <div className="absolute inset-1 flex items-center justify-center pointer-events-none">
                 <svg
-                  className="w-full h-full transform -rotate-90"
+                  className="w-full h-full transform -rotate-90 pointer-events-none"
                   viewBox="0 0 200 200"
                   style={{ maxWidth: '500px', maxHeight: '500px' }}
                 >
