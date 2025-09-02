@@ -27,6 +27,7 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
   const [startX, setStartX] = useState<number>(0);
   const dragRef = useRef<number>(0);
   const isDraggingRef = useRef<boolean>(false);
+  const preventClickRef = useRef<boolean>(false);
 
   const COMPLETE_THRESHOLD = 80; // Drag 80px right to complete
 
@@ -81,6 +82,16 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
     isDraggingRef.current = false;
 
     const finalDragX = dragRef.current;
+    const hadSignificantDrag = Math.abs(finalDragX) >= 5;
+
+    // Set prevent click flag if there was significant drag movement
+    if (hadSignificantDrag) {
+      preventClickRef.current = true;
+      // Reset the flag after a short delay to allow future clicks
+      setTimeout(() => {
+        preventClickRef.current = false;
+      }, 100);
+    }
 
     if (finalDragX >= COMPLETE_THRESHOLD) {
       // Complete the task
@@ -98,6 +109,7 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
     return () => {
       isDraggingRef.current = false;
       dragRef.current = 0;
+      preventClickRef.current = false;
     };
   }, []);
 
@@ -163,8 +175,8 @@ const SwipeableTask = React.forwardRef<HTMLDivElement, SwipeableTaskProps>(funct
         onTouchEnd={handleEnd}
         onTouchCancel={handleEnd}
         onClick={e => {
-          // Only trigger click if there was minimal drag movement and not currently dragging
-          if (!isDraggingRef.current && Math.abs(dragRef.current) < 5 && onClick) {
+          // Only trigger click if there was no recent swipe gesture and not currently dragging
+          if (!isDraggingRef.current && !preventClickRef.current && onClick) {
             onClick();
           }
         }}
