@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { browser } from 'wxt/browser';
 
 // Import translation files
 import enCommon from '../locales/en/common.json';
@@ -99,5 +100,30 @@ i18n
       useSuspense: false,
     },
   });
+
+const EXTENSION_STORAGE_LANGUAGE_KEY = 'language';
+
+i18n.on('languageChanged', (newValue: string) => {
+  browser.storage.local.set({ [EXTENSION_STORAGE_LANGUAGE_KEY]: newValue });
+});
+
+export async function listenLanguageChangeInExtensionBackground() {
+  const result = await browser.storage.local.get(EXTENSION_STORAGE_LANGUAGE_KEY);
+  changeLanguage(result.language);
+
+  browser.storage.local.onChanged.addListener(changes => {
+    if (changes.language) {
+      changeLanguage(changes.language.newValue);
+    }
+  });
+
+  function changeLanguage(newLanguage?: string) {
+    if (newLanguage && i18n.language !== newLanguage) {
+      i18n.changeLanguage(newLanguage).catch(err => {
+        console.error('Failed to change language:', err);
+      });
+    }
+  }
+}
 
 export default i18n;

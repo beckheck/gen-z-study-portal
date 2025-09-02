@@ -1,3 +1,4 @@
+import { listenLanguageChangeInExtensionBackground } from '@/i18n/config';
 import { StudySessionTimerManager } from '@/lib/study-session-timer-manager';
 import { getPhaseDurationSeconds, getPhaseEmoji } from '@/lib/technique-utils';
 import { BackgroundMessage, BackgroundTimerState, StudyPhase } from '@/types';
@@ -6,8 +7,9 @@ import { browser } from 'wxt/browser';
 declare function defineBackground(fn: () => void): any;
 
 export default defineBackground(() => {
-  // Initialize timer manager with state update callback
   const timerManager = new StudySessionTimerManager(updateBadgeFromTimerState);
+
+  listenLanguageChangeInExtensionBackground();
 
   // Check if we're in the extension environment
   if (browser.runtime.onInstalled) {
