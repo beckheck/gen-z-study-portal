@@ -51,6 +51,8 @@ interface StudyTimer {
   setAudioEnabled: (enabled: boolean) => void;
   /** Function to set audio notification volume */
   setAudioVolume: (volume: number) => void;
+  /** Function to set OS notifications enabled/disabled */
+  setNotificationsEnabled: (enabled: boolean) => void;
   /** Function to set countdown display mode */
   setShowCountdown: (showCountdown: boolean) => void;
   /** Function to start the timer */
@@ -81,9 +83,11 @@ export default function useStudyTimer(
     courseId: '',
     audioEnabled: true,
     audioVolume: 0.6,
+    notificationsEnabled: true,
     phase: 'studying',
     phaseElapsed: 0,
     phaseStartTs: null,
+    studyPhasesCompleted: 0,
     showCountdown: false,
   });
 
@@ -168,10 +172,7 @@ export default function useStudyTimer(
   }, []);
 
   const setCourseId = useCallback((courseId: string): void => {
-    handleBackgroundResponse(
-      sendBackgroundMessage({ type: 'timer.updateState', courseId }),
-      'update courseId'
-    );
+    handleBackgroundResponse(sendBackgroundMessage({ type: 'timer.updateState', courseId }), 'update courseId');
   }, []);
 
   const setTechnique = useCallback(async (technique: string): Promise<void> => {
@@ -213,6 +214,13 @@ export default function useStudyTimer(
     );
   }, []);
 
+  const setNotificationsEnabled = useCallback((enabled: boolean): void => {
+    handleBackgroundResponse(
+      sendBackgroundMessage({ type: 'timer.updateState', notificationsEnabled: enabled }),
+      'update notificationsEnabled'
+    );
+  }, []);
+
   const setShowCountdown = useCallback((showCountdown: boolean): void => {
     handleBackgroundResponse(
       sendBackgroundMessage({ type: 'timer.updateState', showCountdown }),
@@ -232,6 +240,7 @@ export default function useStudyTimer(
     setNote,
     setAudioEnabled,
     setAudioVolume,
+    setNotificationsEnabled,
     setShowCountdown,
 
     // Actions

@@ -124,6 +124,9 @@
   "focusTimer": {
     "title": "Temporizador de Concentración",
     "description": "Configura las preferencias y notificaciones de tu temporizador de concentración",
+    "notifications": {
+      "desktop": "Notificaciones del sistema"
+    },
     "audio": {
       "notifications": "Notificaciones de audio",
       "volume": "Volumen"

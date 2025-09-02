@@ -136,5 +136,25 @@
         "partlyCloudy": "Parcialmente nublado"
       }
     }
+  },
+  "notifications": {
+    "permission": {
+      "enabled": "🔔 ¡Notificaciones Activadas!",
+      "enabledMessage": "Ahora recibirás notificaciones del temporizador de estudio."
+    },
+    "timer": {
+      "started": "🚀 ¡Temporizador Iniciado!",
+      "startedMessage": "Modo enfoque activado. ¡Vamos a hacer progresos!",
+      "break": "🎉 ¡Hora del Descanso!",
+      "breakMessage": "¡Buen trabajo! Toma un descanso de {{duration}} minutos para recargar energías.",
+      "longBreak": "🌟 ¡Hora del Descanso Largo!",
+      "longBreakMessage": "¡Excelente progreso! Disfruta tu descanso largo de {{duration}} minutos.",
+      "backToStudy": "📚 ¡De Vuelta al Estudio!",
+      "backToStudyMessage": "El descanso terminó. ¡Volvamos al trabajo enfocado!",
+      "sessionStart": "🚀 ¡Sesión de Estudio Iniciada!",
+      "sessionStartMessage": "Tiempo de enfocarse y hacer progreso en tus objetivos.",
+      "timerUpdate": "⏰ Actualización del Temporizador",
+      "phaseTransition": "Transicionando de {{currentPhase}} a {{nextPhase}}"
+    }
   }
 }

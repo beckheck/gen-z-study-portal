@@ -136,5 +136,25 @@
         "partlyCloudy": "Partly cloudy"
       }
     }
+  },
+  "notifications": {
+    "permission": {
+      "enabled": "🔔 Notifications Enabled!",
+      "enabledMessage": "You'll now receive study timer notifications."
+    },
+    "timer": {
+      "started": "🚀 Study Timer Started!",
+      "startedMessage": "Focus mode activated. Let's make some progress!",
+      "break": "🎉 Time for a Break!",
+      "breakMessage": "Great work! Take a {{duration}} minute break to recharge.",
+      "longBreak": "🌟 Long Break Time!",
+      "longBreakMessage": "Excellent progress! Enjoy your {{duration}} minute long break.",
+      "backToStudy": "📚 Back to Studying!",
+      "backToStudyMessage": "Break time is over. Let's get back to focused work!",
+      "sessionStart": "🚀 Study Session Started!",
+      "sessionStartMessage": "Time to focus and make progress on your goals.",
+      "timerUpdate": "⏰ Timer Update",
+      "phaseTransition": "Transitioning from {{currentPhase}} to {{nextPhase}}"
+    }
   }
 }

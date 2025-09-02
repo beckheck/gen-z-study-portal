@@ -41,6 +41,7 @@ interface BackgroundMessage_Timer_UpdateState {
   moodEnd?: number;
   audioEnabled?: boolean;
   audioVolume?: number;
+  notificationsEnabled?: boolean;
   showCountdown?: boolean;
 }
 
@@ -72,6 +73,7 @@ export interface BackgroundTimerState {
   courseId: string;
   audioEnabled: boolean;
   audioVolume: number;
+  notificationsEnabled: boolean;
   phase: StudyPhase;
   phaseElapsed: number;
   phaseStartTs?: number;

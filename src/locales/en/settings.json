@@ -124,6 +124,9 @@
   "focusTimer": {
     "title": "Focus Timer",
     "description": "Configure your focus timer preferences and notifications",
+    "notifications": {
+      "desktop": "Desktop notifications"
+    },
     "audio": {
       "notifications": "Audio notifications",
       "volume": "Volume"

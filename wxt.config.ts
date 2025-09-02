@@ -29,8 +29,7 @@ export default defineConfig({
   manifest: {
     name: 'StudyHub ✨',
     version: '0.1.0',
-    description:
-      'Study portal · Local-first · Private · Cute af',
+    description: 'Study portal · Local-first · Private · Cute af',
     permissions: [
       'storage',
       'unlimitedStorage',
@@ -40,6 +39,7 @@ export default defineConfig({
       'alarms',
       'scripting',
       'offscreen',
+      'notifications',
       // 'file://*/*',
     ],
     commands: {

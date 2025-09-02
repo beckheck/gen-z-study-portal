@@ -2,7 +2,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useStudySessions } from '@/hooks/useStore';
 import useStudyTimer from '@/hooks/useStudyTimer';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function FocusTimerSettings() {
@@ -13,6 +13,18 @@ export default function FocusTimerSettings() {
 
   return (
     <div className="space-y-6">
+      {/* Notifications Settings Section */}
+      <div className="space-y-4">
+        {/* OS Notifications Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {timerState.notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+            <Label className="text-sm font-medium">{t('focusTimer.notifications.desktop')}</Label>
+          </div>
+          <Switch checked={timerState.notificationsEnabled} onCheckedChange={studyTimer.setNotificationsEnabled} />
+        </div>
+      </div>
+
       {/* Audio Settings Section */}
       <div className="space-y-4">
         {/* Audio Notifications Toggle */}
