@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SimpleSelect } from '@/components/ui/simple-select';
 import { EventForm } from '@/hooks/useEventDialog';
 import { useCourses } from '@/hooks/useStore';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -165,38 +165,45 @@ export function EventDialog({
                     name="eventCategory"
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <SimpleSelect
                         value={field.value}
                         onValueChange={value => {
                           field.onChange(value);
                           // Also update the legacy form state if setForm is available
                           handleFormChange('eventCategory', value);
                         }}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="regular">
-                            <div className="inline-flex gap-2">
-                              <CalendarDays size={16} />
-                              {t('eventTypes.regular')}
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="exam">
-                            <div className="inline-flex gap-2">
-                              <NotebookPen size={16} />
-                              {t('eventTypes.exam')}
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="task">
-                            <div className="inline-flex gap-2">
-                              <ListTodo size={16} />
-                              {t('eventTypes.task')}
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                        placeholder={t('selectCategory')}
+                        className="rounded-xl"
+                        options={[
+                          {
+                            value: 'regular',
+                            label: (
+                              <div className="inline-flex items-center gap-2">
+                                <CalendarDays size={16} />
+                                {t('eventTypes.regular')}
+                              </div>
+                            ),
+                          },
+                          {
+                            value: 'exam',
+                            label: (
+                              <div className="inline-flex items-center gap-2">
+                                <NotebookPen size={16} />
+                                {t('eventTypes.exam')}
+                              </div>
+                            ),
+                          },
+                          {
+                            value: 'task',
+                            label: (
+                              <div className="inline-flex items-center gap-2">
+                                <ListTodo size={16} />
+                                {t('eventTypes.task')}
+                              </div>
+                            ),
+                          },
+                        ]}
+                      />
                     )}
                   />
                   <FormError message={errors.eventCategory?.message} />
@@ -210,25 +217,22 @@ export function EventDialog({
                     name="courseId"
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <SimpleSelect
                         value={field.value}
                         onValueChange={value => {
                           field.onChange(value);
                           handleFormChange('courseId', value);
                         }}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">{tCommon('common.none')}</SelectItem>
-                          {courses.map(c => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        placeholder={t('forms.courseOptional')}
+                        className="rounded-xl"
+                        options={[
+                          { value: 'none', label: tCommon('common.none') },
+                          ...courses.map(c => ({
+                            value: c.id,
+                            label: c.title,
+                          })),
+                        ]}
+                      />
                     )}
                   />
                   <FormError message={errors.courseId?.message} />
@@ -387,22 +391,20 @@ export function EventDialog({
                     name="priority"
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <SimpleSelect
                         value={field.value}
                         onValueChange={value => {
                           field.onChange(value);
                           handleFormChange('priority', value);
                         }}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">{tCommon('priorities.low')}</SelectItem>
-                          <SelectItem value="normal">{tCommon('priorities.normal')}</SelectItem>
-                          <SelectItem value="high">{tCommon('priorities.high')}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        placeholder={t('forms.priority')}
+                        className="rounded-xl"
+                        options={[
+                          { value: 'low', label: tCommon('priorities.low') },
+                          { value: 'normal', label: tCommon('priorities.normal') },
+                          { value: 'high', label: tCommon('priorities.high') },
+                        ]}
+                      />
                     )}
                   />
                   <FormError message={errors.priority?.message} />
