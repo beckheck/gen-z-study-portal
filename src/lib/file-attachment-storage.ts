@@ -4,6 +4,7 @@
  */
 
 import { store } from '@/stores/app';
+import { uid } from './utils';
 
 export interface FileAttachmentMetadata {
   id: string;
@@ -24,17 +25,10 @@ class FileAttachmentStorage {
   private fileCache: Map<string, { data: StoredFileAttachment; accessTime: number }> = new Map();
 
   /**
-   * Generate a unique ID for file attachments
-   */
-  private generateFileId(): string {
-    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
    * Store a file attachment and return its metadata
    */
   async storeFile(file: File): Promise<FileAttachmentMetadata> {
-    const fileId = this.generateFileId();
+    const fileId = uid();
 
     // Convert file to base64
     const base64 = await this.fileToBase64(file);

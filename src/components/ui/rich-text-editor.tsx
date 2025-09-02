@@ -377,7 +377,7 @@ const moveCursorFromFileAttachment = (fileAttachment: HTMLElement, event: Keyboa
 
 /**
  * Shared hierarchical checkbox handling logic
- * 
+ *
  * - Checking a checkbox checks all descendants.
  * - Checking a checkbox with all siblings checked checks the entire ancestor chain.
  * - Unchecking a checkbox unchecks all descendants and the entire ancestor chain.
@@ -821,8 +821,10 @@ export function RichTextEditor({
   const handleFileAttachment = async (file: File) => {
     try {
       const metadata = await fileAttachmentStorage.storeFile(file);
+
       if (editor) {
-        editor
+        // Insert the file attachment
+        const result = editor
           .chain()
           .focus()
           .setFileAttachment({
@@ -832,6 +834,12 @@ export function RichTextEditor({
             fileIcon: getFileIcon(metadata.fileType),
           })
           .run();
+
+        // Move cursor to the end of the document after insertion
+        if (result) {
+          const endPos = editor.state.doc.content.size;
+          editor.chain().focus().setTextSelection(endPos).run();
+        }
       }
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -843,6 +851,15 @@ export function RichTextEditor({
     content,
     editable: !disabled,
     onCreate: ({ editor }) => {
+      // Move cursor to end if content already exists
+      // This prevents new attachments from overwriting existing ones when editor reopens
+      if (content) {
+        setTimeout(() => {
+          const endPos = editor.state.doc.content.size;
+          editor.chain().setTextSelection(endPos).run();
+        }, 0);
+      }
+
       // Add click handlers for file attachments and checkboxes
       editor.view.dom.addEventListener('click', event => {
         const target = event.target as HTMLElement;
@@ -1632,13 +1649,11 @@ export function RichTextDisplay({ content, className, onContentChange, onProgres
 // Helper function to get file icon based on MIME type
 const getFileIcon = (fileType: string): string => {
   const iconMap = {
-    application: '🔢',
     archive: '🗜️',
     audio: '🎵',
     binary: '🔢',
     code: '💻',
     database: '🗄️',
-    document: '📝',
     excel: '📊',
     font: '🔤',
     image: '🖼️',
@@ -1655,6 +1670,8 @@ const getFileIcon = (fileType: string): string => {
     word: '📝',
     xml: '📦',
     zip: '🗜️',
+    document: '📝',
+    application: '🔢',
   };
   for (const [key, icon] of Object.entries(iconMap)) {
     if (fileType.includes(key)) return icon;
