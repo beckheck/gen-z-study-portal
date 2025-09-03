@@ -152,6 +152,13 @@ export function useEventDialog() {
   const handleSaveEvent = (formData: EventForm, editingEvent: any | null) => {
     if (!formData.title) return;
 
+    // If editing an existing event and the category has changed, delete the old event first
+    if (editingEvent && editingEvent.eventType !== formData.eventCategory) {
+      handleDeleteEvent(editingEvent);
+      // Set editingEvent to null so we create a new event instead of updating
+      editingEvent = null;
+    }
+
     if (formData.eventCategory === 'regular') {
       const eventData: any = {
         courseId: formData.courseId,
