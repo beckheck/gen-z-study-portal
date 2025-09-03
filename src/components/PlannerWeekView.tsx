@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useExams, useRegularEvents, useSchedule, useTasks, useWeeklyGoals } from '@/hooks/useStore';
+import { useCourses, useExams, useRegularEvents, useTasks, useWeeklyGoals } from '@/hooks/useStore';
 import { Plus, Target, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +30,6 @@ export function PlannerWeekView({
   eventDialog,
 }: PlannerWeekViewProps) {
   const { getCourseTitle } = useCourses();
-  const { removeSchedule } = useSchedule();
   const { weeklyGoals, addGoal, toggleGoal, deleteGoal, clearAllGoals } = useWeeklyGoals();
   const { updateExam } = useExams();
   const { updateTask } = useTasks();
@@ -49,10 +48,6 @@ export function PlannerWeekView({
         break;
       case 'task':
         updateTask(event.id, { ...event, notes: newContent });
-        break;
-      // Schedule events don't have updatable notes in the current implementation
-      case 'schedule':
-        console.warn('Schedule event notes are not updatable');
         break;
       default:
         console.warn('Unknown event type:', event.eventType);
@@ -237,15 +232,7 @@ export function PlannerWeekView({
                             className="flex-1 group relative bg-white/70 dark:bg-white/5 p-2.5 rounded-xl cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                             onClick={event => {
                               event.stopPropagation();
-                              if (e.eventType === 'schedule') {
-                                // For schedule events, show delete confirmation directly
-                                if (confirm(t('messages.deleteScheduleEvent'))) {
-                                  removeSchedule(e.id);
-                                }
-                              } else {
-                                // For other events, directly open edit dialog
-                                eventDialog.openEditDialog(e);
-                              }
+                              eventDialog.openEditDialog(e);
                             }}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -289,15 +276,7 @@ export function PlannerWeekView({
                       className="group relative flex flex-row items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl mb-2 cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                       onClick={event => {
                         event.stopPropagation();
-                        if (e.eventType === 'schedule') {
-                          // For schedule events, show delete confirmation directly
-                          if (confirm(t('messages.deleteScheduleEvent'))) {
-                            removeSchedule(e.id);
-                          }
-                        } else {
-                          // For other events, directly open edit dialog
-                          eventDialog.openEditDialog(e);
-                        }
+                        eventDialog.openEditDialog(e);
                       }}
                     >
                       <div className="flex-1 min-w-0">

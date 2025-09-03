@@ -17,9 +17,6 @@ const typeColors: Record<string, string> = {
 export const EventTypeIndicator = ({ event, size = 'sm' }: { event: any; size?: 'sm' | 'md' }) => {
   const sizeClass = size === 'md' ? 'w-2.5 h-2.5' : 'w-2 h-2';
 
-  if (event.eventType === 'schedule') {
-    return <span className={`flex-shrink-0 inline-block rounded-full ${sizeClass} ${typeColors[event.type]}`}></span>;
-  }
   if (event.eventType === 'exam') {
     return <span className={`flex-shrink-0 inline-block rounded-full bg-rose-500 ${sizeClass}`}></span>;
   }

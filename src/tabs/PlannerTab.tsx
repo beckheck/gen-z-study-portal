@@ -8,13 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
+import { useCourses, useExams, useRegularEvents, useTasks } from '@/hooks/useStore';
 import { CalendarView } from '@/types';
 import { CalendarDays, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
 // -----------------------------
 // Planner (Week + Month views)
@@ -25,12 +23,11 @@ export default function PlannerTab() {
   const { tasks } = useTasks();
   const { exams } = useExams();
   const { regularEvents } = useRegularEvents();
-  const { eventsForDay } = useSchedule();
 
   // Localization hooks
   const { t } = useTranslation('planner');
   const { t: tCommon } = useTranslation('common');
-  const { getShortDayNames, getShortMonthNames, getMonthNames, formatDate: localizedFormatDate } = useLocalization();
+  const { getShortMonthNames, getMonthNames, formatDate: localizedFormatDate } = useLocalization();
 
   const [showMultiDayEvents, setShowMultiDayEvents] = useState<boolean>(false);
   const [filterCourse, setFilterCourse] = useState<string>('all');
@@ -75,18 +72,6 @@ export default function PlannerTab() {
   function getAllEventsForDate(date: Date): any[] {
     const events = [];
     const dateStr = date.toISOString().split('T')[0];
-    const dayName = DAYS[(date.getDay() + 6) % 7];
-
-    // Regular schedule events
-    const scheduleEvents = eventsForDay(dayName)
-      .filter(e => filterCourse === 'all' || e.courseId === filterCourse)
-      .map(e => ({
-        ...e,
-        eventType: 'schedule',
-        time: e.start,
-        displayTime: `${e.start}–${e.end}`,
-      }));
-    events.push(...scheduleEvents);
 
     // Regular events - always include single-day events, multi-day events only if toggle is on
     const regularEventsForDate = regularEvents
@@ -144,18 +129,6 @@ export default function PlannerTab() {
   function getAllEventsForTooltip(date: Date): any[] {
     const events = [];
     const dateStr = date.toISOString().split('T')[0];
-    const dayName = DAYS[(date.getDay() + 6) % 7];
-
-    // Regular schedule events
-    const scheduleEvents = eventsForDay(dayName)
-      .filter(e => filterCourse === 'all' || e.courseId === filterCourse)
-      .map(e => ({
-        ...e,
-        eventType: 'schedule',
-        time: e.start,
-        displayTime: `${e.start}–${e.end}`,
-      }));
-    events.push(...scheduleEvents);
 
     // ALL Regular events - for tooltip, show all regardless of toggle
     const regularEventsForDate = regularEvents

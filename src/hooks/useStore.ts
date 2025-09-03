@@ -7,7 +7,6 @@ import type {
   ExamGrade,
   ExamInput,
   RegularEventInput,
-  ScheduleEvent,
   StudySession,
   StudySessionTask,
   SoundtrackPosition,
@@ -71,13 +70,6 @@ export function useCourses() {
     for (let i = store.regularEvents.length - 1; i >= 0; i--) {
       if (store.regularEvents[i].courseId === courseId) {
         store.regularEvents.splice(i, 1);
-      }
-    }
-
-    // Clear schedule entries
-    for (let i = store.schedule.length - 1; i >= 0; i--) {
-      if (store.schedule[i].courseId === courseId) {
-        store.schedule.splice(i, 1);
       }
     }
 
@@ -275,29 +267,6 @@ export function useTimetable() {
       if (eventIndex !== -1) {
         store.timetableEvents.splice(eventIndex, 1);
       }
-    },
-  };
-}
-
-/**
- * Hook to access and modify schedule events
- */
-export function useSchedule() {
-  const schedule = useSnapshot(store.schedule);
-
-  return {
-    schedule,
-    addSchedule: (item: Omit<ScheduleEvent, 'id'>) => {
-      store.schedule.push({ ...item, id: uid() });
-    },
-    removeSchedule: (id: string) => {
-      const scheduleIndex = store.schedule.findIndex(s => s.id === id);
-      if (scheduleIndex !== -1) {
-        store.schedule.splice(scheduleIndex, 1);
-      }
-    },
-    eventsForDay: (day: string) => {
-      return schedule.filter(e => e.day === day).sort((a, b) => a.start.localeCompare(b.start));
     },
   };
 }

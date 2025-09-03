@@ -27,7 +27,6 @@ export class DataTransfer {
       exams: state.exams,
       examGrades: state.examGrades,
       tasks: state.tasks,
-      schedule: state.schedule,
       timetableEvents: state.timetableEvents,
       regularEvents: state.regularEvents.map(
         o =>
@@ -189,15 +188,6 @@ export class DataTransfer {
       tasks: data.tasks,
     });
 
-    // Merge with existing schedule, preserving user-assigned colors
-    const mergedSchedule = mergeEvents(
-      this.getState().schedule || [],
-      data.schedule,
-      ['title', 'day', 'start', 'end'], // Key fields to match events
-      ['color'] // Fields to preserve from existing events
-    );
-    this.setState({ schedule: mergedSchedule });
-
     // Merge with existing timetable events, preserving user-assigned colors
     const mergedTimetableEvents = mergeEvents(
       this.getState().timetableEvents || [],
@@ -295,16 +285,6 @@ interface ExchangeFormatV2 {
     priority: string;
     done: boolean;
     notes?: string;
-  }>;
-  schedule: Array<{
-    id: string;
-    courseId: string;
-    title: string;
-    day: string;
-    start: string;
-    end: string;
-    location: string;
-    color?: string;
   }>;
   timetableEvents: Array<{
     id: string;

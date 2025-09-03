@@ -403,20 +403,6 @@ export interface DataTransfer {
 }
 
 /**
- * Schedule event object for weekly schedule (different from TimetableEvent)
- */
-export interface ScheduleEvent {
-  id: string;
-  courseId: string;
-  title: string;
-  day: string;
-  start: string;
-  end: string;
-  location: string;
-  color?: string;
-}
-
-/**
  * Mood emoji configuration object
  */
 export interface MoodEmoji {
@@ -596,7 +582,6 @@ export interface AppState {
   sessions: StudySession[];
   sessionTasks: StudySessionTask[];
   tasks: Task[];
-  schedule: ScheduleEvent[];
   timetableEvents: TimetableEvent[];
   regularEvents: RegularEvent[];
   weeklyGoals: WeeklyGoal[];

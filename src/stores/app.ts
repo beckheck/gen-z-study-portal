@@ -89,7 +89,6 @@ function createInitialState(): AppState {
     exams: [],
     examGrades: [],
     tasks: [],
-    schedule: [],
     timetableEvents: [],
     regularEvents: [],
     sessionTasks: [],

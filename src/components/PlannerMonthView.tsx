@@ -3,7 +3,7 @@ import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressB
 import { Badge } from '@/components/ui/badge';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useExams, useRegularEvents, useSchedule, useTasks } from '@/hooks/useStore';
+import { useCourses, useExams, useRegularEvents, useTasks } from '@/hooks/useStore';
 import { useTranslation } from 'react-i18next';
 import { CalendarView } from '../types';
 import { useState } from 'react';
@@ -33,7 +33,6 @@ export function PlannerMonthView({
 }: PlannerMonthViewProps) {
   const { getCourseTitle } = useCourses();
   const { regularEvents, updateRegularEvent } = useRegularEvents();
-  const { removeSchedule } = useSchedule();
   const { updateExam } = useExams();
   const { updateTask } = useTasks();
   const { t } = useTranslation('planner');
@@ -53,10 +52,6 @@ export function PlannerMonthView({
         break;
       case 'task':
         updateTask(event.id, { ...event, notes: newContent });
-        break;
-      // Schedule events don't have updatable notes in the current implementation
-      case 'schedule':
-        console.warn('Schedule event notes are not updatable');
         break;
       default:
         console.warn('Unknown event type:', event.eventType);
@@ -141,15 +136,7 @@ export function PlannerMonthView({
                     className="text-xs truncate flex items-center gap-1.5 p-1 rounded bg-white/50 dark:bg-white/10 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                     onClick={event => {
                       event.stopPropagation();
-                      if (e.eventType === 'schedule') {
-                        // For schedule events, show delete confirmation directly
-                        if (confirm(t('messages.deleteScheduleEvent'))) {
-                          removeSchedule(e.id);
-                        }
-                      } else {
-                        // For other events, directly open edit dialog
-                        eventDialog.openEditDialog(e);
-                      }
+                      eventDialog.openEditDialog(e);
                     }}
                     title={t('messages.clickToEdit')}
                   >
@@ -183,15 +170,7 @@ export function PlannerMonthView({
                         className="space-y-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/50 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                         onClick={event => {
                           event.stopPropagation();
-                          if (e.eventType === 'schedule') {
-                            // For schedule events, show delete confirmation directly
-                            if (confirm(t('messages.deleteScheduleEvent'))) {
-                              removeSchedule(e.id);
-                            }
-                          } else {
-                            // For other events, directly open edit dialog
-                            eventDialog.openEditDialog(e);
-                          }
+                          eventDialog.openEditDialog(e);
                         }}
                         title={t('messages.clickToEdit')}
                       >
