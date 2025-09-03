@@ -150,83 +150,6 @@ function createInitialState(): AppState {
   };
 }
 
-// Migration map for localStorage keys
-const MIGRATION_MAP = {
-  // Core data
-  'sp:courses': (value: any) => ({ courses: value }),
-  'sp:schedule': (value: any) => ({ schedule: value }),
-  'sp:timetableEvents': (value: any) => ({ timetableEvents: value }),
-  'sp:tasks': (value: any) => ({ tasks: value }),
-  'sp:exams': (value: any) => ({ exams: value }),
-  'sp:examGrades': (value: any) => ({ examGrades: value }),
-  'sp:regularEvents': (value: any) => ({ regularEvents: value }),
-  'sp:sessions': (value: any) => ({ sessions: value }),
-  'sp:sessionTasks': (value: any) => ({ sessionTasks: value }),
-  'sp:selectedCourse': (value: any) => ({ selectedCourse: value }),
-  'sp:degreePlan': (value: any) => ({ degreePlan: value }),
-
-  // Theme settings
-  'sp:dark': (value: any) => ({ theme: { darkMode: value } }),
-  'sp:bgImage': (value: any) => ({ theme: { bgImage: value } }),
-  'sp:customCursor': (value: any) => ({ theme: { customCursor: value } }),
-  'sp:accentColor': (value: any) => ({ theme: { accentColor: value } }),
-  'sp:cardOpacity': (value: any) => ({ theme: { cardOpacity: value } }),
-  'sp:gradientEnabled': (value: any) => ({ theme: { gradientEnabled: value } }),
-  'sp:gradientStart': (value: any) => ({ theme: { gradientStart: value } }),
-  'sp:gradientMiddle': (value: any) => ({ theme: { gradientMiddle: value } }),
-  'sp:gradientEnd': (value: any) => ({ theme: { gradientEnd: value } }),
-
-  // External services
-  'sp:soundtrackEmbed': (value: any) => ({ soundtrack: { embed: value, position: 'dashboard' } }),
-  'sp:weatherApiKey': (value: any) => ({ weatherApiKey: value }),
-  'sp:weatherLocation': (value: any) => ({ weatherLocation: value }),
-
-  // Wellness data
-  'sp:water': (value: any) => ({ wellness: { water: value } }),
-  'sp:gratitude': (value: any) => ({ wellness: { gratitude: value } }),
-  'sp:moodPercentages': (value: any) => ({ wellness: { moodPercentages: value } }),
-  'sp:moodInteracted': (value: any) => ({ wellness: { hasInteracted: value } }),
-  'sp:monthlyMoods': (value: any) => ({ wellness: { monthlyMoods: value } }),
-  'sp:showMoodWords': (value: any) => ({ wellness: { showWords: value } }),
-  'sp:moodEmojis': (value: any) => ({ wellness: { moodEmojis: value } }),
-};
-
-// Load and migrate existing localStorage data
-function migrateFromLocalStorage(): Partial<AppState> {
-  const migratedState: any = {};
-
-  // Only migrate if localStorage is available
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return migratedState;
-  }
-
-  // Migrate each localStorage key
-  Object.entries(MIGRATION_MAP).forEach(([key, migrator]) => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw !== null) {
-        const value = JSON.parse(raw);
-        const migrated = migrator(value);
-
-        // Deep merge the migrated data
-        Object.keys(migrated).forEach(stateKey => {
-          if (stateKey === 'wellness' && migratedState.wellness) {
-            migratedState.wellness = { ...migratedState.wellness, ...migrated[stateKey] };
-          } else if (stateKey === 'theme' && migratedState.theme) {
-            migratedState.theme = { ...migratedState.theme, ...migrated[stateKey] };
-          } else {
-            migratedState[stateKey] = migrated[stateKey];
-          }
-        });
-      }
-    } catch (error) {
-      console.warn(`Failed to migrate localStorage key ${key}:`, error);
-    }
-  });
-
-  return migratedState;
-}
-
 // Loading state for UI (needs to be declared before loadState)
 export const storeLoadingState = proxy<{
   isLoading: boolean;
@@ -240,6 +163,7 @@ export const storeLoadingState = proxy<{
 
 // Load state from hybrid storage (IndexedDB/BrowserStorage or localStorage) or create initial state
 async function loadState(): Promise<AppState> {
+  let state = createInitialState();
   try {
     // Check if we're in browser environment
     if (typeof window === 'undefined') {
@@ -254,7 +178,6 @@ async function loadState(): Promise<AppState> {
     exchangeData = await hybridStorage.getItem(STORAGE_KEY);
 
     if (exchangeData) {
-      let state = createInitialState();
       const dataTransfer: DataTransfer = new DataTransfer(
         () => state,
         newState => {
@@ -263,89 +186,13 @@ async function loadState(): Promise<AppState> {
       );
       storeLoadingState.status = tLoadingScreen('restoringData');
       dataTransfer.importData(exchangeData);
-      
-      // Ensure all new fields are properly initialized
-      if (!state.wellness.dailyHydration) {
-        state.wellness.dailyHydration = {};
-      }
-      
-      return state;
+    } else {
+      console.error('Failed to load state from storage');
     }
-
-    // Fallback: try to load from the old centralized localStorage key
-    storeLoadingState.status = tLoadingScreen('checkingLegacyStorage');
-    const centralizedRaw =
-      typeof window !== 'undefined' && typeof localStorage !== 'undefined' ? localStorage.getItem('sp:appState') : null;
-    if (centralizedRaw) {
-      const parsed = JSON.parse(centralizedRaw);
-      const oldWeather = {
-        apiKey: parsed.weatherApiKey || '',
-        location: parsed.weatherLocation || { ...DEFAULT_WEATHER_LOCATION },
-      };
-
-      // Ensure all required fields exist by merging with defaults
-      const initialState = createInitialState();
-      const mergedState = {
-        ...initialState,
-        ...parsed,
-        // Deep merge theme and wellness objects to preserve default values
-        theme: { ...initialState.theme, ...parsed.theme },
-        soundtrack: { ...initialState.soundtrack, ...parsed.soundtrack },
-        weather: { ...initialState.weather, ...oldWeather, ...parsed.weather },
-        wellness: { 
-          ...initialState.wellness, 
-          ...parsed.wellness,
-          dailyHydration: parsed.wellness?.dailyHydration || {},
-        },
-        weeklyGoals: parsed.weeklyGoals || [],
-        degreePlan: { ...initialState.degreePlan, ...parsed.degreePlan },
-      };
-
-      if (mergedState.soundtrack?.position === 'hidden') {
-        mergedState.soundtrack.position = 'dashboard';
-      }
-
-      return mergedState;
-    }
-
-    // Final fallback: try to migrate from old localStorage keys
-    storeLoadingState.status = tLoadingScreen('migratingLegacyData');
-    const migratedState = migrateFromLocalStorage();
-    const initialState = createInitialState();
-
-    const mergedState = {
-      ...initialState,
-      ...migratedState,
-      // Deep merge theme, soundtrack, and wellness objects to preserve default values
-      theme: { ...initialState.theme, ...migratedState.theme },
-      soundtrack: { ...initialState.soundtrack, ...migratedState.soundtrack },
-      weather: { ...initialState.weather, ...migratedState.weather },
-      wellness: { 
-        ...initialState.wellness, 
-        ...migratedState.wellness,
-        dailyHydration: migratedState.wellness?.dailyHydration || {},
-      },
-      weeklyGoals: migratedState.weeklyGoals || [],
-      degreePlan: { ...initialState.degreePlan, ...migratedState.degreePlan },
-    };
-
-    // If we migrated data, save it to the new storage and clean up old keys
-    if (Object.keys(migratedState).length > 0) {
-      removeDeprecatedLocalStorageItems();
-      // Save migrated data to hybrid storage
-      const exchangeData = new DataTransfer(
-        () => mergedState,
-        () => {}
-      ).exportData();
-      await hybridStorage.setItem(STORAGE_KEY, exchangeData);
-    }
-
-    return mergedState;
   } catch (error) {
     console.error('Failed to load state from storage:', error);
-    const fallbackState = createInitialState();
-    return fallbackState;
   }
+  return state;
 }
 
 // Create the Valtio store
@@ -371,7 +218,7 @@ loadState()
     // Set up cross-context synchronization AFTER store is ready
     setupStorageSynchronization();
 
-    // Do initial persistence to ensure data is saved in hybrid storage
+    // Do initial persistence to ensure data is saved in hybrid storage with new format
     persistStore().catch(error => {
       console.error('Failed to persist initial state:', error);
     });
@@ -426,7 +273,6 @@ export function persistStore(): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       const exchangeData = dataTransfer.exportData();
-      removeDeprecatedLocalStorageItems();
 
       // Use hybrid storage for all contexts (extension and web)
       hybridStorage
@@ -445,27 +291,8 @@ export function persistStore(): Promise<void> {
   });
 }
 
-function removeDeprecatedLocalStorageItems() {
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return;
-  }
-
-  Object.keys(MIGRATION_MAP).forEach(oldKey => {
-    if (localStorage.getItem(oldKey) !== null) {
-      localStorage.removeItem(oldKey);
-    }
-  });
-  localStorage.removeItem('sp:appState');
-  localStorage.removeItem(STORAGE_KEY);
-}
-
 // Function to set up storage synchronization between tabs/contexts
 function setupStorageSynchronization() {
-  // if (typeof window === 'undefined') {
-  //   return;
-  // }
-
-  // Set up unified change listener for all storage adapters (BrowserStorage, IndexedDB, localStorage)
   hybridStorage.addChangeListener((key: string, newValue: any) => {
     if (key === STORAGE_KEY && newValue && isStoreReady) {
       try {
