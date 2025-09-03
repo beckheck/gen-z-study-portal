@@ -104,7 +104,7 @@ i18n
 const EXTENSION_STORAGE_LANGUAGE_KEY = 'language';
 
 i18n.on('languageChanged', (newValue: string) => {
-  browser.storage.local.set({ [EXTENSION_STORAGE_LANGUAGE_KEY]: newValue });
+  browser.storage?.local.set({ [EXTENSION_STORAGE_LANGUAGE_KEY]: newValue });
 });
 
 export async function listenLanguageChangeInExtensionBackground() {

@@ -5,7 +5,11 @@
     "done": "Hecho",
     "undo": "Deshacer",
     "edit": "Editar",
-    "clearCourseData": "Limpiar Datos del Curso"
+    "clearCourseData": "Limpiar Datos del Curso",
+    "showAllNotes": "Mostrar todas las notas",
+    "hideAllNotes": "Ocultar todas las notas",
+    "showNotes": "Mostrar notas",
+    "hideNotes": "Ocultar notas"
   },
   "tasks": {
     "title": "Tareas",

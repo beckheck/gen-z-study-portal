@@ -5,7 +5,11 @@
     "done": "Done",
     "undo": "Undo",
     "edit": "Edit",
-    "clearCourseData": "Clear Course Data"
+    "clearCourseData": "Clear Course Data",
+    "showAllNotes": "Show all notes",
+    "hideAllNotes": "Hide all notes",
+    "showNotes": "Show notes",
+    "hideNotes": "Hide notes"
   },
   "tasks": {
     "title": "To‑Dos",

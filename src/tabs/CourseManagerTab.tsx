@@ -15,7 +15,18 @@ import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses, useExams, useTasks } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
-import { CalendarDays, Check, Edit, ListTodo, Plus, Settings, Trash2, Undo } from 'lucide-react';
+import {
+  CalendarDays,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Edit,
+  ListTodo,
+  Plus,
+  Settings,
+  Trash2,
+  Undo,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -31,10 +42,41 @@ export default function CourseManagerTab() {
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const [taskSortOrder, setTaskSortOrder] = useState<'date' | 'priority'>('date');
   const [examNotesProgress, setExamNotesProgress] = useState<Record<string, ProgressData>>({});
+  const [expandedExamNotes, setExpandedExamNotes] = useState<Record<string, boolean>>({});
   const courseTasks = tasks.filter(t => t.courseId === selectedCourseId);
   const courseExams = exams.filter(e => e.courseId === selectedCourseId);
   const upcomingExams = courseExams.filter(e => !e.completed);
   const completedExams = courseExams.filter(e => e.completed);
+
+  // Toggle expanded state for exam notes
+  const toggleExamNotesExpanded = (examId: string) => {
+    setExpandedExamNotes(prev => ({
+      ...prev,
+      [examId]: !prev[examId],
+    }));
+  };
+
+  // Toggle all exam notes
+  const toggleAllExamNotes = () => {
+    const examsWithNotes = [...upcomingExams, ...completedExams].filter(e => e.notes);
+    const allExpanded = examsWithNotes.every(e => expandedExamNotes[e.id]);
+
+    const newState: Record<string, boolean> = {};
+    examsWithNotes.forEach(e => {
+      newState[e.id] = !allExpanded;
+    });
+
+    setExpandedExamNotes(prev => ({
+      ...prev,
+      ...newState,
+    }));
+  };
+
+  // Check if all notes are expanded
+  const areAllNotesExpanded = () => {
+    const examsWithNotes = [...upcomingExams, ...completedExams].filter(e => e.notes);
+    return examsWithNotes.length > 0 && examsWithNotes.every(e => expandedExamNotes[e.id]);
+  };
 
   // Get priority color for tasks
   const getPriorityColor = (priority: string): string => {
@@ -370,7 +412,7 @@ export default function CourseManagerTab() {
 
         {/* Upcoming Evaluations */}
         <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
@@ -398,45 +440,102 @@ export default function CourseManagerTab() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 pl-1">
             {upcomingExams.length === 0 && (
               <div className="text-sm text-zinc-500">{tCourse('exams.upcoming.empty')}</div>
             )}
+
+            {/* Main chevron for expand/collapse all - positioned above the items */}
+            {[...upcomingExams, ...completedExams].some(e => e.notes) ? (
+              <div className="flex items-start gap-1 mb-2 cursor-pointer" onClick={toggleAllExamNotes}>
+                <div className="flex-shrink-0 w-5 flex justify-center">
+                  <div
+                    className="h-6 w-6 flex items-center justify-center hover:opacity-70 transition-opacity"
+                    title={areAllNotesExpanded() ? tCourse('actions.hideAllNotes') : tCourse('actions.showAllNotes')}
+                  >
+                    {areAllNotesExpanded() ? (
+                      <ChevronDown className="w-4 h-4 text-zinc-500 font-bold" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-zinc-500 font-bold" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 text-xs text-zinc-500 pt-1">
+                  {areAllNotesExpanded() ? tCourse('actions.hideAllNotes') : tCourse('actions.showAllNotes')}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3"> </div>
+            )}
+
             <div className="space-y-2 max-h-[420px] overflow-auto">
               {upcomingExams
                 .sort((a, b) => a.date.localeCompare(b.date))
                 .map(e => (
-                  <div
-                    key={e.id}
-                    className="flex items-start justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/80 dark:hover:bg-white/10 transition-colors"
-                    onClick={() => {
-                      // Create exam event with proper format
-                      const examEvent = {
-                        ...e,
-                        date: e.date, // Keep the exam date format
-                      };
-                      eventDialog.openEditExamDialog(examEvent);
-                    }}
-                  >
-                    <div className="w-full">
-                      <Badge variant="secondary" className="rounded-full self-start float-right">
-                        {(() => {
-                          const examDate = new Date(e.date);
-                          const today = new Date();
-                          const diffTime = examDate.getTime() - today.getTime();
-                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                          return diffDays <= 0
-                            ? tCommon('fields.today')
-                            : diffDays === 1
-                            ? tCommon('fields.tomorrow')
-                            : tCourse('exams.timing.days', { count: diffDays });
-                        })()}
-                      </Badge>{' '}
-                      <div className="font-medium">{e.title}</div>
-                      <div className="text-xs text-zinc-500">
-                        {formatDateDDMMYYYY(e.date)} · {e.weight}%
-                        {e.notes && (
-                          <div className="mt-1">
+                  <div key={e.id} className="flex items-start gap-1">
+                    {/* Chevron positioned outside the card */}
+                    <div className="flex-shrink-0 w-5 flex justify-center pt-3">
+                      {e.notes ? (
+                        <div
+                          className="h-6 w-6 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+                          title={expandedExamNotes[e.id] ? tCourse('actions.hideNotes') : tCourse('actions.showNotes')}
+                          onClick={ev => {
+                            ev.stopPropagation();
+                            toggleExamNotesExpanded(e.id);
+                          }}
+                        >
+                          {expandedExamNotes[e.id] ? (
+                            <ChevronDown className="w-4 h-4 text-zinc-500" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-zinc-500" />
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Exam card */}
+                    <div className="flex-1 bg-white/70 dark:bg-white/5 rounded-xl hover:bg-white/80 dark:hover:bg-white/10 transition-colors">
+                      <div
+                        className="flex items-start justify-between p-3 cursor-pointer"
+                        onClick={() => {
+                          // Create exam event with proper format
+                          const examEvent = {
+                            ...e,
+                            date: e.date, // Keep the exam date format
+                          };
+                          eventDialog.openEditExamDialog(examEvent);
+                        }}
+                      >
+                        <div className="w-full">
+                          <Badge variant="secondary" className="rounded-full self-start float-right">
+                            {(() => {
+                              const examDate = new Date(e.date);
+                              const today = new Date();
+                              const diffTime = examDate.getTime() - today.getTime();
+                              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                              return diffDays <= 0
+                                ? tCommon('fields.today')
+                                : diffDays === 1
+                                ? tCommon('fields.tomorrow')
+                                : tCourse('exams.timing.days', { count: diffDays });
+                            })()}
+                          </Badge>
+                          <div className="font-medium">{e.title}</div>
+                          <div className="text-xs text-zinc-500">
+                            {formatDateDDMMYYYY(e.date)} · {e.weight}%
+                          </div>
+                        </div>
+                      </div>
+
+                      {e.notes && expandedExamNotes[e.id] && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeInOut' }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-3 pb-3">
                             <TasksProgressBar progress={examNotesProgress[e.id]} />
                             <RichTextDisplay
                               content={e.notes}
@@ -456,8 +555,8 @@ export default function CourseManagerTab() {
                               }}
                             />
                           </div>
-                        )}
-                      </div>
+                        </motion.div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -475,25 +574,74 @@ export default function CourseManagerTab() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         key={e.id}
-                        className="flex items-start justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group cursor-pointer hover:bg-white/50 dark:hover:bg-white/8 transition-colors"
-                        onClick={() => {
-                          // Create exam event with proper format
-                          const examEvent = {
-                            ...e,
-                            date: e.date, // Keep the exam date format
-                          };
-                          eventDialog.openEditExamDialog(examEvent);
-                        }}
+                        className="flex items-start gap-1"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-green-600" />
-                            <span className="font-medium text-green-700 dark:text-green-400">{e.title}</span>
+                        {/* Chevron positioned outside the card */}
+                        <div className="flex-shrink-0 w-5 flex justify-center pt-3">
+                          {e.notes ? (
+                            <div
+                              className="h-6 w-6 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+                              onClick={ev => {
+                                ev.stopPropagation();
+                                toggleExamNotesExpanded(e.id);
+                              }}
+                            >
+                              {expandedExamNotes[e.id] ? (
+                                <ChevronDown className="w-4 h-4 text-zinc-400" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-zinc-400" />
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {/* Exam card */}
+                        <div className="flex-1 bg-white/40 dark:bg-white/5 rounded-xl group hover:bg-white/50 dark:hover:bg-white/8 transition-colors">
+                          <div
+                            className="flex items-start justify-between p-3 cursor-pointer"
+                            onClick={() => {
+                              // Create exam event with proper format
+                              const examEvent = {
+                                ...e,
+                                date: e.date, // Keep the exam date format
+                              };
+                              eventDialog.openEditExamDialog(examEvent);
+                            }}
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-green-600" />
+                                <span className="font-medium text-green-700 dark:text-green-400">{e.title}</span>
+                              </div>
+                              <div className="text-xs text-zinc-500 ml-6">
+                                {formatDateDDMMYYYY(e.date)} · {e.weight}% · Completed
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={ev => {
+                                  ev.stopPropagation();
+                                  toggleExamComplete(e.id);
+                                }}
+                                title="Mark as upcoming"
+                              >
+                                <Undo className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="text-xs text-zinc-500 ml-6">
-                            {formatDateDDMMYYYY(e.date)} · {e.weight}% · Completed
-                            {e.notes && (
-                              <div className="mt-1">
+
+                          {e.notes && expandedExamNotes[e.id] && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2, ease: 'easeInOut' }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-3 pb-3">
                                 <RichTextDisplay
                                   content={e.notes}
                                   className="text-xs"
@@ -506,22 +654,8 @@ export default function CourseManagerTab() {
                                   }}
                                 />
                               </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={ev => {
-                              ev.stopPropagation();
-                              toggleExamComplete(e.id);
-                            }}
-                            title="Mark as upcoming"
-                          >
-                            <Undo className="w-4 h-4" />
-                          </Button>
+                            </motion.div>
+                          )}
                         </div>
                       </motion.div>
                     ))}
