@@ -130,6 +130,17 @@
     "audio": {
       "notifications": "Notificaciones de audio",
       "volume": "Volumen"
+    },
+    "siteBlocking": {
+      "title": "Bloqueo de Sitios",
+      "description": "Bloquear sitios web que distraen durante las sesiones de estudio",
+      "strategy": "Estrategia de Bloqueo",
+      "blacklist": "Lista Negra: Bloquear sitios listados",
+      "whitelist": "Lista Blanca: Permitir solo sitios listados",
+      "disabled": "No bloquear nada",
+      "sites": "Sitios",
+      "placeholder": "facebook.com\nyoutube.com\nx.com\ninstagram.com",
+      "help": "Ingresa un sitio por línea. Soporta coincidencias de dominio (ej: facebook.com coincide con www.facebook.com)"
     }
   },
   "storage": {

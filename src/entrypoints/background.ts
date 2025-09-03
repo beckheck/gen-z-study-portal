@@ -1,8 +1,11 @@
 import { listenLanguageChangeInExtensionBackground } from '@/i18n/config';
+import { enactSiteBlockingStrategyInTab } from '@/lib/site-blocking';
 import { StudySessionTimerManager } from '@/lib/study-session-timer-manager';
 import { getPhaseDurationSeconds, getPhaseEmoji } from '@/lib/technique-utils';
 import { BackgroundMessage, BackgroundTimerState, StudyPhase } from '@/types';
 import { browser } from 'wxt/browser';
+import { store } from '@/stores/app';
+import { snapshot } from 'valtio';
 
 declare function defineBackground(fn: () => void): any;
 
@@ -86,6 +89,26 @@ export default defineBackground(() => {
         }
       });
     }
+
+    // Handle tab navigation during study sessions
+    browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      if (tab.url) {
+        const timerState = timerManager.getTimerState();
+        if (timerState.running && timerState.phase === 'studying') {
+          const storeSnapshot = snapshot(store);
+          const focusTimerSettings = storeSnapshot.focusTimer;
+          // Block the tab if it matches our blocked sites based on blocking strategy
+          enactSiteBlockingStrategyInTab(
+            'blockSite',
+            tab,
+            focusTimerSettings.sites,
+            focusTimerSettings.blockingStrategy
+          ).catch(error => {
+            console.log('Could not block newly navigated tab:', error.message);
+          });
+        }
+      }
+    });
   } else {
     console.error('Browser APIs not available - running in build/test environment');
   }

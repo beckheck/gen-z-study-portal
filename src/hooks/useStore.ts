@@ -442,6 +442,12 @@ export function useFocusTimer() {
     setShowCountdown: (showCountdown: boolean) => {
       store.focusTimer.showCountdown = showCountdown;
     },
+    setBlockingStrategy: (blockingStrategy: 'blacklist' | 'whitelist' | 'disabled') => {
+      store.focusTimer.blockingStrategy = blockingStrategy;
+    },
+    setSites: (sites: string) => {
+      store.focusTimer.sites = sites;
+    },
   };
 }
 

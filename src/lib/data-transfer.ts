@@ -642,6 +642,8 @@ interface ExchangeFormatV2 {
       audioVolume: number;
       notificationsEnabled: boolean;
       showCountdown: boolean;
+      blockingStrategy: 'blacklist' | 'whitelist' | 'disabled';
+      sites: string;
     };
     theme: {
       darkMode: boolean;

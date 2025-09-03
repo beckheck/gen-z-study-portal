@@ -1,12 +1,33 @@
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { useAppContext } from '@/contexts/AppContext';
 import { useFocusTimer } from '@/hooks/useStore';
-import { Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
+import { Bell, BellOff, Shield, Volume2, VolumeX } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function FocusTimerSettings() {
+  const { isExtension } = useAppContext();
   const { t } = useTranslation('settings');
-  const { focusTimer, setAudioEnabled, setAudioVolume, setNotificationsEnabled, setShowCountdown } = useFocusTimer();
+  const { focusTimer, setAudioEnabled, setAudioVolume, setNotificationsEnabled, setSites, setBlockingStrategy } =
+    useFocusTimer();
+
+  // Local state for textarea to prevent cursor jumping
+  const [localSites, setLocalSites] = useState(focusTimer.sites);
+
+  // Sync local state with store when focusTimer.sites changes from external sources
+  useEffect(() => {
+    setLocalSites(focusTimer.sites);
+  }, [focusTimer.sites]);
+
+  const handleSitesChange = (value: string) => {
+    // Update local state immediately for smooth typing
+    setLocalSites(value);
+    // Update store (debounced or immediate)
+    setSites(value);
+  };
 
   return (
     <div className="space-y-6">
@@ -52,6 +73,53 @@ export default function FocusTimerSettings() {
           </div>
         )}
       </div>
+
+      {isExtension && (
+        /* Site Blocking Section */
+        <div className="space-y-4">
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <Shield className="w-4 h-4" />
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {t('focusTimer.siteBlocking.title')}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('focusTimer.siteBlocking.description')}</p>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-xs text-zinc-500 uppercase tracking-wide">
+              {t('focusTimer.siteBlocking.strategy')}
+            </Label>
+            <Select value={focusTimer.blockingStrategy} onValueChange={setBlockingStrategy}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select blocking strategy" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="disabled">{t('focusTimer.siteBlocking.disabled')}</SelectItem>
+                <SelectItem value="blacklist">{t('focusTimer.siteBlocking.blacklist')}</SelectItem>
+                <SelectItem value="whitelist">{t('focusTimer.siteBlocking.whitelist')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {focusTimer.blockingStrategy !== 'disabled' && (
+            <div className="space-y-3">
+              <Label className="text-xs text-zinc-500 uppercase tracking-wide">
+                {t('focusTimer.siteBlocking.sites')}
+              </Label>
+              <Textarea
+                value={localSites}
+                onChange={e => handleSitesChange(e.target.value)}
+                placeholder={t('focusTimer.siteBlocking.placeholder')}
+                className="min-h-[120px] resize-y text-xs"
+                rows={6}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('focusTimer.siteBlocking.help')}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 
         Future Focus Timer settings sections can be added here:

@@ -1,4 +1,38 @@
 import { browser } from 'wxt/browser';
+import { ContentScriptMessage } from '../types';
+
+// Import translation resources directly
+import enContent from '../locales/en/content.json';
+import esContent from '../locales/es/content.json';
+
+// Translation resources for content script
+const translations = {
+  en: enContent,
+  es: esContent,
+};
+
+// Helper function to get translations in content script context
+const getTranslation = (key: string, language: string = 'en'): string => {
+  try {
+    const keys = key.split('.');
+    const langTranslations = translations[language] || translations.en;
+    let value: any = langTranslations;
+
+    for (const k of keys) {
+      if (value && typeof value === 'object') {
+        value = value[k];
+      } else {
+        value = undefined;
+        break;
+      }
+    }
+
+    return typeof value === 'string' ? value : key;
+  } catch (error) {
+    console.warn('Translation error for key:', key, 'language:', language);
+    return key;
+  }
+};
 
 // Helper function to get extension URLs cross-browser
 const getExtensionURL = (path: string): string => {
@@ -34,11 +68,15 @@ export default defineContentScript({
         });
 
         // Listen for messages from extension
-        browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        browser.runtime.onMessage.addListener((request: ContentScriptMessage, sender, sendResponse) => {
           if (request.action === 'captureSelection') {
             this.captureCurrentSelection();
           } else if (request.action === 'toggleOverlay') {
             this.toggleStudyOverlay();
+          } else if (request.action === 'blockSite') {
+            this.blockSite(request.language);
+          } else if (request.action === 'unblockSite') {
+            this.unblockSite();
           }
           sendResponse({ success: true });
         });
@@ -75,7 +113,7 @@ export default defineContentScript({
         this.removeOverlay();
 
         const overlay = document.createElement('div');
-        overlay.id = 'study-portal-overlay';
+        overlay.id = 'studyhub-overlay';
 
         const iframe = document.createElement('iframe');
         iframe.src = getExtensionURL('/popup.html');
@@ -129,10 +167,80 @@ export default defineContentScript({
       }
 
       removeOverlay() {
-        const overlay = document.getElementById('study-portal-overlay');
+        const overlay = document.getElementById('studyhub-overlay');
         if (overlay) {
           overlay.remove();
           this.overlayActive = false;
+        }
+      }
+
+      blockSite(language: string = 'en') {
+        // Check if overlay already exists
+        if (document.getElementById('studyhub-block-overlay')) {
+          return;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'studyhub-block-overlay';
+
+        // Create overlay styles
+        overlay.style.cssText = `
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          z-index: 2147483647 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+          font-size: 16px !important;
+          color: white !important;
+          text-align: center !important;
+          padding: 32px !important;
+          box-sizing: border-box !important;
+        `;
+
+        // Create content with absolute font sizes
+        const content = document.createElement('div');
+
+        // Get translated messages using the provided language
+        const t = (key: string) => getTranslation(key, language);
+
+        content.innerHTML = `
+          <div style="background: rgba(255, 255, 255, 0.1) !important; backdrop-filter: blur(10px) !important; border-radius: 20px !important; padding: 48px !important; max-width: 500px !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;">
+            <div style="font-size: 64px !important; margin-bottom: 16px !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;">
+              🎯
+            </div>
+            <h1 style="font-size: 40px !important; font-weight: 700 !important; margin: 0 0 16px 0 !important; line-height: 1.2 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; color: white !important;">
+              ${t('siteBlocking.focusTime')}
+            </h1>
+            <p style="font-size: 20px !important; margin: 0 0 32px 0 !important; opacity: 0.9 !important; line-height: 1.5 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; color: white !important;">
+              ${t('siteBlocking.siteBlocked')}<br/>
+              ${t('siteBlocking.stayFocused')}
+            </p>
+            <div style="font-size: 16px !important; opacity: 0.7 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important; color: white !important;">
+              ${t('siteBlocking.sessionInProgress')}
+            </div>
+          </div>
+        `;
+
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+
+        // Prevent scrolling on the background page
+        document.body.style.overflow = 'hidden';
+      }
+
+      unblockSite() {
+        const overlay = document.getElementById('studyhub-block-overlay');
+        if (overlay) {
+          overlay.remove();
+          // Restore scrolling
+          document.body.style.overflow = '';
         }
       }
     }

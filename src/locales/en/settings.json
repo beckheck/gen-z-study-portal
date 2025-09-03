@@ -130,6 +130,17 @@
     "audio": {
       "notifications": "Audio notifications",
       "volume": "Volume"
+    },
+    "siteBlocking": {
+      "title": "Site Blocking",
+      "description": "Block distracting websites during study sessions",
+      "strategy": "Blocking Strategy",
+      "blacklist": "Blacklist: Block listed sites",
+      "whitelist": "Whitelist: Allow only listed sites",
+      "disabled": "Do nothing",
+      "sites": "Sites",
+      "placeholder": "facebook.com\nyoutube.com\ntwitter.com\ninstagram.com",
+      "help": "Enter one site per line. Supports domain matching (e.g., facebook.com matches www.facebook.com)"
     }
   },
   "storage": {

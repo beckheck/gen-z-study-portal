@@ -1,6 +1,7 @@
-import { browserRuntime } from '@/lib/browser-runtime-stub';
+import { browserRuntime, isExtension } from '@/lib/browser-runtime-stub';
 import { BrowserStorageAdapter, HybridStorage, LocalStorageAdapter } from '@/lib/hybrid-storage';
 import { showNotification, requestNotificationPermission } from '@/lib/notifications';
+import { enactSiteBlockingStrategy } from '@/lib/site-blocking';
 import { getNextPhase, shouldTransitionPhase, getTechniqueConfig } from '@/lib/technique-utils';
 import { getNotificationTranslationAsync } from '@/lib/translation-utils';
 import { uid } from '@/lib/utils';
@@ -122,6 +123,17 @@ export class StudySessionTimerManager {
       this.timerState.studyPhasesCompleted++;
     }
 
+    // Handle site blocking/unblocking based on phase transition
+    if (isExtension) {
+      if (nextPhase === 'studying' && (currentPhase === 'break' || currentPhase === 'longBreak')) {
+        // Transitioning from break back to studying - block sites
+        await enactSiteBlockingStrategy('blockSite', focusTimerSettings.sites, focusTimerSettings.blockingStrategy);
+      } else if ((nextPhase === 'break' || nextPhase === 'longBreak') && currentPhase === 'studying') {
+        // Transitioning from studying to break - unblock sites
+        await enactSiteBlockingStrategy('unblockSite', focusTimerSettings.sites, focusTimerSettings.blockingStrategy);
+      }
+    }
+
     // Play sound when transitioning phases
     if (focusTimerSettings.audioEnabled) {
       if (nextPhase === 'break' || nextPhase === 'longBreak') {
@@ -208,35 +220,50 @@ export class StudySessionTimerManager {
   }
 
   public async startTimer(courseId: string) {
-    const now = Date.now();
-    const focusTimerSettings = this.getFocusTimerSettings();
+    try {
+      const now = Date.now();
+      const focusTimerSettings = this.getFocusTimerSettings();
 
-    this.timerState.running = true;
-    this.timerState.elapsed = 0;
-    this.timerState.startTs = now;
-    this.timerState.courseId = courseId;
-    this.timerState.phase = 'studying';
-    this.timerState.phaseElapsed = 0;
-    this.timerState.phaseStartTs = now;
+      this.timerState.running = true;
+      this.timerState.elapsed = 0;
+      this.timerState.startTs = now;
+      this.timerState.courseId = courseId;
+      this.timerState.phase = 'studying';
+      this.timerState.phaseElapsed = 0;
+      this.timerState.phaseStartTs = now;
 
-    // Play start sound if audio is enabled
-    if (focusTimerSettings.audioEnabled) {
-      await playNotificationSound('start', focusTimerSettings.audioVolume);
+      // Block sites if we're in extension environment and starting a study phase
+      if (isExtension) {
+        await enactSiteBlockingStrategy('blockSite', focusTimerSettings.sites, focusTimerSettings.blockingStrategy);
+      }
+
+      // Play start sound if audio is enabled
+      if (focusTimerSettings.audioEnabled) {
+        await playNotificationSound('start', focusTimerSettings.audioVolume);
+      }
+
+      // Show start notification if enabled (permissions should already be handled)
+      if (focusTimerSettings.notificationsEnabled) {
+        await showNotification({
+          title: await getNotificationTranslationAsync('timer.started'),
+          message: await getNotificationTranslationAsync('timer.startedMessage'),
+          icon: '/hearticon.png',
+          requireInteraction: false,
+          silent: focusTimerSettings.audioEnabled,
+        });
+      }
+
+      this.startTimerInterval();
+      this.saveTimerState();
+    } catch (error) {
+      console.error('[Timer] Failed to start timer:', error);
+      // Reset timer state if startup failed
+      this.timerState.running = false;
+      this.timerState.startTs = null;
+      this.timerState.phaseStartTs = null;
+      this.saveTimerState();
+      throw error;
     }
-
-    // Show start notification if enabled (permissions should already be handled)
-    if (focusTimerSettings.notificationsEnabled) {
-      await showNotification({
-        title: await getNotificationTranslationAsync('timer.started'),
-        message: await getNotificationTranslationAsync('timer.startedMessage'),
-        icon: '/hearticon.png',
-        requireInteraction: false,
-        silent: focusTimerSettings.audioEnabled,
-      });
-    }
-
-    this.startTimerInterval();
-    this.saveTimerState();
   }
 
   public async stopTimer(): Promise<{ session: any } | null> {
@@ -246,6 +273,12 @@ export class StudySessionTimerManager {
 
     const endTs = Date.now();
     const durationMin = Math.max(1, Math.round(this.timerState.elapsed / 60));
+    const focusTimerSettings = this.getFocusTimerSettings();
+
+    // Unblock all sites when stopping the timer
+    if (isExtension) {
+      await enactSiteBlockingStrategy('unblockSite', focusTimerSettings.sites, focusTimerSettings.blockingStrategy);
+    }
 
     // No completion sound when manually stopping - only play break sound during phase transitions
 
@@ -325,21 +358,48 @@ export class StudySessionTimerManager {
   public handleMessage(message: BackgroundMessage_Timer, sendResponse: (response: any) => void) {
     switch (message.type) {
       case 'timer.start':
-        this.startTimer(message.courseId).then(() => {
-          sendResponse({ success: true, state: this.getTimerState() });
-        });
+        this.startTimer(message.courseId)
+          .then(() => {
+            sendResponse({ success: true, state: this.getTimerState() });
+          })
+          .catch(error => {
+            console.error('[TimerManager] Start timer failed:', error);
+            sendResponse({
+              success: false,
+              error: error.message || 'Failed to start timer',
+              state: this.getTimerState(),
+            });
+          });
         break;
 
       case 'timer.stop':
-        this.stopTimer().then(result => {
-          sendResponse({ success: true, state: this.getTimerState(), session: result?.session });
-        });
+        this.stopTimer()
+          .then(result => {
+            sendResponse({ success: true, state: this.getTimerState(), session: result?.session });
+          })
+          .catch(error => {
+            console.error('[TimerManager] Stop timer failed:', error);
+            sendResponse({
+              success: false,
+              error: error.message || 'Failed to stop timer',
+              state: this.getTimerState(),
+            });
+          });
         break;
 
       case 'timer.reset':
-        this.resetTimer().then(() => {
-          sendResponse({ success: true, state: this.getTimerState() });
-        });
+        this.resetTimer()
+          .then(() => {
+            sendResponse({ success: true, state: this.getTimerState() });
+          })
+          .catch(error => {
+            console.error('[TimerManager] Reset timer failed:', error);
+            sendResponse({
+              success: false,
+              error: error.message || 'Failed to reset timer',
+              state: this.getTimerState(),
+            });
+          });
         break;
 
       case 'timer.getState':

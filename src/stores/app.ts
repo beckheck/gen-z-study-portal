@@ -38,11 +38,32 @@ export const DEFAULT_HYDRATION_SETTINGS = {
   unit: 'metric' as const,
 };
 
-export const DEFAULT_FOCUS_TIMER_CONFIG = {
+export const DEFAULT_FOCUS_TIMER_CONFIG: FocusTimerConfig = {
   audioEnabled: true,
   audioVolume: 0.6,
   notificationsEnabled: true,
   showCountdown: false,
+  blockingStrategy: 'disabled',
+  sites: [
+    '4chan.org',
+    'amazon.com',
+    'buzzfeed.com',
+    'discord.com',
+    'disneyplus.com',
+    'facebook.com',
+    'instagram.com',
+    'netflix.com',
+    'pinterest.com',
+    'primevideo.com',
+    'reddit.com',
+    'steampowered.com',
+    'telegram.org',
+    'tiktok.com',
+    'twitch.tv',
+    'whatsapp.com',
+    'x.com',
+    'youtube.com',
+  ].join('\n'),
 };
 
 const DEFAULT_DEGREE_PLAN: DegreePlan = {
@@ -425,9 +446,9 @@ function removeDeprecatedLocalStorageItems() {
 
 // Function to set up storage synchronization between tabs/contexts
 function setupStorageSynchronization() {
-  if (typeof window === 'undefined') {
-    return;
-  }
+  // if (typeof window === 'undefined') {
+  //   return;
+  // }
 
   // Set up unified change listener for all storage adapters (BrowserStorage, IndexedDB, localStorage)
   hybridStorage.addChangeListener((key: string, newValue: any) => {

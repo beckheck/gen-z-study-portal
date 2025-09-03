@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="wxt" />
 
 import React from 'react';
 
@@ -59,6 +60,31 @@ export type BackgroundMessage_Timer =
   | BackgroundMessage_Timer_BroadcastState;
 
 export type BackgroundMessage = BackgroundMessage_Tab | BackgroundMessage_TextSelected | BackgroundMessage_Timer;
+
+// Content script message interfaces
+interface ContentScriptMessage_BlockSite {
+  action: 'blockSite';
+  language?: string;
+}
+
+interface ContentScriptMessage_UnblockSite {
+  action: 'unblockSite';
+}
+
+interface ContentScriptMessage_CaptureSelection {
+  action: 'captureSelection';
+  selectedText?: string;
+}
+
+interface ContentScriptMessage_ToggleOverlay {
+  action: 'toggleOverlay';
+}
+
+export type ContentScriptMessage =
+  | ContentScriptMessage_BlockSite
+  | ContentScriptMessage_UnblockSite
+  | ContentScriptMessage_CaptureSelection
+  | ContentScriptMessage_ToggleOverlay;
 
 export type StudyPhase = 'studying' | 'break' | 'longBreak';
 
@@ -461,6 +487,8 @@ export interface FocusTimerConfig {
   audioVolume: number;
   notificationsEnabled: boolean;
   showCountdown: boolean;
+  blockingStrategy: 'blacklist' | 'whitelist' | 'disabled';
+  sites: string;
 }
 
 /**

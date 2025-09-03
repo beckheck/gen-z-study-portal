@@ -48,6 +48,7 @@ export default function SettingsTab() {
   const refMap = {
     courses: useRef<HTMLDivElement>(null),
     about: useRef<HTMLDivElement>(null),
+    focusTimer: useRef<HTMLDivElement>(null),
     soundtrack: useRef<HTMLDivElement>(null),
     background: useRef<HTMLDivElement>(null),
     customCursor: useRef<HTMLDivElement>(null),
@@ -442,6 +443,7 @@ export default function SettingsTab() {
 
   const soundtrackDialog = settingsDialogs.soundtrack;
   const coursesDialog = settingsDialogs.courses;
+  const focusTimerDialog = settingsDialogs.focusTimer;
   const hydrationDialog = settingsDialogs.hydration;
   const weatherApiDialog = settingsDialogs.weatherApi;
 
@@ -453,6 +455,12 @@ export default function SettingsTab() {
       title: coursesDialog.title,
       icon: coursesDialog.Icon,
       render: () => <SettingsDialogCard dialog={coursesDialog} />,
+    },
+    {
+      id: 'focusTimer',
+      title: focusTimerDialog.title,
+      icon: focusTimerDialog.Icon,
+      render: () => <SettingsDialogCard dialog={focusTimerDialog} />,
     },
     {
       id: 'soundtrack',

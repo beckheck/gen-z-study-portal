@@ -49,14 +49,6 @@ export function getTranslation(key: string, options?: { ns?: string; [key: strin
 }
 
 /**
- * Async version of getTranslation that waits for i18n to be ready
- */
-export async function getTranslationAsync(key: string, options?: { ns?: string; [key: string]: any }): Promise<string> {
-  await ensureI18nReady();
-  return getTranslation(key, options);
-}
-
-/**
  * Get notification translations specifically
  */
 export function getNotificationTranslation(key: string, interpolation?: Record<string, any>): string {
