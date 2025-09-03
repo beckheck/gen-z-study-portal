@@ -146,6 +146,7 @@ export class DataTransfer {
         hydrationSettings: data.wellness.hydrationSettings || {
           ...DEFAULT_HYDRATION_SETTINGS,
         },
+        dailyHydration: data.wellness.dailyHydration || {},
       },
       soundtrack: {
         embed: data.settings.soundtrackEmbed,
@@ -356,6 +357,13 @@ interface ExchangeFormatV2 {
       dailyGoalOZ: number;
       unit: 'metric' | 'imperial';
     };
+    dailyHydration?: Record<string, {
+      intake: number;
+      goal: number;
+      unit: 'metric' | 'imperial';
+      useCups: boolean;
+      savedAt: number;
+    }>;
   };
   fileAttachments: {
     files: Record<
