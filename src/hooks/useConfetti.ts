@@ -56,19 +56,19 @@ export function useConfetti({
     setConfettiPieces(initialPieces);
 
     // Start gradual fade out after full duration
-    activeTimers.current.fadeTimer = setTimeout(() => {
+    activeTimers.current.fadeTimer = window.setTimeout(() => {
       // Gradually reduce pieces
-      activeTimers.current.intervalId = setInterval(() => {
+      activeTimers.current.intervalId = window.setInterval(() => {
         setConfettiPieces(prev => Math.max(0, prev - pieceReduction));
       }, reductionInterval);
 
       // Start opacity fade after delay
-      activeTimers.current.opacityTimeout = setTimeout(() => {
+      activeTimers.current.opacityTimeout = window.setTimeout(() => {
         setConfettiOpacity(0);
       }, opacityFadeDelay);
 
       // Clean up and hide completely after fade
-      activeTimers.current.cleanupTimeout = setTimeout(() => {
+      activeTimers.current.cleanupTimeout = window.setTimeout(() => {
         setShowConfetti(false);
         if (activeTimers.current.intervalId) {
           clearInterval(activeTimers.current.intervalId);

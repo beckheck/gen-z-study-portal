@@ -109,7 +109,7 @@ const SwipeableItem = React.forwardRef<HTMLDivElement, SwipeableItemProps>(funct
       ref={ref}
       initial={animationsEnabled ? { opacity: 0, height: 0, y: -10 } : false}
       animate={animationsEnabled ? { opacity: 1, height: 'auto', y: 0 } : false}
-      exit={animationsEnabled ? { opacity: 0, height: 0, y: -10 } : false}
+      exit={animationsEnabled ? { opacity: 0, height: 0, y: -10 } : undefined}
       transition={
         animationsEnabled
           ? {

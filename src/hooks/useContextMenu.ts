@@ -30,7 +30,8 @@ export function useContextMenu<T = any>() {
     e.stopPropagation();
     setSelectedItem(item);
 
-    const rect = (e.currentTarget || (e.target as HTMLElement)).getBoundingClientRect();
+    const target = e.currentTarget || e.target;
+    const rect = (target as HTMLElement).getBoundingClientRect();
     setPosition({
       x: rect.left,
       y: rect.top,

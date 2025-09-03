@@ -70,7 +70,7 @@ export default function CoursesSettings() {
 
         {/* Reorderable course list */}
         <div className="space-y-2">
-          <Reorder.Group values={courses} onReorder={handleReorder} className="space-y-2">
+          <Reorder.Group values={[...courses]} onReorder={handleReorder} className="space-y-2">
             {courses.map(course => (
               <Reorder.Item
                 key={course.id}

@@ -11,7 +11,7 @@ interface DeferredInputProps extends React.InputHTMLAttributes<HTMLInputElement>
 const DeferredInput = React.forwardRef<HTMLInputElement, DeferredInputProps>(
   ({ value, onChange, onDeferredChange, debounceMs = 300, ...props }, ref) => {
     const [localValue, setLocalValue] = React.useState(value);
-    const debounceRef = React.useRef<number>();
+    const debounceRef = React.useRef<number | undefined>(undefined);
 
     // Update local value when external value changes
     React.useEffect(() => {
@@ -29,7 +29,7 @@ const DeferredInput = React.forwardRef<HTMLInputElement, DeferredInputProps>(
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
-      debounceRef.current = setTimeout(() => {
+      debounceRef.current = window.setTimeout(() => {
         onDeferredChange(newValue);
       }, debounceMs);
     };
