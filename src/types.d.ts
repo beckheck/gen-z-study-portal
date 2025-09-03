@@ -450,6 +450,24 @@ export interface MonthlyMoods {
 }
 
 /**
+ * Daily hydration data for calendar tracking
+ */
+export interface DailyHydration {
+  intake: number;
+  goal: number;
+  unit: 'metric' | 'imperial';
+  useCups: boolean;
+  savedAt: number;
+}
+
+/**
+ * Daily hydration collection organized by date
+ */
+export interface DailyHydrations {
+  [dateString: string]: DailyHydration;
+}
+
+/**
  * Mood emojis collection for customization
  */
 export interface MoodEmojis {
@@ -503,6 +521,7 @@ export interface Wellness {
   showWords: boolean;
   moodEmojis: MoodEmojis;
   hydrationSettings: HydrationSettings;
+  dailyHydration: DailyHydrations;
 }
 
 /**

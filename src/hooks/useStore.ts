@@ -537,6 +537,9 @@ export function useWellness() {
     setHydrationSettings: (hydrationSettings: typeof wellness.hydrationSettings) => {
       store.wellness.hydrationSettings = hydrationSettings;
     },
+    setDailyHydration: (dailyHydration: typeof wellness.dailyHydration) => {
+      store.wellness.dailyHydration = dailyHydration;
+    },
   };
 }
 

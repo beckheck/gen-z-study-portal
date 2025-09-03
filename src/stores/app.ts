@@ -133,6 +133,7 @@ function createInitialState(): AppState {
       showWords: true,
       moodEmojis: { ...DEFAULT_MOOD_EMOJIS },
       hydrationSettings: { ...DEFAULT_HYDRATION_SETTINGS },
+      dailyHydration: {},
     },
 
     // File attachments
@@ -262,6 +263,12 @@ async function loadState(): Promise<AppState> {
       );
       storeLoadingState.status = tLoadingScreen('restoringData');
       dataTransfer.importData(exchangeData);
+      
+      // Ensure all new fields are properly initialized
+      if (!state.wellness.dailyHydration) {
+        state.wellness.dailyHydration = {};
+      }
+      
       return state;
     }
 
@@ -285,7 +292,11 @@ async function loadState(): Promise<AppState> {
         theme: { ...initialState.theme, ...parsed.theme },
         soundtrack: { ...initialState.soundtrack, ...parsed.soundtrack },
         weather: { ...initialState.weather, ...oldWeather, ...parsed.weather },
-        wellness: { ...initialState.wellness, ...parsed.wellness },
+        wellness: { 
+          ...initialState.wellness, 
+          ...parsed.wellness,
+          dailyHydration: parsed.wellness?.dailyHydration || {},
+        },
         weeklyGoals: parsed.weeklyGoals || [],
         degreePlan: { ...initialState.degreePlan, ...parsed.degreePlan },
       };
@@ -309,7 +320,11 @@ async function loadState(): Promise<AppState> {
       theme: { ...initialState.theme, ...migratedState.theme },
       soundtrack: { ...initialState.soundtrack, ...migratedState.soundtrack },
       weather: { ...initialState.weather, ...migratedState.weather },
-      wellness: { ...initialState.wellness, ...migratedState.wellness },
+      wellness: { 
+        ...initialState.wellness, 
+        ...migratedState.wellness,
+        dailyHydration: migratedState.wellness?.dailyHydration || {},
+      },
       weeklyGoals: migratedState.weeklyGoals || [],
       degreePlan: { ...initialState.degreePlan, ...migratedState.degreePlan },
     };

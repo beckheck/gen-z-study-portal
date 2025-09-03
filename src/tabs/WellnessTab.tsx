@@ -8,10 +8,10 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useWellness } from '@/hooks/useStore';
-import { CalendarView, MonthlyMood, MoodEmoji } from '@/types';
+import { CalendarView, MonthlyMood, MoodEmoji, DailyHydration } from '@/types';
 import { motion } from 'framer-motion';
 import { Settings } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function WellnessTab() {
@@ -30,15 +30,26 @@ export default function WellnessTab() {
     setShowWords,
     setMoodEmojis,
     setHydrationSettings,
+    setDailyHydration,
   } = useWellness();
 
-  const { water, gratitude, moodPercentages, hasInteracted, monthlyMoods, showWords, moodEmojis, hydrationSettings } =
+  const { water, gratitude, moodPercentages, hasInteracted, monthlyMoods, showWords, moodEmojis, hydrationSettings, dailyHydration } =
     wellness;
   const [breathing, setBreathing] = useState<boolean>(false);
+
+  // Ensure dailyHydration is always defined
+  const safeDailyHydration = dailyHydration || {};
 
   // Local state for UI only (not persisted)
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState<boolean>(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null); // Track which mood is showing emoji picker
+
+  // Save current water intake as daily hydration data
+  useEffect(() => {
+    if (water >= 0) {
+      saveDailyHydration(water);
+    }
+  }, [water]); // Only trigger when water changes
 
   // Emoji library for picker
   const emojiLibrary: string[] = [
@@ -338,6 +349,35 @@ export default function WellnessTab() {
         hydrationSettings.unit === 'metric' ? hydrationSettings.dailyGoalML : hydrationSettings.dailyGoalOZ;
       return (water / totalGoal) * 100;
     }
+  };
+
+  // Save daily hydration data
+  const saveDailyHydration = (waterIntake: number): void => {
+    const today = getTodayDateString();
+    const goal = hydrationSettings.useCups
+      ? hydrationSettings.unit === 'metric'
+        ? Math.ceil(hydrationSettings.dailyGoalML / hydrationSettings.cupSizeML)
+        : Math.ceil(hydrationSettings.dailyGoalOZ / hydrationSettings.cupSizeOZ)
+      : hydrationSettings.unit === 'metric'
+      ? hydrationSettings.dailyGoalML
+      : hydrationSettings.dailyGoalOZ;
+
+    const newDailyHydration = {
+      ...safeDailyHydration,
+      [today]: {
+        intake: waterIntake,
+        goal: goal,
+        unit: hydrationSettings.unit,
+        useCups: hydrationSettings.useCups,
+        savedAt: Date.now(),
+      },
+    };
+    setDailyHydration(newDailyHydration);
+  };
+
+  // Get hydration data for specific date
+  const getHydrationForDate = (dateString: string): DailyHydration | null => {
+    return safeDailyHydration[dateString] || null;
   };
 
   return (
@@ -719,6 +759,7 @@ export default function WellnessTab() {
                         '0'
                       )}-${String(day).padStart(2, '0')}`;
                       const dayMood = getMoodForDate(dateString);
+                      const dayHydration = getHydrationForDate(dateString);
                       const isToday = dateString === getTodayDateString();
 
                       return (
@@ -733,13 +774,24 @@ export default function WellnessTab() {
                           }}
                         >
                           {day}
+                          
+                          {/* Hydration indicator */}
+                          {dayHydration && (
+                            <div 
+                              className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white dark:border-zinc-800"
+                              style={{
+                                backgroundColor: dayHydration.intake >= dayHydration.goal ? '#10b981' : '#60a5fa',
+                              }}
+                              title={`Hydration: ${Math.round((dayHydration.intake / dayHydration.goal) * 100)}%`}
+                            />
+                          )}
 
                           {/* Hover Tooltip for Mood Breakdown */}
-                          {dayMood && (
+                          {(dayMood || dayHydration) && (
                             <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                              <div className="bg-white dark:bg-zinc-800 shadow-xl rounded-xl p-3 border border-white/20 dark:border-white/10 min-w-[200px]">
+                              <div className="bg-white dark:bg-zinc-800 shadow-xl rounded-xl p-3 border border-white/20 dark:border-white/10 min-w-[220px]">
                                 {/* Date Header */}
-                                <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2 text-center">
+                                <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3 text-center">
                                   {formatDate(
                                     new Date(
                                       `${calendarView.year}-${String(calendarView.month + 1).padStart(2, '0')}-${String(
@@ -753,46 +805,132 @@ export default function WellnessTab() {
                                   )}
                                 </div>
 
-                                {/* Total Percentage */}
-                                <div className="text-center mb-3">
-                                  <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                                    {dayMood.totalPercentage}%
-                                  </div>
-                                  <div className="text-xs text-zinc-500">{t('mood.totalMood')}</div>
-                                </div>
+                                {/* Mood Section */}
+                                {dayMood && (
+                                  <div className="mb-4">
+                                    {/* Total Percentage */}
+                                    <div className="text-center mb-3">
+                                      <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                                        {dayMood.totalPercentage}%
+                                      </div>
+                                      <div className="text-xs text-zinc-500">{t('mood.totalMood')}</div>
+                                    </div>
 
-                                {/* Mood Breakdown */}
-                                <div className="space-y-2">
-                                  {Object.entries(dayMood.percentages || {})
-                                    .filter(([_, percentage]) => percentage > 0)
-                                    .sort(([a], [b]) => a.localeCompare(b))
-                                    .map(([moodKey, percentage]) => {
-                                      const moodConfig = moodEmojis[moodKey] || {
-                                        emoji: '😐',
-                                        word: moodKey,
-                                        color: '#6b7280',
-                                      };
-                                      return (
-                                        <div key={moodKey} className="flex items-center justify-between">
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-sm">{moodConfig.emoji}</span>
-                                            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 capitalize">
-                                              {moodConfig.word}
-                                            </span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
+                                    {/* Mood Breakdown */}
+                                    <div className="space-y-2">
+                                      {Object.entries(dayMood.percentages || {})
+                                        .filter(([_, percentage]) => percentage > 0)
+                                        .sort(([a], [b]) => a.localeCompare(b))
+                                        .map(([moodKey, percentage]) => {
+                                          const moodConfig = moodEmojis[moodKey] || {
+                                            emoji: '😐',
+                                            word: moodKey,
+                                            color: '#6b7280',
+                                          };
+                                          return (
+                                            <div key={moodKey} className="flex items-center justify-between">
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-sm">{moodConfig.emoji}</span>
+                                                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 capitalize">
+                                                  {moodConfig.word}
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <div
+                                                  className="w-3 h-3 rounded-full"
+                                                  style={{ backgroundColor: moodConfig.color }}
+                                                />
+                                                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                                                  {percentage}%
+                                                </span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Hydration Section */}
+                                {(() => {
+                                  const dayHydration = getHydrationForDate(dateString);
+                                  if (!dayHydration) return null;
+
+                                  const hydrationProgress = (dayHydration.intake / dayHydration.goal) * 100;
+                                  const isOverGoal = hydrationProgress > 100;
+
+                                  return (
+                                    <div className={dayMood ? 'border-t border-zinc-200 dark:border-zinc-600 pt-3' : ''}>
+                                      {/* Hydration Header */}
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-sm">💧</span>
+                                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                          Hydration
+                                        </span>
+                                      </div>
+
+                                      {/* Hydration Progress */}
+                                      <div className="space-y-2">
+                                        {/* Progress Bar */}
+                                        <div className="relative">
+                                          <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2">
                                             <div
-                                              className="w-3 h-3 rounded-full"
-                                              style={{ backgroundColor: moodConfig.color }}
+                                              className={`h-2 rounded-full transition-all duration-300 ${
+                                                isOverGoal
+                                                  ? 'bg-gradient-to-r from-blue-500 to-green-500'
+                                                  : 'bg-blue-500'
+                                              }`}
+                                              style={{
+                                                width: `${Math.min(hydrationProgress, 100)}%`,
+                                              }}
                                             />
-                                            <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                                              {percentage}%
-                                            </span>
+                                            {/* Overflow indicator */}
+                                            {isOverGoal && (
+                                              <div
+                                                className="absolute top-0 right-0 h-2 bg-green-500 rounded-r-full"
+                                                style={{
+                                                  width: `${Math.min((hydrationProgress - 100) / 2, 50)}%`,
+                                                }}
+                                              />
+                                            )}
                                           </div>
                                         </div>
-                                      );
-                                    })}
-                                </div>
+
+                                        {/* Numbers */}
+                                        <div className="flex items-center justify-between text-sm">
+                                          <div className="text-zinc-600 dark:text-zinc-400">
+                                            {dayHydration.useCups
+                                              ? `${dayHydration.intake}/${dayHydration.goal} cups`
+                                              : `${dayHydration.intake}/${dayHydration.goal}${
+                                                  dayHydration.unit === 'metric' ? 'mL' : 'oz'
+                                                }`}
+                                          </div>
+                                          <div
+                                            className={`font-bold ${
+                                              isOverGoal
+                                                ? 'text-green-600 dark:text-green-400'
+                                                : hydrationProgress >= 80
+                                                ? 'text-blue-600 dark:text-blue-400'
+                                                : 'text-zinc-700 dark:text-zinc-300'
+                                            }`}
+                                          >
+                                            {Math.round(hydrationProgress)}%
+                                          </div>
+                                        </div>
+
+                                        {/* Achievement badge */}
+                                        {isOverGoal && (
+                                          <div className="text-center">
+                                            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                                              <span>🎉</span>
+                                              Goal exceeded!
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
 
                                 {/* Tooltip Arrow */}
                                 <div className="absolute top-full left-1/2 transform -translate-x-1/2">
@@ -807,11 +945,20 @@ export default function WellnessTab() {
                 </div>
 
                 {/* Streak Indicator */}
-                <div className="flex items-center justify-center gap-2 mt-4 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
-                  <span className="text-orange-600 text-sm">🔥</span>
-                  <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
-                    {t('mood.daysTracked', { count: Object.keys(monthlyMoods).length })}
-                  </span>
+                <div className="flex items-center justify-center gap-4 mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="text-orange-600 text-sm">🔥</span>
+                    <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                      {t('mood.daysTracked', { count: Object.keys(monthlyMoods).length })}
+                    </span>
+                  </div>
+                  <div className="w-px h-4 bg-orange-300 dark:bg-orange-700" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-600 text-sm">💧</span>
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      {Object.keys(safeDailyHydration).length} days hydrated
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
