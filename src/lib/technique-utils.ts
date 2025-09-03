@@ -2,7 +2,7 @@
  * Utility functions for handling study techniques and phase management
  */
 
-import { StudyPhase } from '../types';
+import { TimerPhase } from '../types';
 
 export interface TechniqueConfig {
   id: string;
@@ -70,10 +70,10 @@ export function getTechniqueConfig(techniqueId: string): TechniqueConfig {
 /**
  * Get the duration in seconds for the current phase
  * @param techniqueId - Technique ID
- * @param phase - Current phase ('studying', 'break', or 'longBreak')
+ * @param phase - Current phase ('focus', 'break', or 'longBreak')
  * @returns Duration in seconds, or Infinity for continuous flow
  */
-export function getPhaseDurationSeconds(techniqueId: string, phase: StudyPhase): number {
+export function getPhaseDurationSeconds(techniqueId: string, phase: TimerPhase): number {
   const config = getTechniqueConfig(techniqueId);
 
   if (config.breakMinutes === 0) {
@@ -81,7 +81,7 @@ export function getPhaseDurationSeconds(techniqueId: string, phase: StudyPhase):
   }
 
   let minutes: number;
-  if (phase === 'studying') {
+  if (phase === 'focus') {
     minutes = config.studyMinutes;
   } else if (phase === 'longBreak') {
     minutes = config.longBreakMinutes || config.breakMinutes;
@@ -92,12 +92,12 @@ export function getPhaseDurationSeconds(techniqueId: string, phase: StudyPhase):
   return minutes * 60; // Convert to seconds
 }
 
-export function getPhaseEmoji(techniqueId: string, phase: StudyPhase): string {
+export function getPhaseEmoji(techniqueId: string, phase: TimerPhase): string {
   const config = getTechniqueConfig(techniqueId);
   if (config.breakMinutes === 0) {
     return '⏰';
   }
-  return phase === 'studying' ? '📚' : phase === 'longBreak' ? '💤' : '🧘🏻'; //🧘🏻🪷💅
+  return phase === 'focus' ? '📚' : phase === 'longBreak' ? '💤' : '🧘🏻'; //🧘🏻🪷💅
 }
 
 /**
@@ -107,7 +107,7 @@ export function getPhaseEmoji(techniqueId: string, phase: StudyPhase): string {
  * @param phaseElapsed - Seconds elapsed in current phase
  * @returns Whether the phase should transition
  */
-export function shouldTransitionPhase(techniqueId: string, phase: StudyPhase, phaseElapsed: number): boolean {
+export function shouldTransitionPhase(techniqueId: string, phase: TimerPhase, phaseElapsed: number): boolean {
   const config = getTechniqueConfig(techniqueId);
 
   if (config.breakMinutes === 0) {
@@ -125,11 +125,11 @@ export function shouldTransitionPhase(techniqueId: string, phase: StudyPhase, ph
  * @param studyPhasesCompleted - Number of study phases completed
  * @returns Next phase
  */
-export function getNextPhase(currentPhase: StudyPhase, techniqueId: string, studyPhasesCompleted: number): StudyPhase {
+export function getNextPhase(currentPhase: TimerPhase, techniqueId: string, studyPhasesCompleted: number): TimerPhase {
   const config = getTechniqueConfig(techniqueId);
 
-  if (currentPhase === 'studying') {
-    // After studying, determine if it's time for a long break
+  if (currentPhase === 'focus') {
+    // After focus, determine if it's time for a long break
     if (config.longBreakInterval && config.longBreakMinutes) {
       const completedAfterThis = studyPhasesCompleted + 1;
       if (completedAfterThis % config.longBreakInterval === 0) {
@@ -139,6 +139,6 @@ export function getNextPhase(currentPhase: StudyPhase, techniqueId: string, stud
     return 'break';
   }
 
-  // After any break (short or long), return to studying
-  return 'studying';
+  // After any break (short or long), return to focus
+  return 'focus';
 }

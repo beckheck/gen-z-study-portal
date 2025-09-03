@@ -75,7 +75,7 @@ export default function StudyTrackerTab() {
   // Get technique configuration for goal time display
   const techniqueConfig = getTechniqueConfig(timerState.technique);
   const phaseGoalMinutes =
-    timerState.phase === 'studying'
+    timerState.phase === 'focus'
       ? techniqueConfig.studyMinutes
       : timerState.phase === 'break'
       ? techniqueConfig.breakMinutes
@@ -125,11 +125,11 @@ export default function StudyTrackerTab() {
 
   const getTechniqueDisplayName = useCallback(
     (techniqueConfig: TechniqueConfig): string => {
-      const studyingEmoji = getPhaseEmoji(techniqueConfig.id, 'studying');
+      const focusEmoji = getPhaseEmoji(techniqueConfig.id, 'focus');
       const breakEmoji = getPhaseEmoji(techniqueConfig.id, 'break');
       const longBreakEmoji = getPhaseEmoji(techniqueConfig.id, 'longBreak');
       return t(techniqueConfig.name, {
-        studyMinutes: `${studyingEmoji}${
+        studyMinutes: `${focusEmoji}${
           techniqueConfig.studyMinutes === Infinity ? '∞' : techniqueConfig.studyMinutes
         }`,
         breakMinutes: `${breakEmoji}${techniqueConfig.breakMinutes}`,
@@ -189,7 +189,7 @@ export default function StudyTrackerTab() {
                     strokeLinecap="round"
                     stroke="currentColor"
                     className={`${phaseProgress > 0 ? 'transition-all duration-1000' : 'transition-none'} ${
-                      timerState.phase === 'studying'
+                      timerState.phase === 'focus'
                         ? 'text-orange-500'
                         : timerState.phase === 'break'
                         ? 'text-green-500'
@@ -213,7 +213,7 @@ export default function StudyTrackerTab() {
                     const maxEmojisToShow = 4;
                     const completedPhases = timerState.studyPhasesCompleted;
                     const studyEmojis = Array(Math.min(completedPhases || 0, maxEmojisToShow))
-                      .fill(getPhaseEmoji(timerState.technique, 'studying'))
+                      .fill(getPhaseEmoji(timerState.technique, 'focus'))
                       .join(' ');
 
                     if (completedPhases == 0) {
@@ -246,9 +246,9 @@ export default function StudyTrackerTab() {
                 {statusEmoji}{' '}
                 {!timerState.running ? (
                   t('focusTimer.status.ready')
-                ) : timerState.phase === 'studying' ? (
+                ) : timerState.phase === 'focus' ? (
                   <>
-                    {t('focusTimer.status.studying')}
+                    {t('focusTimer.status.focus')}
                     {phaseGoalMinutes !== Infinity && (
                       <span className="ml-2 opacity-70">
                         {t('focusTimer.timer.phaseGoal', { minutes: phaseGoalMinutes })}

@@ -12,7 +12,7 @@
     "moodStart": "Estado inicial",
     "moodEnd": "Estado final",
     "status": {
-      "studying": "Estudiando…",
+      "focus": "Estudiando…",
       "break": "Descanso…",
       "longBreak": "Descanso largo…",
       "ready": "Listo"

@@ -86,7 +86,7 @@ export type ContentScriptMessage =
   | ContentScriptMessage_CaptureSelection
   | ContentScriptMessage_ToggleOverlay;
 
-export type StudyPhase = 'studying' | 'break' | 'longBreak';
+export type TimerPhase = 'focus' | 'break' | 'longBreak';
 
 export interface BackgroundTimerState {
   running: boolean;
@@ -97,7 +97,7 @@ export interface BackgroundTimerState {
   note: string;
   startTs?: number;
   courseId: string;
-  phase: StudyPhase;
+  phase: TimerPhase;
   phaseElapsed: number;
   phaseStartTs?: number;
   studyPhasesCompleted: number; // Counter for completed study phases

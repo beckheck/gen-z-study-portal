@@ -25,7 +25,7 @@ export class StudySessionTimerManager {
     note: '',
     startTs: null,
     courseId: '',
-    phase: 'studying',
+    phase: 'focus',
     phaseElapsed: 0,
     phaseStartTs: null,
     studyPhasesCompleted: 0,
@@ -118,18 +118,18 @@ export class StudySessionTimerManager {
     const now = Date.now();
     const focusTimerSettings = this.getFocusTimerSettings();
 
-    // Increment study phases counter when completing a studying phase
-    if (currentPhase === 'studying') {
+    // Increment study phases counter when completing a focus phase
+    if (currentPhase === 'focus') {
       this.timerState.studyPhasesCompleted++;
     }
 
     // Handle site blocking/unblocking based on phase transition
     if (isExtension) {
-      if (nextPhase === 'studying' && (currentPhase === 'break' || currentPhase === 'longBreak')) {
-        // Transitioning from break back to studying - block sites
+      if (nextPhase === 'focus' && (currentPhase === 'break' || currentPhase === 'longBreak')) {
+        // Transitioning from break back to focus - block sites
         await enactSiteBlockingStrategy('blockSite', focusTimerSettings.sites, focusTimerSettings.blockingStrategy);
-      } else if ((nextPhase === 'break' || nextPhase === 'longBreak') && currentPhase === 'studying') {
-        // Transitioning from studying to break - unblock sites
+      } else if ((nextPhase === 'break' || nextPhase === 'longBreak') && currentPhase === 'focus') {
+        // Transitioning from focus to break - unblock sites
         await enactSiteBlockingStrategy('unblockSite', focusTimerSettings.sites, focusTimerSettings.blockingStrategy);
       }
     }
@@ -138,7 +138,7 @@ export class StudySessionTimerManager {
     if (focusTimerSettings.audioEnabled) {
       if (nextPhase === 'break' || nextPhase === 'longBreak') {
         await playNotificationSound('break', focusTimerSettings.audioVolume);
-      } else if (nextPhase === 'studying') {
+      } else if (nextPhase === 'focus') {
         await playNotificationSound('start', focusTimerSettings.audioVolume);
       }
     }
@@ -175,10 +175,10 @@ export class StudySessionTimerManager {
         const longBreakDuration = config.longBreakMinutes || config.breakMinutes;
         title = await getNotificationTranslationAsync('timer.longBreak');
         message = await getNotificationTranslationAsync('timer.longBreakMessage', { duration: longBreakDuration });
-      } else if (nextPhase === 'studying') {
+      } else if (nextPhase === 'focus') {
         if (currentPhase === 'break' || currentPhase === 'longBreak') {
-          title = await getNotificationTranslationAsync('timer.backToStudy');
-          message = await getNotificationTranslationAsync('timer.backToStudyMessage');
+          title = await getNotificationTranslationAsync('timer.backToFocus');
+          message = await getNotificationTranslationAsync('timer.backToFocusMessage');
         } else {
           title = await getNotificationTranslationAsync('timer.sessionStart');
           message = await getNotificationTranslationAsync('timer.sessionStartMessage');
@@ -228,7 +228,7 @@ export class StudySessionTimerManager {
       this.timerState.elapsed = 0;
       this.timerState.startTs = now;
       this.timerState.courseId = courseId;
-      this.timerState.phase = 'studying';
+      this.timerState.phase = 'focus';
       this.timerState.phaseElapsed = 0;
       this.timerState.phaseStartTs = now;
 
@@ -299,7 +299,7 @@ export class StudySessionTimerManager {
     this.timerState.elapsed = 0;
     this.timerState.startTs = null;
     this.timerState.note = '';
-    this.timerState.phase = 'studying';
+    this.timerState.phase = 'focus';
     this.timerState.phaseElapsed = 0;
     this.timerState.phaseStartTs = null;
     this.timerState.studyPhasesCompleted = 0;
@@ -316,7 +316,7 @@ export class StudySessionTimerManager {
     const now = Date.now();
     this.timerState.elapsed = 0;
     this.timerState.phaseElapsed = 0;
-    this.timerState.phase = 'studying';
+    this.timerState.phase = 'focus';
     this.timerState.studyPhasesCompleted = 0;
 
     if (this.timerState.running && this.timerState.startTs) {

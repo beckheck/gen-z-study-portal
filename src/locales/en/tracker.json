@@ -12,7 +12,7 @@
     "moodStart": "Mood start",
     "moodEnd": "Mood end",
     "status": {
-      "studying": "Studying…",
+      "focus": "Studying…",
       "break": "Break time…",
       "longBreak": "Long break…",
       "ready": "Ready"

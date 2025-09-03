@@ -73,7 +73,7 @@ export default function useStudyTimer(
     note: '',
     startTs: null,
     courseId: '',
-    phase: 'studying',
+    phase: 'focus',
     phaseElapsed: 0,
     phaseStartTs: null,
     studyPhasesCompleted: 0,

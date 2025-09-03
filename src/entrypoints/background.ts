@@ -2,7 +2,7 @@ import { listenLanguageChangeInExtensionBackground } from '@/i18n/config';
 import { enactSiteBlockingStrategyInTab } from '@/lib/site-blocking';
 import { StudySessionTimerManager } from '@/lib/study-session-timer-manager';
 import { getPhaseDurationSeconds, getPhaseEmoji } from '@/lib/technique-utils';
-import { BackgroundMessage, BackgroundTimerState, StudyPhase } from '@/types';
+import { BackgroundMessage, BackgroundTimerState, TimerPhase } from '@/types';
 import { browser } from 'wxt/browser';
 import { store } from '@/stores/app';
 import { snapshot } from 'valtio';
@@ -94,7 +94,7 @@ export default defineBackground(() => {
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       if (tab.url) {
         const timerState = timerManager.getTimerState();
-        if (timerState.running && timerState.phase === 'studying') {
+        if (timerState.running && timerState.phase === 'focus') {
           const storeSnapshot = snapshot(store);
           const focusTimerSettings = storeSnapshot.focusTimer;
           // Block the tab if it matches our blocked sites based on blocking strategy
@@ -207,7 +207,7 @@ const getRemainingTimeForCurrentPhase = (timerState: BackgroundTimerState): numb
   return Math.max(0, phaseDuration - timerState.phaseElapsed);
 };
 
-const formatBadgeText = (timeInSeconds: number, phase: StudyPhase, technique: string): string => {
+const formatBadgeText = (timeInSeconds: number, phase: TimerPhase, technique: string): string => {
   const phasePrefix = getPhaseEmoji(technique, phase);
 
   // For flow technique, show elapsed time with "F" prefix
@@ -234,7 +234,7 @@ const formatBadgeText = (timeInSeconds: number, phase: StudyPhase, technique: st
 
 const getBadgeColor = (phase: string): string => {
   switch (phase) {
-    case 'studying':
+    case 'focus':
       return '#FF9800';
     case 'break':
       return '#4CAF50';

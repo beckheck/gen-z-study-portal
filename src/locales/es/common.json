@@ -139,21 +139,21 @@
   },
   "notifications": {
     "permission": {
-      "enabled": "🔔 ¡Notificaciones Activadas!",
+      "enabled": "🔔 ¡Notificaciones activadas!",
       "enabledMessage": "Ahora recibirás notificaciones del temporizador de estudio."
     },
     "timer": {
-      "started": "🚀 ¡Temporizador Iniciado!",
+      "started": "🚀 ¡Temporizador iniciado!",
       "startedMessage": "Modo enfoque activado. ¡Vamos a hacer progresos!",
-      "break": "🎉 ¡Hora del Descanso!",
+      "break": "🎉 ¡Hora del descanso!",
       "breakMessage": "¡Buen trabajo! Toma un descanso de {{duration}} minutos para recargar energías.",
-      "longBreak": "🌟 ¡Hora del Descanso Largo!",
+      "longBreak": "🌟 ¡Hora del descanso largo!",
       "longBreakMessage": "¡Excelente progreso! Disfruta tu descanso largo de {{duration}} minutos.",
-      "backToStudy": "📚 ¡De Vuelta al Estudio!",
-      "backToStudyMessage": "El descanso terminó. ¡Volvamos al trabajo enfocado!",
-      "sessionStart": "🚀 ¡Sesión de Estudio Iniciada!",
+      "backToFocus": "📚 ¡De Vuelta al estudio!",
+      "backToFocusMessage": "El descanso terminó. ¡Volvamos al trabajo enfocado!",
+      "sessionStart": "🚀 ¡Sesión de estudio iniciada!",
       "sessionStartMessage": "Tiempo de enfocarse y hacer progreso en tus objetivos.",
-      "timerUpdate": "⏰ Actualización del Temporizador",
+      "timerUpdate": "⏰ Actualización del temporizador",
       "phaseTransition": "Transicionando de {{currentPhase}} a {{nextPhase}}"
     }
   }
