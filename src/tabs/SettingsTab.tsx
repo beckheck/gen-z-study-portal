@@ -469,15 +469,15 @@ export default function SettingsTab() {
       render: () => <SettingsDialogCard dialog={soundtrackDialog} />,
     },
     { id: 'background', title: t('background.title'), icon: Image, render: renderBackgroundCard },
-    { id: 'customCursor', title: t('customCursor.title'), icon: MousePointer, render: renderCustomCursorCard },
-    { id: 'accentColor', title: t('accentColor.title'), icon: Palette, render: renderAccentColorCard },
-    { id: 'cardOpacity', title: t('cardOpacity.title'), icon: Layers, render: renderCardOpacityCard },
     {
       id: 'backgroundGradient',
       title: t('backgroundGradient.title'),
       icon: Brush,
       render: renderBackgroundGradientCard,
     },
+    { id: 'accentColor', title: t('accentColor.title'), icon: Palette, render: renderAccentColorCard },
+    { id: 'cardOpacity', title: t('cardOpacity.title'), icon: Layers, render: renderCardOpacityCard },
+    { id: 'customCursor', title: t('customCursor.title'), icon: MousePointer, render: renderCustomCursorCard },
     {
       id: 'hydration',
       title: hydrationDialog.title,
