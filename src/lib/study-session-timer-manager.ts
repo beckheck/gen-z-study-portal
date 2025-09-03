@@ -4,6 +4,8 @@ import { showNotification, requestNotificationPermission } from '@/lib/notificat
 import { getNextPhase, shouldTransitionPhase, getTechniqueConfig } from '@/lib/technique-utils';
 import { getNotificationTranslationAsync } from '@/lib/translation-utils';
 import { uid } from '@/lib/utils';
+import { store } from '@/stores/app';
+import { snapshot } from 'valtio';
 import { BackgroundMessage_Timer, BackgroundTimerState, StudySession } from '@/types';
 import { AudioKey, playAudio } from './audio';
 
@@ -22,20 +24,24 @@ export class StudySessionTimerManager {
     note: '',
     startTs: null,
     courseId: '',
-    audioEnabled: true,
-    audioVolume: 0.6,
-    notificationsEnabled: true,
     phase: 'studying',
     phaseElapsed: 0,
     phaseStartTs: null,
     studyPhasesCompleted: 0,
-    showCountdown: false,
   };
 
   private timerInterval: NodeJS.Timeout | null = null;
 
   constructor(private readonly onStateChange?: (state: BackgroundTimerState) => void) {
     this.initializeTimerState();
+  }
+
+  /**
+   * Get current focus timer settings from the app store
+   */
+  private getFocusTimerSettings() {
+    const storeSnapshot = snapshot(store);
+    return storeSnapshot.focusTimer;
   }
 
   private setStorageValue(newValue: any) {
@@ -55,7 +61,7 @@ export class StudySessionTimerManager {
       this.setStorageValue(result);
 
       // If notifications are enabled but we haven't checked permissions, check them now
-      if (this.timerState.notificationsEnabled) {
+      if (this.getFocusTimerSettings().notificationsEnabled) {
         this.requestNotificationPermissionIfNeeded();
       }
 
@@ -109,6 +115,7 @@ export class StudySessionTimerManager {
     const currentPhase = this.timerState.phase;
     const nextPhase = getNextPhase(currentPhase, this.timerState.technique, this.timerState.studyPhasesCompleted);
     const now = Date.now();
+    const focusTimerSettings = this.getFocusTimerSettings();
 
     // Increment study phases counter when completing a studying phase
     if (currentPhase === 'studying') {
@@ -116,11 +123,11 @@ export class StudySessionTimerManager {
     }
 
     // Play sound when transitioning phases
-    if (this.timerState.audioEnabled) {
+    if (focusTimerSettings.audioEnabled) {
       if (nextPhase === 'break' || nextPhase === 'longBreak') {
-        await playNotificationSound('break', this.timerState.audioVolume);
+        await playNotificationSound('break', focusTimerSettings.audioVolume);
       } else if (nextPhase === 'studying') {
-        await playNotificationSound('start', this.timerState.audioVolume);
+        await playNotificationSound('start', focusTimerSettings.audioVolume);
       }
     }
 
@@ -136,8 +143,10 @@ export class StudySessionTimerManager {
   }
 
   private async showPhaseTransitionNotification(currentPhase: string, nextPhase: string) {
+    const focusTimerSettings = this.getFocusTimerSettings();
+
     // Don't show notifications if disabled
-    if (!this.timerState.notificationsEnabled) {
+    if (!focusTimerSettings.notificationsEnabled) {
       return;
     }
 
@@ -176,7 +185,7 @@ export class StudySessionTimerManager {
         message,
         icon: '/hearticon.png',
         requireInteraction: false,
-        silent: !this.timerState.audioEnabled, // Respect audio settings for notification sound
+        silent: focusTimerSettings.audioEnabled,
       });
     } catch (error) {
       console.error('Failed to show phase transition notification:', error);
@@ -200,6 +209,7 @@ export class StudySessionTimerManager {
 
   public async startTimer(courseId: string) {
     const now = Date.now();
+    const focusTimerSettings = this.getFocusTimerSettings();
 
     this.timerState.running = true;
     this.timerState.elapsed = 0;
@@ -210,18 +220,18 @@ export class StudySessionTimerManager {
     this.timerState.phaseStartTs = now;
 
     // Play start sound if audio is enabled
-    if (this.timerState.audioEnabled) {
-      await playNotificationSound('start', this.timerState.audioVolume);
+    if (focusTimerSettings.audioEnabled) {
+      await playNotificationSound('start', focusTimerSettings.audioVolume);
     }
 
     // Show start notification if enabled (permissions should already be handled)
-    if (this.timerState.notificationsEnabled) {
+    if (focusTimerSettings.notificationsEnabled) {
       await showNotification({
         title: await getNotificationTranslationAsync('timer.started'),
         message: await getNotificationTranslationAsync('timer.startedMessage'),
         icon: '/hearticon.png',
         requireInteraction: false,
-        silent: !this.timerState.audioEnabled,
+        silent: focusTimerSettings.audioEnabled,
       });
     }
 
@@ -286,8 +296,8 @@ export class StudySessionTimerManager {
   public updateTimerSettings(settings: Partial<BackgroundTimerState>) {
     this.timerState = { ...this.timerState, ...settings };
 
-    // If notifications were just enabled, request permission immediately
-    if (settings.notificationsEnabled === true) {
+    // If notifications were just enabled in the passed settings, request permission immediately
+    if (this.getFocusTimerSettings().notificationsEnabled === true) {
       this.requestNotificationPermissionIfNeeded();
     }
 
@@ -299,9 +309,8 @@ export class StudySessionTimerManager {
       const permission = await requestNotificationPermission();
       if (permission === 'denied') {
         console.warn('Notification permissions denied - disabling notifications');
-        // Automatically disable notifications if permission is denied
-        this.timerState.notificationsEnabled = false;
-        this.saveTimerState();
+        // Automatically disable notifications in the store if permission is denied
+        store.focusTimer.notificationsEnabled = false;
       }
     } catch (error) {
       console.error('Failed to request notification permission:', error);
@@ -338,27 +347,13 @@ export class StudySessionTimerManager {
         break;
 
       case 'timer.updateState':
-        const {
-          technique,
-          note,
-          moodStart,
-          moodEnd,
-          audioEnabled,
-          audioVolume,
-          notificationsEnabled,
-          showCountdown,
-          courseId,
-        } = message;
+        const { technique, note, moodStart, moodEnd, courseId } = message;
         this.updateTimerSettings({
           ...(courseId !== undefined && { courseId }),
           ...(technique && { technique }),
           ...(note !== undefined && { note }),
           ...(moodStart !== undefined && { moodStart }),
           ...(moodEnd !== undefined && { moodEnd }),
-          ...(audioEnabled !== undefined && { audioEnabled }),
-          ...(audioVolume !== undefined && { audioVolume }),
-          ...(notificationsEnabled !== undefined && { notificationsEnabled }),
-          ...(showCountdown !== undefined && { showCountdown }),
         });
         sendResponse({ success: true, state: this.getTimerState() });
         break;

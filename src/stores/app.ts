@@ -3,7 +3,7 @@ import i18next from 'i18next';
 import { proxy, snapshot, subscribe } from 'valtio';
 import { DataTransfer } from '../lib/data-transfer';
 import { hybridStorage } from '../lib/hybrid-storage';
-import type { AppState, DegreePlan, MoodEmojis, WeatherLocation } from '../types';
+import type { AppState, DegreePlan, MoodEmojis, WeatherLocation, FocusTimerConfig } from '../types';
 
 const STORAGE_KEY = 'sp:appStateExchange';
 
@@ -36,6 +36,13 @@ export const DEFAULT_HYDRATION_SETTINGS = {
   dailyGoalML: 2000,
   dailyGoalOZ: 67.6,
   unit: 'metric' as const,
+};
+
+export const DEFAULT_FOCUS_TIMER_CONFIG = {
+  audioEnabled: true,
+  audioVolume: 0.6,
+  notificationsEnabled: true,
+  showCountdown: false,
 };
 
 const DEFAULT_DEGREE_PLAN: DegreePlan = {
@@ -115,6 +122,9 @@ function createInitialState(): AppState {
 
     // Active tabs per mode
     activeTabsByMode: {},
+
+    // Focus timer configuration
+    focusTimer: { ...DEFAULT_FOCUS_TIMER_CONFIG },
   };
 }
 

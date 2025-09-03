@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useStudySessions } from '@/hooks/useStore';
+import { useCourses, useFocusTimer, useStudySessions } from '@/hooks/useStore';
 import useStudyTimer from '@/hooks/useStudyTimer';
 import {
   getPhaseDurationSeconds,
@@ -55,6 +55,8 @@ export default function StudyTrackerTab() {
   }, selectedCourseId);
   const { timerState } = studyTimer;
 
+  const { focusTimer, setShowCountdown } = useFocusTimer();
+
   // Update timer's course ID when selected course changes during running session
   useEffect(() => {
     if (timerState.running && timerState.courseId !== selectedCourseId) {
@@ -91,7 +93,7 @@ export default function StudyTrackerTab() {
 
   // Determine what time to show based on mode and conditions
   const timeToShow =
-    timerState.showCountdown && phaseDurationSeconds !== Infinity && timerState.running
+    focusTimer.showCountdown && phaseDurationSeconds !== Infinity && timerState.running
       ? phaseRemainingSeconds
       : displayElapsed;
 
@@ -100,7 +102,7 @@ export default function StudyTrackerTab() {
     .padStart(2, '0');
   const elapsedSec = (timeToShow % 60).toString().padStart(2, '0');
   const elapsedMinSec =
-    timerState.showCountdown && phaseDurationSeconds !== Infinity && timerState.running
+    focusTimer.showCountdown && phaseDurationSeconds !== Infinity && timerState.running
       ? `-${elapsedMin}:${elapsedSec}`
       : `${elapsedMin}:${elapsedSec}`;
 
@@ -231,9 +233,9 @@ export default function StudyTrackerTab() {
 
               <div
                 className="text-5xl font-extrabold tracking-wider tabular-nums cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors select-none"
-                onClick={() => studyTimer.setShowCountdown(!timerState.showCountdown)}
+                onClick={() => setShowCountdown(!focusTimer.showCountdown)}
                 title={
-                  timerState.showCountdown
+                  focusTimer.showCountdown
                     ? t('focusTimer.timer.tooltipElapsed')
                     : t('focusTimer.timer.tooltipCountdown')
                 }

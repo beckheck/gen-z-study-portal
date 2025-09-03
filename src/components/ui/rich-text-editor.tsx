@@ -1685,7 +1685,8 @@ const canViewInBrowser = (fileName: string): boolean => {
   const viewableTypes = ['pdf', 'txt', 'html', 'htm', 'json', 'xml', 'csv'];
   const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
   const videoTypes = ['mp4', 'mov'];
-  return [...viewableTypes, ...imageTypes, ...videoTypes].includes(fileExtension);
+  const audioTypes = ['mp3', 'wav'];
+  return [...viewableTypes, ...imageTypes, ...videoTypes, ...audioTypes].includes(fileExtension);
 };
 
 // Helper to inject styles only once

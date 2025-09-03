@@ -47,14 +47,6 @@ interface StudyTimer {
   setMoodEnd: (mood: number) => void;
   /** Function to set session notes */
   setNote: (note: string) => void;
-  /** Function to set audio notifications enabled/disabled */
-  setAudioEnabled: (enabled: boolean) => void;
-  /** Function to set audio notification volume */
-  setAudioVolume: (volume: number) => void;
-  /** Function to set OS notifications enabled/disabled */
-  setNotificationsEnabled: (enabled: boolean) => void;
-  /** Function to set countdown display mode */
-  setShowCountdown: (showCountdown: boolean) => void;
   /** Function to start the timer */
   startTimer: () => void;
   /** Function to stop the timer with course index */
@@ -81,14 +73,10 @@ export default function useStudyTimer(
     note: '',
     startTs: null,
     courseId: '',
-    audioEnabled: true,
-    audioVolume: 0.6,
-    notificationsEnabled: true,
     phase: 'studying',
     phaseElapsed: 0,
     phaseStartTs: null,
     studyPhasesCompleted: 0,
-    showCountdown: false,
   });
 
   // Initialize timer state from background on mount
@@ -200,34 +188,6 @@ export default function useStudyTimer(
     handleBackgroundResponse(sendBackgroundMessage({ type: 'timer.updateState', moodEnd: mood }), 'update moodEnd');
   }, []);
 
-  const setAudioEnabled = useCallback((enabled: boolean): void => {
-    handleBackgroundResponse(
-      sendBackgroundMessage({ type: 'timer.updateState', audioEnabled: enabled }),
-      'update audioEnabled'
-    );
-  }, []);
-
-  const setAudioVolume = useCallback((volume: number): void => {
-    handleBackgroundResponse(
-      sendBackgroundMessage({ type: 'timer.updateState', audioVolume: volume }),
-      'update audioVolume'
-    );
-  }, []);
-
-  const setNotificationsEnabled = useCallback((enabled: boolean): void => {
-    handleBackgroundResponse(
-      sendBackgroundMessage({ type: 'timer.updateState', notificationsEnabled: enabled }),
-      'update notificationsEnabled'
-    );
-  }, []);
-
-  const setShowCountdown = useCallback((showCountdown: boolean): void => {
-    handleBackgroundResponse(
-      sendBackgroundMessage({ type: 'timer.updateState', showCountdown }),
-      'update showCountdown'
-    );
-  }, []);
-
   return {
     // State
     timerState,
@@ -238,10 +198,6 @@ export default function useStudyTimer(
     setMoodStart,
     setMoodEnd,
     setNote,
-    setAudioEnabled,
-    setAudioVolume,
-    setNotificationsEnabled,
-    setShowCountdown,
 
     // Actions
     startTimer,

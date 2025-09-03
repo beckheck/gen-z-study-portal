@@ -71,14 +71,10 @@ export interface BackgroundTimerState {
   note: string;
   startTs?: number;
   courseId: string;
-  audioEnabled: boolean;
-  audioVolume: number;
-  notificationsEnabled: boolean;
   phase: StudyPhase;
   phaseElapsed: number;
   phaseStartTs?: number;
   studyPhasesCompleted: number; // Counter for completed study phases
-  showCountdown: boolean;
 }
 
 /**
@@ -458,6 +454,16 @@ export interface HydrationSettings {
 }
 
 /**
+ * Focus timer configuration for study sessions
+ */
+export interface FocusTimerConfig {
+  audioEnabled: boolean;
+  audioVolume: number;
+  notificationsEnabled: boolean;
+  showCountdown: boolean;
+}
+
+/**
  * Wellness data object for tracking user wellness metrics
  */
 export interface Wellness {
@@ -556,6 +562,7 @@ export interface AppState {
   wellness: Wellness;
   fileAttachments: FileAttachmentStore;
   activeTabsByMode: Record<string, string>;
+  focusTimer: FocusTimerConfig;
 }
 
 export interface AppTab {

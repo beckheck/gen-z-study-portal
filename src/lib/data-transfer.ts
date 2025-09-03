@@ -1,4 +1,4 @@
-import { DEFAULT_HYDRATION_SETTINGS, DEFAULT_MOOD_EMOJIS } from '@/stores/app';
+import { DEFAULT_HYDRATION_SETTINGS, DEFAULT_MOOD_EMOJIS, DEFAULT_FOCUS_TIMER_CONFIG } from '@/stores/app';
 import { AppState, SoundtrackPosition } from '@/types';
 import { uid } from './utils';
 
@@ -53,6 +53,7 @@ export class DataTransfer {
         soundtrackEmbed: state.soundtrack.embed,
         soundtrackPosition: state.soundtrack.position,
         weather: state.weather,
+        focusTimer: state.focusTimer,
         theme: {
           darkMode: state.theme.darkMode,
           gradient: {
@@ -155,6 +156,9 @@ export class DataTransfer {
         apiKey: data.settings.weather.apiKey,
         location: data.settings.weather.location,
       },
+      focusTimer: data.settings.focusTimer || {
+        ...DEFAULT_FOCUS_TIMER_CONFIG,
+      },
       theme: {
         darkMode: data.settings.theme.darkMode,
         gradientEnabled: data.settings.theme.gradient.enabled,
@@ -248,6 +252,7 @@ export class DataTransfer {
           name: data.settings.degreePlan?.name || 'Degree Plan',
           ...(data.settings.degreePlan || { semesters: [], completedCourses: [] }),
         },
+        focusTimer: { ...DEFAULT_FOCUS_TIMER_CONFIG },
       };
 
       this.setState(newState);
@@ -631,6 +636,12 @@ interface ExchangeFormatV2 {
         useGeolocation: boolean;
         city: string;
       };
+    };
+    focusTimer: {
+      audioEnabled: boolean;
+      audioVolume: number;
+      notificationsEnabled: boolean;
+      showCountdown: boolean;
     };
     theme: {
       darkMode: boolean;

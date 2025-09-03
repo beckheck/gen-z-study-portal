@@ -423,6 +423,29 @@ export function useSoundtrack() {
 }
 
 /**
+ * Hook to access and modify focus timer settings
+ */
+export function useFocusTimer() {
+  const focusTimer = useSnapshot(store.focusTimer);
+
+  return {
+    focusTimer,
+    setAudioEnabled: (audioEnabled: boolean) => {
+      store.focusTimer.audioEnabled = audioEnabled;
+    },
+    setAudioVolume: (audioVolume: number) => {
+      store.focusTimer.audioVolume = audioVolume;
+    },
+    setNotificationsEnabled: (notificationsEnabled: boolean) => {
+      store.focusTimer.notificationsEnabled = notificationsEnabled;
+    },
+    setShowCountdown: (showCountdown: boolean) => {
+      store.focusTimer.showCountdown = showCountdown;
+    },
+  };
+}
+
+/**
  * Hook to access and modify degree plan
  */
 export function useDegreePlan() {

@@ -1,15 +1,12 @@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useStudySessions } from '@/hooks/useStore';
-import useStudyTimer from '@/hooks/useStudyTimer';
+import { useFocusTimer } from '@/hooks/useStore';
 import { Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function FocusTimerSettings() {
   const { t } = useTranslation('settings');
-  const { addSession } = useStudySessions();
-  const studyTimer = useStudyTimer(addSession);
-  const { timerState } = studyTimer;
+  const { focusTimer, setAudioEnabled, setAudioVolume, setNotificationsEnabled, setShowCountdown } = useFocusTimer();
 
   return (
     <div className="space-y-6">
@@ -18,10 +15,10 @@ export default function FocusTimerSettings() {
         {/* OS Notifications Toggle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {timerState.notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+            {focusTimer.notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
             <Label className="text-sm font-medium">{t('focusTimer.notifications.desktop')}</Label>
           </div>
-          <Switch checked={timerState.notificationsEnabled} onCheckedChange={studyTimer.setNotificationsEnabled} />
+          <Switch checked={focusTimer.notificationsEnabled} onCheckedChange={setNotificationsEnabled} />
         </div>
       </div>
 
@@ -30,14 +27,14 @@ export default function FocusTimerSettings() {
         {/* Audio Notifications Toggle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {timerState.audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            {focusTimer.audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             <Label className="text-sm font-medium">{t('focusTimer.audio.notifications')}</Label>
           </div>
-          <Switch checked={timerState.audioEnabled} onCheckedChange={studyTimer.setAudioEnabled} />
+          <Switch checked={focusTimer.audioEnabled} onCheckedChange={setAudioEnabled} />
         </div>
 
         {/* Volume Control */}
-        {timerState.audioEnabled && (
+        {focusTimer.audioEnabled && (
           <div className="space-y-3">
             <Label className="text-xs text-zinc-500 uppercase tracking-wide">{t('focusTimer.audio.volume')}</Label>
             <div className="flex items-center gap-3">
@@ -46,11 +43,11 @@ export default function FocusTimerSettings() {
                 min="0.1"
                 max="1"
                 step="0.05"
-                value={timerState.audioVolume}
-                onChange={e => studyTimer.setAudioVolume(parseFloat(e.target.value))}
+                value={focusTimer.audioVolume}
+                onChange={e => setAudioVolume(parseFloat(e.target.value))}
                 className="flex-1 h-2 bg-white/70 dark:bg-white/10 rounded-lg appearance-none slider"
               />
-              <span className="text-sm text-zinc-500 min-w-[3rem]">{Math.round(timerState.audioVolume * 100)}%</span>
+              <span className="text-sm text-zinc-500 min-w-[3rem]">{Math.round(focusTimer.audioVolume * 100)}%</span>
             </div>
           </div>
         )}
