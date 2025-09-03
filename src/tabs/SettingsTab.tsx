@@ -178,7 +178,7 @@ export default function SettingsTab() {
               </span>
             </label>
           </Button>
-          <BuyMeACoffeeButton id="" />
+          <BuyMeACoffeeButton id="studyhub" />
         </div>
         <StorageInfoCard />
       </CardContent>
