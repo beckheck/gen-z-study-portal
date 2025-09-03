@@ -5,6 +5,9 @@
   "editEvent": "Editar Evento",
   "addToTimetable": "Agregar al Horario",
   "updateEvent": "Actualizar Evento",
+  "addEventHint": "Agregar evento",
+  "dropHere": "Soltar aquí",
+  "unknownCourse": "Curso Desconocido",
   "days": {
     "monday": "Lunes",
     "tuesday": "Martes",
@@ -16,12 +19,6 @@
     "wed": "Mié",
     "thu": "Jue",
     "fri": "Vie"
-  },
-  "eventTypes": {
-    "catedra": "Cátedra",
-    "ayudantia": "Ayudantía",
-    "taller": "Taller",
-    "laboratorio": "Laboratorio"
   },
   "fields": {
     "course": "Curso",
@@ -51,8 +48,5 @@
     "classroom": "Aula:",
     "teacher": "Profesor:",
     "ta": "Ayudante:"
-  },
-  "unknownCourse": "Curso Desconocido",
-  "addEventHint": "Agregar evento",
-  "dropHere": "Soltar aquí"
+  }
 }

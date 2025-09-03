@@ -49,18 +49,24 @@ export default function TimetableTab() {
     return dayIndex !== -1 ? toTitleCase(shortDayNames[dayIndex]) : englishDay.slice(0, 3);
   };
 
-  // Event types - get from translations
-  const eventTypes: string[] = [
-    t('eventTypes.catedra'),
-    t('eventTypes.ayudantia'),
-    t('eventTypes.taller'),
-    t('eventTypes.laboratorio'),
+  // Event types
+  const activityTypesEnum = {
+    catedra: 'Cátedra',
+    ayudantia: 'Ayudantía',
+    taller: 'Taller',
+    laboratorio: 'Laboratorio',
+  };
+  const activityTypes: string[] = [
+    activityTypesEnum.catedra,
+    activityTypesEnum.ayudantia,
+    activityTypesEnum.taller,
+    activityTypesEnum.laboratorio,
   ];
 
   // Default timetable event input values to avoid redundancy
   const DEFAULT_TIMETABLE_EVENT_INPUT: TimetableEventInput = {
     courseId: courses[0].id,
-    eventType: eventTypes[0],
+    eventType: activityTypes[0],
     classroom: '',
     teacher: '',
     day: weekDays[0], // Use English day name as key
@@ -337,7 +343,7 @@ export default function TimetableTab() {
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400">
                             <span className="font-medium">
-                              {event.eventType === t('eventTypes.catedra') ? t('hover.teacher') : t('hover.ta')}
+                              {event.eventType === activityTypesEnum.catedra ? t('hover.teacher') : t('hover.ta')}
                             </span>{' '}
                             {event.teacher}
                           </div>
@@ -415,7 +421,7 @@ export default function TimetableTab() {
                   <SelectValue placeholder={t('placeholders.selectEventType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {eventTypes.map(type => (
+                  {activityTypes.map(type => (
                     <SelectItem key={type} value={type}>
                       {type}
                     </SelectItem>
@@ -480,7 +486,7 @@ export default function TimetableTab() {
 
             <div>
               <Label htmlFor="teacher" className="text-gray-700 dark:text-gray-300">
-                {eventInput.eventType === t('eventTypes.catedra') ? t('fields.teacherName') : t('fields.taName')}
+                {eventInput.eventType === activityTypesEnum.catedra ? t('fields.teacherName') : t('fields.taName')}
               </Label>
               <Input
                 id="teacher"
@@ -489,7 +495,7 @@ export default function TimetableTab() {
                   setEventInput({ ...eventInput, teacher: e.target.value })
                 }
                 placeholder={
-                  eventInput.eventType === t('eventTypes.catedra')
+                  eventInput.eventType === activityTypesEnum.catedra
                     ? t('placeholders.teacherName')
                     : t('placeholders.taName')
                 }

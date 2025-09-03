@@ -7,6 +7,7 @@
   "updateEvent": "Update Event",
   "addEventHint": "Add event",
   "dropHere": "Drop here",
+  "unknownCourse": "Unknown Course",
   "days": {
     "monday": "Monday",
     "tuesday": "Tuesday",
@@ -18,12 +19,6 @@
     "wed": "Wed",
     "thu": "Thu",
     "fri": "Fri"
-  },
-  "eventTypes": {
-    "catedra": "Cátedra",
-    "ayudantia": "Ayudantía",
-    "taller": "Taller",
-    "laboratorio": "Laboratorio"
   },
   "fields": {
     "course": "Course",
@@ -53,7 +48,5 @@
     "classroom": "Classroom:",
     "teacher": "Teacher:",
     "ta": "TA:"
-  },
-  "unknownCourse": "Unknown Course",
-  "addEventHint": "Add event"
+  }
 }
