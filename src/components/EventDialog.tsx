@@ -400,9 +400,9 @@ export function EventDialog({
                         placeholder={t('forms.priority')}
                         className="rounded-xl"
                         options={[
-                          { value: 'low', label: tCommon('priorities.low') },
-                          { value: 'normal', label: tCommon('priorities.normal') },
-                          { value: 'high', label: tCommon('priorities.high') },
+                          { value: 'low', label: <>🟡 &nbsp;&nbsp;{tCommon('priorities.low')}</> },
+                          { value: 'normal', label: <>🟠 &nbsp;&nbsp;{tCommon('priorities.normal')}</> },
+                          { value: 'high', label: <>🔴 &nbsp;&nbsp;{tCommon('priorities.high')}</> },
                         ]}
                       />
                     )}
