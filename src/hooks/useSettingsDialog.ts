@@ -1,9 +1,10 @@
 import CoursesSettings from '@/components/settings/CoursesSettings';
+import DegreePlanSettings from '@/components/settings/DegreePlanSettings';
 import FocusTimerSettings from '@/components/settings/FocusTimerSettings';
 import HydrationSettings from '@/components/settings/HydrationSettings';
 import SoundtrackSettings from '@/components/settings/SoundtrackSettings';
 import WeatherApiSettings from '@/components/settings/WeatherApiSettings';
-import { BookOpen, Cloud, Droplets, Music, Timer } from 'lucide-react';
+import { BookOpen, Cloud, Droplets, GraduationCap, Music, Timer } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -26,6 +27,12 @@ export function useSettingsDialog() {
         subtitle: t('courses.description'),
         Icon: BookOpen,
         Body: CoursesSettings,
+      },
+      degreePlan: {
+        title: t('degreePlan.title'),
+        subtitle: t('degreePlan.description'),
+        Icon: GraduationCap,
+        Body: DegreePlanSettings,
       },
       focusTimer: {
         title: t('focusTimer.title'),

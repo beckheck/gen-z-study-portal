@@ -43,8 +43,8 @@ export default function DegreePlanTab() {
   const [draggedCourse, setDraggedCourse] = useState<DegreeCourse | null>(null);
   const [draggedFromSemester, setDraggedFromSemester] = useState<number | null>(null);
   const [totalSemestersInput, setTotalSemestersInput] = useState<number>(0);
-  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false);
-  const [tempTitle, setTempTitle] = useState<string>('');
+  const [degreePlanNameInput, setDegreePlanNameInput] = useState<string>('');
+  const [nameHasChanged, setNameHasChanged] = useState<boolean>(false);
   const [semesterForm, setSemesterForm] = useState<SemesterForm>({
     acronym: '',
     name: '',
@@ -127,8 +127,8 @@ export default function DegreePlanTab() {
     setDegreePlanStep('setup');
     setCurrentSemester(1);
     setEditingCourse(null);
-    setIsEditingTitle(false);
-    setTempTitle('');
+    setDegreePlanNameInput('');
+    setNameHasChanged(false);
     setSemesterForm({
       acronym: '',
       name: '',
@@ -230,31 +230,20 @@ export default function DegreePlanTab() {
     setSemesters([...degreePlan.semesters, newSemester]);
   };
 
-  // Handle title editing functions
-  const handleTitleDoubleClick = (): void => {
-    setIsEditingTitle(true);
-    setTempTitle(degreePlan.name || 'Degree Plan');
+  // Handle degree plan name changes
+  const handleNameChange = (value: string): void => {
+    setDegreePlanNameInput(value);
+    setNameHasChanged(value !== degreePlan.name);
   };
 
-  const handleTitleSave = (): void => {
-    if (tempTitle.trim()) {
-      setDegreePlanName(tempTitle.trim());
-    }
-    setIsEditingTitle(false);
-    setTempTitle('');
+  const handleNameSave = (): void => {
+    setDegreePlanName(degreePlanNameInput.trim() || 'Degree Plan');
+    setNameHasChanged(false);
   };
 
-  const handleTitleCancel = (): void => {
-    setIsEditingTitle(false);
-    setTempTitle('');
-  };
-
-  const handleTitleKeyPress = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Enter') {
-      handleTitleSave();
-    } else if (e.key === 'Escape') {
-      handleTitleCancel();
-    }
+  const handleNameReset = (): void => {
+    setDegreePlanNameInput(degreePlan.name || 'Degree Plan');
+    setNameHasChanged(false);
   };
 
   return (
@@ -265,25 +254,7 @@ export default function DegreePlanTab() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="w-5 h-5" />
-                {isEditingTitle ? (
-                  <Input
-                    value={tempTitle}
-                    onChange={e => setTempTitle(e.target.value)}
-                    onBlur={handleTitleSave}
-                    onKeyDown={handleTitleKeyPress}
-                    className="h-8 text-lg font-bold bg-white dark:bg-zinc-800 border-2 border-blue-400 rounded-xl px-3 focus:border-blue-500 focus:outline-none"
-                    autoFocus
-                    style={{ minWidth: '200px' }}
-                  />
-                ) : (
-                  <div
-                    className="inline-block px-4 py-2 bg-white/60 dark:bg-white/10 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 font-bold"
-                    onDoubleClick={handleTitleDoubleClick}
-                    title="Double-click to edit degree plan name"
-                  >
-                    {degreePlan.name || t('title')}
-                  </div>
-                )}
+                <span>{degreePlan.name || t('title')}</span>
                 <span className="text-sm font-normal text-gray-500">Overview</span>
               </CardTitle>
               <CardDescription>{t('description')}</CardDescription>
@@ -307,6 +278,10 @@ export default function DegreePlanTab() {
                 variant="ghost"
                 className="rounded-xl"
                 onClick={() => {
+                  // Initialize the name input when opening the dialog
+                  setDegreePlanNameInput(degreePlan.name || 'Degree Plan');
+                  setNameHasChanged(false);
+                  
                   // If degree plan already exists, go to view step, otherwise start setup
                   if (degreePlan.semesters.length > 0) {
                     setDegreePlanStep('view');
@@ -501,6 +476,48 @@ export default function DegreePlanTab() {
                   : `${t('semester.courses', { number: currentSemester })}. Maximum 8 courses per semester.`)}
               {degreePlanStep === 'view' && t('view.description')}
             </DialogDescription>
+            
+            {/* Degree Plan Name Section */}
+            <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+              <div className="space-y-2">
+                <Label htmlFor="degree-plan-name-dialog" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  {t('settings.degreePlanName')}
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="degree-plan-name-dialog"
+                    value={degreePlanNameInput}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    placeholder="Enter degree plan name"
+                    className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                  />
+                  {nameHasChanged && (
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleNameReset}
+                        className="rounded-xl px-3"
+                        title={tCommon('actions.cancel')}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleNameSave}
+                        className="rounded-xl px-3"
+                        title={tCommon('actions.save')}
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-zinc-500">
+                  {t('settings.degreePlanNameDescription')}
+                </p>
+              </div>
+            </div>
           </DialogHeader>
 
           {degreePlanStep === 'setup' && (

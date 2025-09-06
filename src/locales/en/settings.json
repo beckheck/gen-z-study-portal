@@ -25,6 +25,10 @@
       "confirmDelete": "Delete Course"
     }
   },
+  "degreePlan": {
+    "title": "Degree Plan",
+    "description": "Customize your degree plan settings and information"
+  },
   "about": {
     "title": "About",
     "description": "Local-first · Private · Cute af",

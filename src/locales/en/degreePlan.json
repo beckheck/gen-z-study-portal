@@ -3,6 +3,7 @@
   "description": "Plan your academic journey",
   "actions": {
     "customize": "Customize Degree Plan",
+    "degreePlanSettings": "Degree Plan Settings",
     "editSemester": "Edit semester",
     "deleteSemester": "Delete semester",
     "removeEmptySemester": "Remove empty semester",
@@ -91,5 +92,13 @@
   "editing": {
     "title": "Semester {{number}} Courses - Editing",
     "description": "Edit course \"{{acronym}}\" in semester {{number}}."
+  },
+  "settings": {
+    "degreePlanName": "Degree Plan Name",
+    "degreePlanNameDescription": "Give your degree plan a custom name to help identify it.",
+    "totalSemesters": "Semesters",
+    "totalCourses": "Total Courses",
+    "completedCourses": "Completed",
+    "completedCredits": "Credits Done"
   }
 }

@@ -25,6 +25,10 @@
       "confirmDelete": "Eliminar Curso"
     }
   },
+  "degreePlan": {
+    "title": "Plan de Grado",
+    "description": "Personaliza la configuración y información de tu plan de grado"
+  },
   "about": {
     "title": "Acerca de",
     "description": "Local · Privado · Súper lindo",

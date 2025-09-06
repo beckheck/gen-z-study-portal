@@ -443,6 +443,7 @@ export default function SettingsTab() {
 
   const soundtrackDialog = settingsDialogs.soundtrack;
   const coursesDialog = settingsDialogs.courses;
+  const degreePlanDialog = settingsDialogs.degreePlan;
   const focusTimerDialog = settingsDialogs.focusTimer;
   const hydrationDialog = settingsDialogs.hydration;
   const weatherApiDialog = settingsDialogs.weatherApi;
@@ -455,6 +456,12 @@ export default function SettingsTab() {
       title: coursesDialog.title,
       icon: coursesDialog.Icon,
       render: () => <SettingsDialogCard dialog={coursesDialog} />,
+    },
+    {
+      id: 'degreePlan',
+      title: degreePlanDialog.title,
+      icon: degreePlanDialog.Icon,
+      render: () => <SettingsDialogCard dialog={degreePlanDialog} />,
     },
     {
       id: 'focusTimer',

@@ -3,6 +3,7 @@
   "description": "Planifica tu trayecto académico",
   "actions": {
     "customize": "Personalizar Malla Interactiva",
+    "degreePlanSettings": "Configuración de Malla Interactiva",
     "editSemester": "Editar semestre",
     "deleteSemester": "Eliminar semestre",
     "removeEmptySemester": "Eliminar semestre vacío",
@@ -91,5 +92,13 @@
   "editing": {
     "title": "Cursos del {{number}}° Semestre - Editando",
     "description": "Editar curso \"{{acronym}}\" en el semestre {{number}}."
+  },
+  "settings": {
+    "degreePlanName": "Nombre de la Malla Interactiva",
+    "degreePlanNameDescription": "Dale un nombre personalizado a tu malla interactiva para identificarla fácilmente.",
+    "totalSemesters": "Semestres",
+    "totalCourses": "Cursos Totales",
+    "completedCourses": "Completadas",
+    "completedCredits": "Créditos Hechos"
   }
 }
