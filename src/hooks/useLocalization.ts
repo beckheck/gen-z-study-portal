@@ -74,7 +74,19 @@ export function useLocalization() {
 
   // Format date as DD-MM-YYYY or DD/MM/YYYY
   const formatDateDDMMYYYY = useCallback((date: Date | string, separator: string = '-') => {
-    const d = typeof date === 'string' ? new Date(date) : date;
+    let d: Date;
+    if (typeof date === 'string') {
+      // Parse date string properly to avoid timezone issues
+      // Split the date string and create date with local timezone
+      const parts = date.split('-');
+      if (parts.length === 3) {
+        d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        d = new Date(date);
+      }
+    } else {
+      d = date;
+    }
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
