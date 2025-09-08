@@ -44,6 +44,16 @@
     "description": "Your recent sessions",
     "noSessions": "No sessions yet. Let's cook. 👨‍🍳",
     "duration": "{{duration}}",
-    "sessionInfo": "{{course}} · {{duration}}"
+    "sessionInfo": "{{course}} · {{duration}}",
+    "editSession": {
+      "title": "Edit Study Session",
+      "description": "Modify the details of your study session",
+      "durationLabel": "Duration (minutes)",
+      "buttons": {
+        "edit": "Edit session",
+        "save": "Save changes",
+        "cancel": "Cancel"
+      }
+    }
   }
 }

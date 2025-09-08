@@ -296,6 +296,12 @@ export function useStudySessions() {
         store.sessions.splice(sessionIndex, 1);
       }
     },
+    updateSession: (id: string, updates: Partial<StudySession>) => {
+      const sessionIndex = store.sessions.findIndex(s => s.id === id);
+      if (sessionIndex !== -1) {
+        store.sessions[sessionIndex] = { ...store.sessions[sessionIndex], ...updates };
+      }
+    },
     addSessionTask: (title: string) => {
       const task = { id: uid(), title, done: false, createdAt: Date.now() };
       store.sessionTasks.unshift(task);

@@ -2,6 +2,7 @@ import LevelsSlider from '@/components/LevelsSlider';
 import { useSettingsDialogContext } from '@/components/settings/SettingsDialogProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,7 +17,8 @@ import {
   STUDY_TECHNIQUES,
   TechniqueConfig,
 } from '@/lib/technique-utils';
-import { Flame, HeartHandshake, ListTodo, Plus, Settings, Timer, TimerReset, Trash2 } from 'lucide-react';
+import { StudySession } from '@/types';
+import { Edit, Flame, HeartHandshake, ListTodo, Plus, Settings, Timer, TimerReset, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -43,6 +45,7 @@ export default function StudyTrackerTab() {
     sessionTasks,
     addSession,
     deleteSession,
+    updateSession,
     addSessionTask,
     toggleSessionTask,
     deleteSessionTask,
@@ -84,6 +87,18 @@ export default function StudyTrackerTab() {
   // Session-only tasks
   const [sessionTaskTitle, setSessionTaskTitle] = useState<string>('');
 
+  // Edit session dialog state
+  const [editSessionDialog, setEditSessionDialog] = useState<boolean>(false);
+  const [editingSession, setEditingSession] = useState<StudySession | null>(null);
+  const [editForm, setEditForm] = useState({
+    courseId: '',
+    technique: '',
+    note: '',
+    moodStart: 3,
+    moodEnd: 3,
+    durationMin: 0,
+  });
+
   // Calculate display time (use phase time for techniques with breaks, total time for flow)
   const displayElapsed = techniqueConfig.breakMinutes === 0 ? timerState.elapsed : timerState.phaseElapsed;
 
@@ -122,7 +137,6 @@ export default function StudyTrackerTab() {
   /**
    * Get localized technique name
    */
-
   const getTechniqueDisplayName = useCallback(
     (techniqueConfig: TechniqueConfig): string => {
       const focusEmoji = getPhaseEmoji(techniqueConfig.id, 'focus');
@@ -139,6 +153,49 @@ export default function StudyTrackerTab() {
     },
     [t]
   );
+
+  /**
+   * Open edit session dialog
+   */
+  const openEditSession = useCallback((session: StudySession): void => {
+    setEditingSession(session);
+    setEditForm({
+      courseId: session.courseId,
+      technique: session.technique,
+      note: session.note || '',
+      moodStart: session.moodStart || 3,
+      moodEnd: session.moodEnd || 3,
+      durationMin: session.durationMin,
+    });
+    setEditSessionDialog(true);
+  }, []);
+
+  /**
+   * Save edited session
+   */
+  const saveEditedSession = useCallback((): void => {
+    if (!editingSession) return;
+
+    updateSession(editingSession.id, {
+      courseId: editForm.courseId,
+      technique: editForm.technique,
+      note: editForm.note.trim() || undefined,
+      moodStart: editForm.moodStart,
+      moodEnd: editForm.moodEnd,
+      durationMin: editForm.durationMin,
+    });
+
+    setEditSessionDialog(false);
+    setEditingSession(null);
+  }, [editingSession, editForm, updateSession]);
+
+  /**
+   * Cancel editing session
+   */
+  const cancelEditSession = useCallback((): void => {
+    setEditSessionDialog(false);
+    setEditingSession(null);
+  }, []);
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
@@ -500,14 +557,138 @@ export default function StudyTrackerTab() {
                   </div>
                   {session.note && <div className="text-sm mt-1 whitespace-pre-wrap">{session.note}</div>}
                 </div>
-                <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSession(session.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="rounded-xl" 
+                    onClick={() => openEditSession(session)}
+                    title={t('sessionLog.editSession.buttons.edit')}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteSession(session.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Session Dialog */}
+      <Dialog open={editSessionDialog} onOpenChange={setEditSessionDialog}>
+        <DialogContent className="max-w-2xl bg-white dark:bg-black border-zinc-200 dark:border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
+              <Edit className="w-5 h-5" />
+              {t('sessionLog.editSession.title')}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-600 dark:text-zinc-400">
+              {t('sessionLog.editSession.description')}
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingSession && (
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-course">{t('focusTimer.course')}</Label>
+                  <Select 
+                    value={editForm.courseId} 
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, courseId: value }))}
+                  >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-technique">{t('focusTimer.technique')}</Label>
+                  <Select 
+                    value={editForm.technique} 
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, technique: value }))}
+                  >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STUDY_TECHNIQUES.map(technique => (
+                        <SelectItem key={technique.id} value={technique.id}>
+                          {getTechniqueDisplayName(technique)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-duration">{t('sessionLog.editSession.durationLabel')}</Label>
+                <Input
+                  id="edit-duration"
+                  type="number"
+                  min="1"
+                  max="480"
+                  value={editForm.durationMin}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, durationMin: parseInt(e.target.value) || 0 }))}
+                  className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <LevelsSlider
+                  label={t('focusTimer.moodStart')}
+                  labels={moodLabels}
+                  value={editForm.moodStart}
+                  onChange={(value) => setEditForm(prev => ({ ...prev, moodStart: value }))}
+                />
+                <LevelsSlider
+                  label={t('focusTimer.moodEnd')}
+                  labels={moodLabels}
+                  value={editForm.moodEnd}
+                  onChange={(value) => setEditForm(prev => ({ ...prev, moodEnd: value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-note">{t('focusTimer.sessionNotes')}</Label>
+                <Textarea
+                  id="edit-note"
+                  value={editForm.note}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, note: e.target.value }))}
+                  className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                  placeholder={t('focusTimer.notesPlaceholder')}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <Button
+                  variant="outline"
+                  onClick={cancelEditSession}
+                  className="rounded-xl border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  {tCommon('actions.cancel')}
+                </Button>
+                <Button
+                  onClick={saveEditedSession}
+                  className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                >
+                  {tCommon('actions.save')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
