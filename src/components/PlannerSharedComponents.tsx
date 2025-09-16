@@ -37,7 +37,7 @@ export const EventTooltip = ({
   onProgressChange?: (progress: ProgressData) => void;
 }) => {
   const { getCourseTitle } = useCourses();
-  const { t } = useTranslation();
+  const { t } = useTranslation('planner');
   return (
     <div
       style={{
@@ -59,9 +59,11 @@ export const EventTooltip = ({
         <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
           <div>{getCourseTitle(event.courseId)}</div>
           <div>{t(`items:${event.type}.title`)}</div>
-          {event.location && <div>{event.location}</div>}
-          {event.weight && <div>Weight: {event.weight}%</div>}
-          {event.priority && <div>Priority: {event.priority}</div>}
+          {event.location && <div>{t('tooltip.location', { location: event.location })}</div>}
+          {event.weight && <div>{t('tooltip.weight', { weight: event.weight })}</div>}
+          {event.priority && (
+            <div>{t('tooltip.priority', { priority: t(`items:task.priority.${event.priority}`) })}</div>
+          )}
           {event.notes && (
             <div className="mt-2">
               <TasksProgressBar progress={progress} className="mb-2" />

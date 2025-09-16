@@ -216,8 +216,8 @@ export function PlannerWeekView({
                           {/* Right: Event content */}
                           <div
                             className="flex-1 group relative bg-white/70 dark:bg-white/5 p-2.5 rounded-xl cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
-                            onClick={event => {
-                              event.stopPropagation();
+                            onClick={clickEvent => {
+                              clickEvent.stopPropagation();
                               itemDialog.openEditDialog(e);
                             }}
                           >
@@ -261,8 +261,8 @@ export function PlannerWeekView({
                     <div
                       key={e.id}
                       className="group relative flex flex-row items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl mb-2 cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
-                      onClick={event => {
-                        event.stopPropagation();
+                      onClick={clickEvent => {
+                        clickEvent.stopPropagation();
                         itemDialog.openEditDialog(e);
                       }}
                     >

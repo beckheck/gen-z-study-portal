@@ -129,8 +129,8 @@ export function PlannerMonthView({
                   <div
                     key={idx}
                     className="text-xs truncate flex items-center gap-1.5 p-1 rounded bg-white/50 dark:bg-white/10 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                    onClick={event => {
-                      event.stopPropagation();
+                    onClick={clickEvent => {
+                      clickEvent.stopPropagation();
                       itemDialog.openEditDialog(e);
                     }}
                     title={t('messages.clickToEdit')}
@@ -159,39 +159,43 @@ export function PlannerMonthView({
                   </div>
 
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {tooltipEvents.map((e, idx) => (
+                    {tooltipEvents.map((event, idx) => (
                       <div
                         key={idx}
                         className="space-y-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/50 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                        onClick={event => {
-                          event.stopPropagation();
-                          itemDialog.openEditDialog(e);
+                        onClick={clickEvent => {
+                          clickEvent.stopPropagation();
+                          itemDialog.openEditDialog(event);
                         }}
                         title={t('messages.clickToEdit')}
                       >
                         <div className="flex items-center gap-2">
-                          <EventTypeIndicator event={e} size="md" />
-                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">{e.title || e.type}</span>
+                          <EventTypeIndicator event={event} size="md" />
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            {event.title || event.type}
+                          </span>
                         </div>
 
                         <div className="text-sm text-zinc-600 dark:text-zinc-300 ml-4">
-                          <div className="font-medium">{getCourseTitle(e.courseId)}</div>
-                          <div>{t(`items:${e.type}.title`)}</div>
-                          {e.location && <div>📍 {e.location}</div>}
-                          {e.weight && <div>⚖️ Weight: {e.weight}%</div>}
-                          {e.priority && <div>🎯 Priority: {e.priority}</div>}
-                          {e.notes && (
+                          <div className="font-medium">{getCourseTitle(event.courseId)}</div>
+                          <div>{t(`items:${event.type}.title`)}</div>
+                          {event.location && <div>{t('tooltip.location', { location: event.location })}</div>}
+                          {event.weight && <div>{t('tooltip.weight', { weight: event.weight })}</div>}
+                          {event.priority && (
+                            <div>{t('tooltip.priority', { priority: t(`items:task.priority.${event.priority}`) })}</div>
+                          )}
+                          {event.notes && (
                             <div className="mt-1">
                               <span className="mr-1">📝</span>
-                              <TasksProgressBar progress={eventNotesProgress[e.id]} className="mb-1 ml-4" />
+                              <TasksProgressBar progress={eventNotesProgress[event.id]} className="mb-1 ml-4" />
                               <RichTextDisplay
-                                content={e.notes}
+                                content={event.notes}
                                 className="inline text-sm"
-                                onContentChange={newContent => handleEventContentChange(e, newContent)}
+                                onContentChange={newContent => handleEventContentChange(event, newContent)}
                                 onProgressChange={progress => {
                                   setEventNotesProgress(prev => ({
                                     ...prev,
-                                    [e.id]: progress,
+                                    [event.id]: progress,
                                   }));
                                 }}
                               />
