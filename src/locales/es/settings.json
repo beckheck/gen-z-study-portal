@@ -120,7 +120,7 @@
       "title": "Configuración de Ubicación del Clima",
       "useDevice": "Usar ubicación del dispositivo",
       "cityLabel": "Nombre de la ciudad",
-      "cityPlaceholder": "Ingresa el nombre de la ciudad (ej. Londres, Tokio, Nueva York)",
+      "cityPlaceholder": "Ingresa el nombre de la ciudad (ej. Bogotá, Lima, Santiago)",
       "deviceLocationNote": "Desactiva la ubicación del dispositivo para ingresar una ciudad manualmente",
       "manualLocationNote": "Ingresa el nombre de una ciudad para obtener el clima de esa ubicación"
     }

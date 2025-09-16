@@ -447,7 +447,7 @@ export class BrowserStorageAdapter implements StorageAdapter {
   }
 
   isAvailable(): boolean {
-    return !!browser.runtime?.id && !!browser.storage?.local;
+    return globalThis.browser && !!browser.runtime?.id && !!browser.storage?.local;
   }
 
   private setupStorageListener() {
