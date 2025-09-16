@@ -14,6 +14,7 @@ import enDegreePlan from '../locales/en/degreePlan.json';
 import enCourseManager from '../locales/en/courseManager.json';
 import enSoundtrack from '../locales/en/soundtrack.json';
 import enTips from '../locales/en/tips.json';
+import enItems from '../items/locales/en/items.json';
 
 import esCommon from '../locales/es/common.json';
 import esPlanner from '../locales/es/planner.json';
@@ -25,6 +26,7 @@ import esDegreePlan from '../locales/es/degreePlan.json';
 import esCourseManager from '../locales/es/courseManager.json';
 import esSoundtrack from '../locales/es/soundtrack.json';
 import esTips from '../locales/es/tips.json';
+import esItems from '../items/locales/es/items.json';
 
 // Translation resources
 const resources = {
@@ -39,6 +41,7 @@ const resources = {
     courseManager: enCourseManager,
     soundtrack: enSoundtrack,
     tips: enTips,
+    items: enItems,
   },
   es: {
     common: esCommon,
@@ -51,6 +54,7 @@ const resources = {
     courseManager: esCourseManager,
     soundtrack: esSoundtrack,
     tips: esTips,
+    items: esItems,
   },
 };
 
@@ -81,6 +85,7 @@ i18n
       'courseManager',
       'soundtrack',
       'tips',
+      'items',
     ],
 
     detection: languageDetectorOptions,
@@ -127,3 +132,4 @@ export async function listenLanguageChangeInExtensionBackground() {
 }
 
 export default i18n;
+export const t = i18n.t.bind(i18n);

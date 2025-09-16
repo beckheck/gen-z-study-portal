@@ -25,7 +25,7 @@ const DefaultErrorFallback: React.FC<{ error?: Error; errorInfo?: React.ErrorInf
       >
         Refresh Page
       </button>
-      {process.env.NODE_ENV === 'development' && error && (
+      {import.meta.env.VITE_FEATURE_TESTING && error && (
         <details className="mt-6 text-left">
           <summary className="cursor-pointer text-sm text-muted-foreground mb-2">
             Error Details (Development Only)

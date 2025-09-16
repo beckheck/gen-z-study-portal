@@ -21,6 +21,7 @@ import DegreePlanTab from '@/tabs/DegreePlanTab';
 import PlannerTab from '@/tabs/PlannerTab';
 import SettingsTab from '@/tabs/SettingsTab';
 import StudyTrackerTab from '@/tabs/StudyTrackerTab';
+import TestTab from '@/tabs/TestTab';
 import TimetableTab from '@/tabs/TimetableTab';
 import WellnessTab from '@/tabs/WellnessTab';
 import { motion } from 'framer-motion';
@@ -37,6 +38,7 @@ import {
   NotebookPen,
   Settings as SettingsIcon,
   Sparkles,
+  TestTubeDiagonal,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -94,6 +96,7 @@ export default function StudyPortal(): React.JSX.Element {
     { value: 'study', label: t('navigation.study'), icon: Brain },
     { value: 'wellness', label: t('navigation.wellness'), icon: HeartPulse },
     { value: 'settings', label: t('navigation.settings'), icon: SettingsIcon },
+    ...(import.meta.env.VITE_FEATURE_TESTING ? [{ value: 'test', label: 'Test', icon: TestTubeDiagonal }] : []),
   ];
 
   const navigationValues = tabs.map(tab => tab.value);
@@ -348,6 +351,12 @@ export default function StudyPortal(): React.JSX.Element {
               <TabsContent value="settings">
                 <SettingsTab />
               </TabsContent>
+
+              {import.meta.env.VITE_FEATURE_TESTING && (
+                <TabsContent value="test">
+                  <TestTab />
+                </TabsContent>
+              )}
             </Tabs>
 
             {/* Single Soundtrack Card - Always mounted, position controlled by prop */}

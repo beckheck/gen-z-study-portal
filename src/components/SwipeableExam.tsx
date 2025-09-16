@@ -2,13 +2,13 @@ import { Badge } from '@/components/ui/badge';
 import SwipeableItem from '@/components/ui/swipeable-item';
 import { useLocalization } from '@/hooks/useLocalization';
 import { useCourses } from '@/hooks/useStore';
-import { Exam } from '@/types';
+import { ItemExam } from '@/items/exam/modelSchema';
 import { AlertTriangle } from 'lucide-react';
 import React from 'react';
 
 interface SwipeableExamProps {
   key: string; // Unique key for React
-  exam: Exam;
+  exam: ItemExam;
   index: number;
   expanded: number;
   calculateDDay: (dateString: string) => string | null;
@@ -23,6 +23,9 @@ const SwipeableExam = React.forwardRef<HTMLDivElement, SwipeableExamProps>(funct
   const { getCourseTitle } = useCourses();
   const { formatDateDDMMYYYY } = useLocalization();
 
+  // Convert timestamp to date string for compatibility with existing functions
+  const examDateString = new Date(exam.startsAt).toISOString().split('T')[0];
+
   return (
     <SwipeableItem ref={ref} index={index} expanded={expanded} onComplete={() => onComplete(exam.id)} onClick={onClick}>
       <div className="flex items-center justify-between">
@@ -34,18 +37,18 @@ const SwipeableExam = React.forwardRef<HTMLDivElement, SwipeableExamProps>(funct
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="rounded-full">
-            {formatDateDDMMYYYY(exam.date)}
+            {formatDateDDMMYYYY(examDateString)}
           </Badge>
           <Badge
             variant="outline"
             className={`rounded-full text-xs font-mono flex items-center gap-1 ${
-              calculateDDay(exam.date)?.startsWith('D+')
+              calculateDDay(examDateString)?.startsWith('D+')
                 ? 'border-yellow-400 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-900/20'
                 : ''
             }`}
           >
-            {calculateDDay(exam.date)?.startsWith('D+') && <AlertTriangle className="w-3 h-3" />}
-            {calculateDDay(exam.date)}
+            {calculateDDay(examDateString)?.startsWith('D+') && <AlertTriangle className="w-3 h-3" />}
+            {calculateDDay(examDateString)}
           </Badge>
         </div>
       </div>

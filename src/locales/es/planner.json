@@ -2,14 +2,13 @@
   "title": "Planificador",
   "views": {
     "week": "Semana",
-    "month": "Mes"
+    "month": "Mes",
+    "agenda": "Agenda"
   },
   "events": {
-    "addEvent": "Agregar Evento",
     "addExam": "Agregar Examen",
     "addTask": "Agregar Tarea",
     "allDay": "Todo el día",
-    "editEvent": "Editar Evento",
     "editExam": "Editar Examen",
     "editTask": "Editar Tarea",
     "eventDetails": "Detalles del Evento",
@@ -31,11 +30,6 @@
     "title": "Título",
     "type": "Tipo",
     "weight": "Ponderación (%)"
-  },
-  "eventTypes": {
-    "exam": "Examen",
-    "regular": "Evento Regular",
-    "task": "Tarea"
   },
   "goals": {
     "weeklyGoals": "Metas Semanales",

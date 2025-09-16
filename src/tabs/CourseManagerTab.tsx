@@ -1,4 +1,3 @@
-import { EventDialog } from '@/components/EventDialog';
 import { useSettingsDialogContext } from '@/components/settings/SettingsDialogProvider';
 import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressBar';
 import { Badge } from '@/components/ui/badge';
@@ -11,9 +10,14 @@ import { Progress } from '@/components/ui/progress';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useConfetti } from '@/hooks/useConfetti';
-import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useExams, useTasks } from '@/hooks/useStore';
+import { useCourses, useExamGrades, useItems } from '@/hooks/useStore';
+import { ItemDialog } from '@/items/base/dialog';
+import { ItemExam } from '@/items/exam/modelSchema';
+import { getItemTaskPriorityColor } from '@/items/task/methods';
+import { ItemTask } from '@/items/task/modelSchema';
+import { useItemDialog } from '@/items/useItemDialog';
+import { compareDates } from '@/lib/date-utils';
 import { motion } from 'framer-motion';
 import {
   CalendarDays,
@@ -35,9 +39,16 @@ export default function CourseManagerTab() {
   const { t: tCommon } = useTranslation('common');
   const { formatDateDDMMYYYY } = useLocalization();
   const { courses, selectedCourseId, getCourseTitle, setSelectedCourse, clearCourseData } = useCourses();
-  const { tasks, toggleTask, deleteTask } = useTasks();
-  const { exams, examGrades, addExam, updateExam, setExamGrades, toggleExamComplete } = useExams();
-  const eventDialog = useEventDialog();
+  const { items, getItemsByType, updateItem, deleteItem } = useItems();
+
+  // Get items by type
+  const tasks = getItemsByType('task') as ItemTask[];
+  const exams = getItemsByType('exam') as ItemExam[];
+
+  // Access exam grades separately (still managed in the old way)
+  const { examGrades, setExamGrades } = useExamGrades();
+
+  const itemDialog = useItemDialog();
   const { openDialog: openSettingsDialog } = useSettingsDialogContext();
   const [clearConfirmOpen, setClearConfirmOpen] = useState<boolean>(false);
   const [taskSortOrder, setTaskSortOrder] = useState<'date' | 'priority'>('date');
@@ -45,8 +56,8 @@ export default function CourseManagerTab() {
   const [expandedExamNotes, setExpandedExamNotes] = useState<Record<string, boolean>>({});
   const courseTasks = tasks.filter(t => t.courseId === selectedCourseId);
   const courseExams = exams.filter(e => e.courseId === selectedCourseId);
-  const upcomingExams = courseExams.filter(e => !e.completed);
-  const completedExams = courseExams.filter(e => e.completed);
+  const upcomingExams = courseExams.filter(e => !e.isCompleted);
+  const completedExams = courseExams.filter(e => e.isCompleted);
 
   // Toggle expanded state for exam notes
   const toggleExamNotesExpanded = (examId: string) => {
@@ -78,77 +89,63 @@ export default function CourseManagerTab() {
     return examsWithNotes.length > 0 && examsWithNotes.every(e => expandedExamNotes[e.id]);
   };
 
-  // Get priority color for tasks
-  const getPriorityColor = (priority: string): string => {
-    switch (priority) {
-      case 'high':
-        return '#ef4444'; // red-500
-      case 'normal':
-        return '#f97316'; // orange-500
-      case 'low':
-        return '#eab308'; // yellow-500
-      default:
-        return '#f97316'; // default to orange
-    }
-  };
-
   // Sort tasks based on selected order
   const sortTasks = (taskList: typeof courseTasks) => {
     return [...taskList].sort((a, b) => {
       if (taskSortOrder === 'date') {
         // Sort by due date (earliest first), then by priority, then alphabetically
-        if (!a.due && !b.due) {
+        if (!a.dueAt && !b.dueAt) {
           // Both have no due date, sort by priority then alphabetically
-          const priorityOrder = { high: 0, normal: 1, low: 2 };
+          const priorityOrder = { high: 0, medium: 1, low: 2 };
           const priorityComparison =
             priorityOrder[a.priority as keyof typeof priorityOrder] -
             priorityOrder[b.priority as keyof typeof priorityOrder];
           if (priorityComparison !== 0) return priorityComparison;
-          return a.title.localeCompare(b.title);
+          return (a.title || '').localeCompare(b.title || '');
         }
-        if (!a.due) return 1; // Tasks without due date go to end
-        if (!b.due) return -1;
+        if (!a.dueAt) return 1; // Tasks without due date go to end
+        if (!b.dueAt) return -1;
 
-        const dateComparison = new Date(a.due).getTime() - new Date(b.due).getTime();
+        const dateComparison = compareDates(a.dueAt, b.dueAt);
         if (dateComparison !== 0) return dateComparison;
 
         // If dates are same, sort by priority
-        const priorityOrder = { high: 0, normal: 1, low: 2 };
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
         const priorityComparison =
           priorityOrder[a.priority as keyof typeof priorityOrder] -
           priorityOrder[b.priority as keyof typeof priorityOrder];
         if (priorityComparison !== 0) return priorityComparison;
 
         // If both date and priority are same, sort alphabetically
-        return a.title.localeCompare(b.title);
+        return (a.title || '').localeCompare(b.title || '');
       } else {
-        // Sort by priority (high > normal > low), then by due date, then alphabetically
-        const priorityOrder = { high: 0, normal: 1, low: 2 };
+        // Sort by priority (high > medium > low), then by due date, then alphabetically
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
         const priorityComparison =
           priorityOrder[a.priority as keyof typeof priorityOrder] -
           priorityOrder[b.priority as keyof typeof priorityOrder];
         if (priorityComparison !== 0) return priorityComparison;
 
         // If priorities are same, sort by due date
-        if (!a.due && !b.due) {
+        if (!a.dueAt && !b.dueAt) {
           // Both have no due date, sort alphabetically
-          return a.title.localeCompare(b.title);
+          return (a.title || '').localeCompare(b.title || '');
         }
-        if (!a.due) return 1;
-        if (!b.due) return -1;
+        if (!a.dueAt) return 1;
+        if (!b.dueAt) return -1;
 
-        const dateComparison = new Date(a.due).getTime() - new Date(b.due).getTime();
+        const dateComparison = compareDates(a.dueAt, b.dueAt);
         if (dateComparison !== 0) return dateComparison;
 
         // If both priority and date are same, sort alphabetically
-        return a.title.localeCompare(b.title);
+        return (a.title || '').localeCompare(b.title || '');
       }
     });
   };
 
   // Create sorted task lists
-  const openTasks = sortTasks(courseTasks.filter(t => !t.done));
-  const completedTasks = sortTasks(courseTasks.filter(t => t.done));
+  const openTasks = sortTasks(courseTasks.filter(t => !t.isCompleted));
+  const completedTasks = sortTasks(courseTasks.filter(t => t.isCompleted));
 
   // Grade calculation logic
   const courseGrades = examGrades.filter(g => {
@@ -197,7 +194,7 @@ export default function CourseManagerTab() {
   };
 
   const progress = useMemo(() => {
-    const completed = courseTasks.filter(t => t.done).length;
+    const completed = courseTasks.filter(t => t.isCompleted).length;
     const total = courseTasks.length || 1;
     return Math.round((completed / total) * 100);
   }, [courseTasks]);
@@ -270,8 +267,7 @@ export default function CourseManagerTab() {
                 </Select>
                 <Button
                   onClick={() =>
-                    eventDialog.openDialog({
-                      eventCategory: 'task',
+                    itemDialog.openAddDialog('task', {
                       courseId: selectedCourseId,
                     })
                   }
@@ -298,18 +294,18 @@ export default function CourseManagerTab() {
                 <div
                   key={t.id}
                   className="flex items-center justify-between bg-white/70 dark:bg-white/5 p-3 rounded-xl group border-l-4"
-                  style={{ borderLeftColor: getPriorityColor(t.priority) }}
+                  style={{ borderLeftColor: getItemTaskPriorityColor(t.priority) }}
                 >
                   <div
                     className="flex-1 cursor-pointer"
                     onClick={() => {
-                      // Create task event with proper format for editing
-                      eventDialog.openEditTaskDialog(t);
+                      // Edit task using the item dialog
+                      itemDialog.openEditDialog(t);
                     }}
                   >
                     <div className="font-medium">{t.title}</div>
                     <div className="text-xs text-zinc-500">
-                      {t.due ? formatDateDDMMYYYY(t.due) : '—'} · {t.priority}
+                      {t.dueAt ? formatDateDDMMYYYY(new Date(t.dueAt).toISOString().split('T')[0]) : '—'} · {t.priority}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -319,7 +315,7 @@ export default function CourseManagerTab() {
                       className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={e => {
                         e.stopPropagation();
-                        eventDialog.openEditTaskDialog(t);
+                        itemDialog.openEditDialog(t);
                       }}
                       title={tCourse('actions.edit')}
                     >
@@ -330,12 +326,12 @@ export default function CourseManagerTab() {
                       variant="default"
                       className="rounded-xl"
                       onClick={() => {
-                        toggleTask(t.id);
+                        updateItem(t.id, { isCompleted: true } as any);
                       }}
                     >
                       {tCourse('actions.done')}
                     </Button>
-                    <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteTask(t.id)}>
+                    <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => deleteItem(t.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -354,20 +350,21 @@ export default function CourseManagerTab() {
                         animate={{ opacity: 1, y: 0 }}
                         key={t.id}
                         className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl group border-l-4"
-                        style={{ borderLeftColor: getPriorityColor(t.priority) }}
+                        style={{ borderLeftColor: getItemTaskPriorityColor(t.priority) }}
                       >
                         <div
                           className="flex-1 cursor-pointer"
                           onClick={() => {
-                            // Create task event with proper format for editing
-                            eventDialog.openEditTaskDialog(t);
+                            // Edit completed task using the item dialog
+                            itemDialog.openEditDialog(t);
                           }}
                         >
                           <div className="line-through group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                             {t.title}
                           </div>
                           <div className="text-xs text-zinc-500">
-                            {t.due ? formatDateDDMMYYYY(t.due) : '—'} · {t.priority}
+                            {t.dueAt ? formatDateDDMMYYYY(new Date(t.dueAt).toISOString().split('T')[0]) : '—'} ·{' '}
+                            {t.priority}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -377,7 +374,7 @@ export default function CourseManagerTab() {
                             className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={e => {
                               e.stopPropagation();
-                              eventDialog.openEditTaskDialog(t);
+                              itemDialog.openEditDialog(t);
                             }}
                             title={tCourse('actions.edit')}
                           >
@@ -387,7 +384,7 @@ export default function CourseManagerTab() {
                             size="icon"
                             variant="ghost"
                             className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => toggleTask(t.id)}
+                            onClick={() => updateItem(t.id, { isCompleted: false } as any)}
                             title={tCourse('actions.undo')}
                           >
                             <Undo className="w-4 h-4" />
@@ -396,7 +393,7 @@ export default function CourseManagerTab() {
                             size="icon"
                             variant="ghost"
                             className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => deleteTask(t.id)}
+                            onClick={() => deleteItem(t.id)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -423,8 +420,7 @@ export default function CourseManagerTab() {
               </div>
               <Button
                 onClick={() =>
-                  eventDialog.openDialog({
-                    eventCategory: 'exam',
+                  itemDialog.openAddDialog('exam', {
                     courseId: selectedCourseId,
                   })
                 }
@@ -470,7 +466,7 @@ export default function CourseManagerTab() {
 
             <div className="space-y-2 max-h-[420px] overflow-auto">
               {upcomingExams
-                .sort((a, b) => a.date.localeCompare(b.date))
+                .sort((a, b) => compareDates(a.startsAt, b.startsAt))
                 .map(e => (
                   <div key={e.id} className="flex items-start gap-1">
                     {/* Chevron positioned outside the card */}
@@ -498,20 +494,16 @@ export default function CourseManagerTab() {
                       <div
                         className="flex items-start justify-between p-3 cursor-pointer"
                         onClick={() => {
-                          // Create exam event with proper format
-                          const examEvent = {
-                            ...e,
-                            date: e.date, // Keep the exam date format
-                          };
-                          eventDialog.openEditExamDialog(examEvent);
+                          // Edit exam using the item dialog
+                          itemDialog.openEditDialog(e);
                         }}
                       >
                         <div className="w-full">
                           <Badge variant="secondary" className="rounded-full self-start float-right">
                             {(() => {
-                              const examDate = new Date(e.date);
+                              const examDate = new Date(e.startsAt);
                               const today = new Date();
-                              const diffTime = examDate.getTime() - today.getTime();
+                              const diffTime = compareDates(examDate, today);
                               const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                               return diffDays <= 0
                                 ? tCommon('fields.today')
@@ -522,7 +514,7 @@ export default function CourseManagerTab() {
                           </Badge>
                           <div className="font-medium">{e.title}</div>
                           <div className="text-xs text-zinc-500">
-                            {formatDateDDMMYYYY(e.date)} · {e.weight}%
+                            {formatDateDDMMYYYY(new Date(e.startsAt).toISOString().split('T')[0])} · {e.weight}%
                           </div>
                         </div>
                       </div>
@@ -542,10 +534,9 @@ export default function CourseManagerTab() {
                               className="text-xs"
                               onContentChange={newContent => {
                                 // Update the exam with the new notes content
-                                updateExam(e.id, {
-                                  ...e,
+                                updateItem(e.id, {
                                   notes: newContent,
-                                });
+                                } as any);
                               }}
                               onProgressChange={progress => {
                                 setExamNotesProgress(prev => ({
@@ -568,7 +559,7 @@ export default function CourseManagerTab() {
                 <div className="text-xs uppercase tracking-wide text-zinc-500 mt-4">{tCommon('status.completed')}</div>
                 <div className="space-y-2">
                   {completedExams
-                    .sort((a, b) => b.date.localeCompare(a.date))
+                    .sort((a, b) => compareDates(b.startsAt, a.startsAt))
                     .map(e => (
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
@@ -600,12 +591,8 @@ export default function CourseManagerTab() {
                           <div
                             className="flex items-start justify-between p-3 cursor-pointer"
                             onClick={() => {
-                              // Create exam event with proper format
-                              const examEvent = {
-                                ...e,
-                                date: e.date, // Keep the exam date format
-                              };
-                              eventDialog.openEditExamDialog(examEvent);
+                              // Edit completed exam using the item dialog
+                              itemDialog.openEditDialog(e);
                             }}
                           >
                             <div className="flex-1">
@@ -614,7 +601,8 @@ export default function CourseManagerTab() {
                                 <span className="font-medium text-green-700 dark:text-green-400">{e.title}</span>
                               </div>
                               <div className="text-xs text-zinc-500 ml-6">
-                                {formatDateDDMMYYYY(e.date)} · {e.weight}% · Completed
+                                {formatDateDDMMYYYY(new Date(e.startsAt).toISOString().split('T')[0])} · {e.weight}% ·
+                                Completed
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -624,7 +612,7 @@ export default function CourseManagerTab() {
                                 className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                                 onClick={ev => {
                                   ev.stopPropagation();
-                                  toggleExamComplete(e.id);
+                                  updateItem(e.id, { isCompleted: false } as any);
                                 }}
                                 title="Mark as upcoming"
                               >
@@ -647,10 +635,9 @@ export default function CourseManagerTab() {
                                   className="text-xs"
                                   onContentChange={newContent => {
                                     // Update the exam with the new notes content
-                                    updateExam(e.id, {
-                                      ...e,
+                                    updateItem(e.id, {
                                       notes: newContent,
-                                    });
+                                    } as any);
                                   }}
                                 />
                               </div>
@@ -695,11 +682,11 @@ export default function CourseManagerTab() {
                 {courseExams
                   .sort((a, b) => {
                     // First sort by date (earliest first)
-                    const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+                    const dateComparison = compareDates(a.startsAt, b.startsAt);
                     if (dateComparison !== 0) return dateComparison;
 
                     // If dates are the same, sort alphabetically by title
-                    return a.title.localeCompare(b.title);
+                    return (a.title || '').localeCompare(b.title || '');
                   })
                   .map(exam => {
                     const currentGrade = courseGrades.find(g => g.examId === exam.id);
@@ -708,12 +695,8 @@ export default function CourseManagerTab() {
                         key={exam.id}
                         className="flex items-center justify-between bg-white/40 dark:bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
                         onClick={() => {
-                          // Create exam event with proper format
-                          const examEvent = {
-                            ...exam,
-                            date: exam.date, // Keep the exam date format
-                          };
-                          eventDialog.openEditExamDialog(examEvent);
+                          // Edit exam using the item dialog
+                          itemDialog.openEditDialog(exam);
                         }}
                       >
                         <div className="flex-1 min-w-0">
@@ -803,17 +786,19 @@ export default function CourseManagerTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Event Dialog for editing exams */}
-      <EventDialog
-        open={eventDialog.open}
-        onOpenChange={eventDialog.closeDialog}
-        editingEvent={eventDialog.editingEvent}
-        form={eventDialog.form}
-        setForm={eventDialog.setForm}
-        onSave={eventDialog.handleSave}
-        onDelete={eventDialog.handleDelete}
-        disableEventCategory={true}
-        disableCourse={true}
+      {/* Item Dialog for editing tasks and exams */}
+      <ItemDialog
+        open={itemDialog.open}
+        onOpenChange={itemDialog.onOpenChange}
+        editingItem={itemDialog.editingItem}
+        itemType={itemDialog.itemType}
+        form={itemDialog.form}
+        hidden={itemDialog.hidden}
+        disabled={itemDialog.disabled}
+        availableItemTypes={itemDialog.availableItemTypes}
+        onTypeChange={itemDialog.handleChangeItemType}
+        onSave={itemDialog.handleSave}
+        onDelete={itemDialog.handleDelete}
       />
     </div>
   );

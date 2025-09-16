@@ -86,13 +86,10 @@ function createInitialState(): AppState {
   return {
     // Core data
     sessions: [],
-    exams: [],
     examGrades: [],
-    tasks: [],
-    timetableEvents: [],
-    regularEvents: [],
     sessionTasks: [],
     weeklyGoals: [],
+    items: [],
     courses: [...DEFAULT_COURSES],
     selectedCourseId: DEFAULT_COURSES[0]?.id,
 
@@ -338,24 +335,10 @@ export const performGarbageCollection = async (): Promise<void> => {
     // Get current store state
     const currentStore = snapshot(store) as AppState;
 
-    // Scan regular events for file attachments in notes
-    currentStore.regularEvents.forEach(event => {
+    // Scan items for file attachments in notes
+    currentStore.items.forEach(event => {
       if (event.notes) {
         extractFileIds(event.notes);
-      }
-    });
-
-    // Scan exams for file attachments in notes
-    currentStore.exams.forEach(exam => {
-      if (exam.notes) {
-        extractFileIds(exam.notes);
-      }
-    });
-
-    // Scan tasks for file attachments in notes
-    currentStore.tasks.forEach(task => {
-      if (task.notes) {
-        extractFileIds(task.notes);
       }
     });
 

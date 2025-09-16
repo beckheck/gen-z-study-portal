@@ -1,0 +1,217 @@
+{
+  "common": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "close": "Close"
+    },
+    "fields": {
+      "title": "Title",
+      "course": "Course",
+      "notes": "Notes",
+      "color": "Color",
+      "type": "Type"
+    },
+    "placeholders": {
+      "selectCourse": "Select a course",
+      "notesPlaceholder": "Additional details..."
+    },
+    "warnings": {
+      "typeChangeWarning": "⚠️ Changing the type will preserve only the fields in common."
+    },
+    "validation": {
+      "idRequired": "ID is required",
+      "titleRequired": "Title is required",
+      "titleMinLength": "Title cannot be empty",
+      "courseRequired": "Course selection is required",
+      "isDeletedRequired": "Deletion status is required",
+      "createdAtRequired": "Creation timestamp is required",
+      "updatedAtRequired": "Update timestamp is required"
+    }
+  },
+  "task": {
+    "title": "Task",
+    "actions": {
+      "add": "Add Task",
+      "edit": "Edit Task",
+      "create": "Create Task",
+      "update": "Update Task",
+      "delete": "Delete Task"
+    },
+    "descriptions": {
+      "add": "Create a new task with due date and priority",
+      "edit": "Modify task details, due date, and completion status",
+      "create": "Create a new task with due date and priority",
+      "update": "Update task information and settings",
+      "delete": "Remove this task permanently"
+    },
+    "fields": {
+      "dueDate": "Due Date",
+      "priority": "Priority",
+      "completed": "Completed"
+    },
+    "placeholders": {
+      "title": "e.g., Submit Assignment",
+      "notes": "Additional task details..."
+    },
+    "validation": {
+      "dueAtRequired": "Due date is required",
+      "priorityRequired": "Priority is required",
+      "isCompletedRequired": "Completion status is required"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    }
+  },
+  "exam": {
+    "title": "Exam",
+    "actions": {
+      "add": "Add Exam",
+      "edit": "Edit Exam",
+      "create": "Create Exam",
+      "update": "Update Exam",
+      "delete": "Delete Exam"
+    },
+    "descriptions": {
+      "add": "Schedule a new exam with date, time, and weight",
+      "edit": "Modify exam details, schedule, and completion status",
+      "create": "Schedule a new exam with date, time, and weight",
+      "update": "Update exam information and settings",
+      "delete": "Remove this exam permanently"
+    },
+    "fields": {
+      "date": "Date",
+      "time": "Time",
+      "subject": "Subject",
+      "weight": "Weight (%)",
+      "completed": "Completed"
+    },
+    "placeholders": {
+      "title": "e.g., Midterm Exam",
+      "subject": "e.g., Calculus, History",
+      "notes": "Chapters, topics, allowed materials..."
+    },
+    "validation": {
+      "startsAtRequired": "Start date and time are required",
+      "startsAtTimeRequired": "Start time is required",
+      "weightRequired": "Weight percentage is required",
+      "weightMin": "Weight must be at least 0%",
+      "weightMax": "Weight cannot exceed 100%",
+      "isCompletedRequired": "Completion status is required"
+    }
+  },
+  "event": {
+    "title": "Event",
+    "actions": {
+      "add": "Add Event",
+      "edit": "Edit Event",
+      "create": "Create Event",
+      "update": "Update Event",
+      "delete": "Delete Event"
+    },
+    "descriptions": {
+      "add": "Create a new event with date, time, and location",
+      "edit": "Modify event details, schedule, and recurrence settings",
+      "create": "Create a new event with date, time, and location",
+      "update": "Update event information and settings",
+      "delete": "Remove this event permanently"
+    },
+    "fields": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "allDay": "All Day",
+      "location": "Location",
+      "recurring": "Recurring",
+      "recurrenceSettings": "Recurrence Settings",
+      "frequency": "Frequency",
+      "interval": "Interval",
+      "weekdays": "Weekdays",
+      "occurrences": "Occurrences",
+      "untilDate": "Until Date"
+    },
+    "placeholders": {
+      "title": "e.g., Math Olympics Week",
+      "location": "e.g., Main Auditorium",
+      "unlimited": "Leave blank for unlimited",
+      "notes": "Event details, agenda, etc."
+    },
+    "validation": {
+      "startsAtRequired": "Start date and time are required",
+      "startsAtTimeRequired": "Start time is required",
+      "endsAtRequired": "End date and time are required",
+      "endAfterStart": "End time must be after start time",
+      "isAllDayRequired": "All day setting is required",
+      "frequencyRequired": "Recurrence frequency is required",
+      "intervalRequired": "Recurrence interval is required",
+      "intervalMin": "Interval must be at least 1",
+      "weekdayMin": "Weekday must be between 0 (Sunday) and 6 (Saturday)",
+      "weekdayMax": "Weekday must be between 0 (Sunday) and 6 (Saturday)",
+      "countRequired": "Occurrence count is required",
+      "countMin": "Occurrence count must be at least 1",
+      "untilRequired": "End date for recurrence is required"
+    },
+    "frequency": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    }
+  },
+  "timetable": {
+    "title": "Timetable entry",
+    "block": "Block",
+    "actions": {
+      "add": "Add to Timetable",
+      "edit": "Edit Timetable Entry",
+      "create": "Create Timetable Entry",
+      "update": "Update Timetable Entry",
+      "delete": "Delete Timetable Entry"
+    },
+    "descriptions": {
+      "add": "Add a new class or activity to your weekly timetable",
+      "edit": "Modify timetable details, classroom, and teacher information",
+      "create": "Add a new class or activity to your weekly timetable",
+      "update": "Update timetable entry information and settings",
+      "delete": "Remove this timetable entry permanently"
+    },
+    "fields": {
+      "weekday": "Weekday",
+      "timeBlock": "Time Block",
+      "classroom": "Classroom",
+      "teacher": "Teacher/TA",
+      "activityType": "Activity"
+    },
+    "placeholders": {
+      "classroomExample": "e.g., A-101",
+      "teacherName": "Teacher's name"
+    },
+    "validation": {
+      "idRequired": "Block ID is required",
+      "startsAtRequired": "Start time is required",
+      "endsAtRequired": "End time is required",
+      "timeFormat": "Time must be in HH:MM format (e.g., 9:30)",
+      "blockIdRequired": "Time block selection is required",
+      "weekdayRequired": "Weekday is required",
+      "weekdayMin": "Weekday must be between 0 (Sunday) and 6 (Saturday)",
+      "weekdayMax": "Weekday must be between 0 (Sunday) and 6 (Saturday)",
+      "classroomRequired": "Classroom is required",
+      "classroomMinLength": "Classroom name cannot be empty",
+      "teacherRequired": "Teacher name is required",
+      "teacherMinLength": "Teacher name cannot be empty",
+      "activityTypeRequired": "Activity type is required",
+      "activityTypeMinLength": "Activity type cannot be empty"
+    },
+    "activityTypes": {
+      "lecture": "Lecture",
+      "lab": "Lab",
+      "tutorial": "Tutorial",
+      "workshop": "Workshop"
+    }
+  }
+}

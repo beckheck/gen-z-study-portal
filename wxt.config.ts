@@ -20,10 +20,6 @@ export default defineConfig({
         '@': '/src', // Path aliases for cleaner imports
       },
     },
-    define: {
-      // Ensure browser environment detection works
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-    },
   }),
 
   manifest: {

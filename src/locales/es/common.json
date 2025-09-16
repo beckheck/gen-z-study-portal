@@ -15,11 +15,6 @@
     "clear": "Limpiar",
     "done": "Hecho"
   },
-  "priorities": {
-    "low": "Baja",
-    "normal": "Normal",
-    "high": "Alta"
-  },
   "status": {
     "completed": "Completadas",
     "pending": "Pendientes",
@@ -46,7 +41,13 @@
     "none": "Ninguno",
     "all": "Todos",
     "low": "bajo",
-    "high": "alto"
+    "high": "alto",
+    "items": "Elementos",
+    "searchByTitle": "Buscar por título...",
+    "noItemsFound": "No se encontraron elementos que coincidan con tu búsqueda",
+    "noItemsYet": "Aún no hay elementos. ¡Haz clic en los botones de arriba para agregar algunos!",
+    "completed": "Completado",
+    "scrollForMore": "Desplázate para ver más"
   },
   "loadingScreen": {
     "loadingData": "Cargando tus datos de estudio...",

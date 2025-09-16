@@ -1,0 +1,217 @@
+{
+  "common": {
+    "actions": {
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "close": "Cerrar"
+    },
+    "fields": {
+      "title": "Título",
+      "course": "Curso",
+      "notes": "Notas",
+      "color": "Color",
+      "type": "Tipo"
+    },
+    "placeholders": {
+      "selectCourse": "Seleccionar un curso",
+      "notesPlaceholder": "Detalles adicionales..."
+    },
+    "warnings": {
+      "typeChangeWarning": "⚠️ Cambiar el tipo preservará solo los campos en común."
+    },
+    "validation": {
+      "idRequired": "El ID es obligatorio",
+      "titleRequired": "El título es obligatorio",
+      "titleMinLength": "El título no puede estar vacío",
+      "courseRequired": "La selección del curso es obligatoria",
+      "isDeletedRequired": "El estado de eliminación es obligatorio",
+      "createdAtRequired": "La marca de tiempo de creación es obligatoria",
+      "updatedAtRequired": "La marca de tiempo de actualización es obligatoria"
+    }
+  },
+  "task": {
+    "title": "Tarea",
+    "actions": {
+      "add": "Agregar Tarea",
+      "edit": "Editar Tarea",
+      "create": "Crear Tarea",
+      "update": "Actualizar Tarea",
+      "delete": "Eliminar Tarea"
+    },
+    "descriptions": {
+      "add": "Crear una nueva tarea con fecha de vencimiento y prioridad",
+      "edit": "Modificar detalles de la tarea, fecha de vencimiento y estado de completitud",
+      "create": "Crear una nueva tarea con fecha de vencimiento y prioridad",
+      "update": "Actualizar información y configuración de la tarea",
+      "delete": "Eliminar esta tarea permanentemente"
+    },
+    "fields": {
+      "dueDate": "Fecha de Vencimiento",
+      "priority": "Prioridad",
+      "completed": "Completada"
+    },
+    "placeholders": {
+      "title": "ej., Entregar Tarea",
+      "notes": "Detalles adicionales de la tarea..."
+    },
+    "validation": {
+      "dueAtRequired": "La fecha de vencimiento es obligatoria",
+      "priorityRequired": "La prioridad es obligatoria",
+      "isCompletedRequired": "El estado de completitud es obligatorio"
+    },
+    "priority": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "urgent": "Urgente"
+    }
+  },
+  "exam": {
+    "title": "Examen",
+    "actions": {
+      "add": "Agregar Examen",
+      "edit": "Editar Examen",
+      "create": "Crear Examen",
+      "update": "Actualizar Examen",
+      "delete": "Eliminar Examen"
+    },
+    "descriptions": {
+      "add": "Programar un nuevo examen con fecha, hora y peso",
+      "edit": "Modificar detalles del examen, horario y estado de completitud",
+      "create": "Programar un nuevo examen con fecha, hora y peso",
+      "update": "Actualizar información y configuración del examen",
+      "delete": "Eliminar este examen permanentemente"
+    },
+    "fields": {
+      "date": "Fecha",
+      "time": "Hora",
+      "subject": "Materia",
+      "weight": "Ponderación (%)",
+      "completed": "Completado"
+    },
+    "placeholders": {
+      "title": "ej., Examen Parcial",
+      "subject": "ej., Cálculo, Historia",
+      "notes": "Capítulos, temas, materiales permitidos..."
+    },
+    "validation": {
+      "startsAtRequired": "La fecha y hora de inicio son obligatorias",
+      "startsAtTimeRequired": "La hora de inicio es obligatoria",
+      "weightRequired": "El porcentaje de peso es obligatorio",
+      "weightMin": "El peso debe ser al menos 0%",
+      "weightMax": "El peso no puede exceder el 100%",
+      "isCompletedRequired": "El estado de completitud es obligatorio"
+    }
+  },
+  "event": {
+    "title": "Evento",
+    "actions": {
+      "add": "Agregar Evento",
+      "edit": "Editar Evento",
+      "create": "Crear Evento",
+      "update": "Actualizar Evento",
+      "delete": "Eliminar Evento"
+    },
+    "descriptions": {
+      "add": "Crear un nuevo evento con fecha, hora y ubicación",
+      "edit": "Modificar detalles del evento, horario y configuración de recurrencia",
+      "create": "Crear un nuevo evento con fecha, hora y ubicación",
+      "update": "Actualizar información y configuración del evento",
+      "delete": "Eliminar este evento permanentemente"
+    },
+    "fields": {
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha de Fin",
+      "startTime": "Hora de Inicio",
+      "endTime": "Hora de Fin",
+      "allDay": "Todo el Día",
+      "location": "Ubicación",
+      "recurring": "Recurrente",
+      "recurrenceSettings": "Configuración de Recurrencia",
+      "frequency": "Frecuencia",
+      "interval": "Intervalo",
+      "weekdays": "Días de la Semana",
+      "occurrences": "Ocurrencias",
+      "untilDate": "Hasta Fecha"
+    },
+    "placeholders": {
+      "title": "ej., Semana de Olimpiadas de Matemáticas",
+      "location": "ej., Auditorio Principal",
+      "unlimited": "Dejar en blanco para ilimitado",
+      "notes": "Detalles del evento, agenda, etc."
+    },
+    "validation": {
+      "startsAtRequired": "La fecha y hora de inicio son obligatorias",
+      "startsAtTimeRequired": "La hora de inicio es obligatoria",
+      "endsAtRequired": "La fecha y hora de fin son obligatorias",
+      "endAfterStart": "La hora de fin debe ser posterior a la de inicio",
+      "isAllDayRequired": "La configuración de todo el día es obligatoria",
+      "frequencyRequired": "La frecuencia de recurrencia es obligatoria",
+      "intervalRequired": "El intervalo de recurrencia es obligatorio",
+      "intervalMin": "El intervalo debe ser al menos 1",
+      "weekdayMin": "El día de la semana debe estar entre 0 (domingo) y 6 (sábado)",
+      "weekdayMax": "El día de la semana debe estar entre 0 (domingo) y 6 (sábado)",
+      "countRequired": "El número de ocurrencias es obligatorio",
+      "countMin": "El número de ocurrencias debe ser al menos 1",
+      "untilRequired": "La fecha de fin de recurrencia es obligatoria"
+    },
+    "frequency": {
+      "daily": "Diario",
+      "weekly": "Semanal",
+      "monthly": "Mensual",
+      "yearly": "Anual"
+    }
+  },
+  "timetable": {
+    "title": "Entrada de Horario",
+    "block": "Bloque",
+    "actions": {
+      "add": "Agregar al Horario",
+      "edit": "Editar Entrada del Horario",
+      "create": "Crear Entrada del Horario",
+      "update": "Actualizar Entrada del Horario",
+      "delete": "Eliminar Entrada del Horario"
+    },
+    "descriptions": {
+      "add": "Agregar una nueva clase o actividad a tu horario semanal",
+      "edit": "Modificar detalles del horario, aula e información del profesor",
+      "create": "Agregar una nueva clase o actividad a tu horario semanal",
+      "update": "Actualizar información y configuración de la entrada del horario",
+      "delete": "Eliminar esta entrada del horario permanentemente"
+    },
+    "fields": {
+      "weekday": "Día",
+      "timeBlock": "Bloque horario",
+      "classroom": "Aula",
+      "teacher": "Profesor/Ayudante",
+      "activityType": "Actividad"
+    },
+    "placeholders": {
+      "classroomExample": "ej., A-101",
+      "teacherName": "Nombre del profesor"
+    },
+    "validation": {
+      "idRequired": "El ID del bloque es obligatorio",
+      "startsAtRequired": "La hora de inicio es obligatoria",
+      "endsAtRequired": "La hora de fin es obligatoria",
+      "timeFormat": "La hora debe estar en formato HH:MM (ej., 9:30)",
+      "blockIdRequired": "La selección del bloque de tiempo es obligatoria",
+      "weekdayRequired": "El día de la semana es obligatorio",
+      "weekdayMin": "El día de la semana debe estar entre 0 (domingo) y 6 (sábado)",
+      "weekdayMax": "El día de la semana debe estar entre 0 (domingo) y 6 (sábado)",
+      "classroomRequired": "El aula es obligatoria",
+      "classroomMinLength": "El nombre del aula no puede estar vacío",
+      "teacherRequired": "El nombre del profesor es obligatorio",
+      "teacherMinLength": "El nombre del profesor no puede estar vacío",
+      "activityTypeRequired": "El tipo de actividad es obligatorio",
+      "activityTypeMinLength": "El tipo de actividad no puede estar vacío"
+    },
+    "activityTypes": {
+      "lecture": "Cátedra",
+      "lab": "Laboratorio",
+      "tutorial": "Ayudantía",
+      "workshop": "Taller"
+    }
+  }
+}

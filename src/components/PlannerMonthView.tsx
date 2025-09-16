@@ -3,7 +3,8 @@ import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressB
 import { Badge } from '@/components/ui/badge';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useExams, useRegularEvents, useTasks } from '@/hooks/useStore';
+import { useCourses, useItems } from '@/hooks/useStore';
+import { compareDates, isMultiDayEvent } from '@/lib/date-utils';
 import { useTranslation } from 'react-i18next';
 import { CalendarView } from '../types';
 import { useState } from 'react';
@@ -18,7 +19,7 @@ interface PlannerMonthViewProps {
   getAllEventsForDate: (date: Date) => any[];
   getAllEventsForTooltip: (date: Date) => any[];
   handleDayClick: (date: Date) => void;
-  eventDialog: any;
+  itemDialog: any;
 }
 
 export function PlannerMonthView({
@@ -29,33 +30,22 @@ export function PlannerMonthView({
   getAllEventsForDate,
   getAllEventsForTooltip,
   handleDayClick,
-  eventDialog,
+  itemDialog,
 }: PlannerMonthViewProps) {
   const { getCourseTitle } = useCourses();
-  const { regularEvents, updateRegularEvent } = useRegularEvents();
-  const { updateExam } = useExams();
-  const { updateTask } = useTasks();
+  const { getItemsByType, updateItem } = useItems();
   const { t } = useTranslation('planner');
   const { getShortDayNames, formatDate: localizedFormatDate, formatDateDDMMYYYY } = useLocalization();
+
+  // Get items by type
+  const regularEvents = getItemsByType('event');
 
   // Progress tracking for task-based notes in events
   const [eventNotesProgress, setEventNotesProgress] = useState<Record<string, ProgressData>>({});
 
   // Helper function to handle content changes for different event types
   const handleEventContentChange = (event: any, newContent: string) => {
-    switch (event.eventType) {
-      case 'exam':
-        updateExam(event.id, { ...event, notes: newContent });
-        break;
-      case 'regular':
-        updateRegularEvent(event.id, { ...event, notes: newContent });
-        break;
-      case 'task':
-        updateTask(event.id, { ...event, notes: newContent });
-        break;
-      default:
-        console.warn('Unknown event type:', event.eventType);
-    }
+    updateItem(event.id, { notes: newContent });
   };
 
   return (
@@ -78,10 +68,15 @@ export function PlannerMonthView({
           const tooltipEvents = getAllEventsForTooltip(date); // For tooltip, show all events including hidden multi-day
 
           // Check if this day has any multi-day events for border color
-          const allRegularEventsOnDay = tooltipEvents.filter(e => e.eventType === 'regular');
-          const multiDayEventsOnDay = allRegularEventsOnDay.filter(
-            e => e.isMultiDay !== false && e.endDate && e.endDate !== e.startDate
-          );
+          const allRegularEventsOnDay = tooltipEvents.filter(e => e.type === 'event');
+          // Calculate multi-day events using timezone-safe comparison
+          const multiDayEventsOnDay = allRegularEventsOnDay.filter(item => {
+            if (item.type !== 'event') return false;
+            // Check if event spans multiple days using timezone-safe comparison
+            const startDate = new Date(item.startsAt);
+            const endDate = new Date(item.endsAt);
+            return isMultiDayEvent(startDate, endDate);
+          });
           const hasMultiDayEvent = multiDayEventsOnDay.length > 0;
           const multiDayEventColor = hasMultiDayEvent ? multiDayEventsOnDay[0].color || '#6366f1' : null;
 
@@ -136,7 +131,7 @@ export function PlannerMonthView({
                     className="text-xs truncate flex items-center gap-1.5 p-1 rounded bg-white/50 dark:bg-white/10 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                     onClick={event => {
                       event.stopPropagation();
-                      eventDialog.openEditDialog(e);
+                      itemDialog.openEditDialog(e);
                     }}
                     title={t('messages.clickToEdit')}
                   >
@@ -170,7 +165,7 @@ export function PlannerMonthView({
                         className="space-y-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/50 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                         onClick={event => {
                           event.stopPropagation();
-                          eventDialog.openEditDialog(e);
+                          itemDialog.openEditDialog(e);
                         }}
                         title={t('messages.clickToEdit')}
                       >
@@ -181,7 +176,7 @@ export function PlannerMonthView({
 
                         <div className="text-sm text-zinc-600 dark:text-zinc-300 ml-4">
                           <div className="font-medium">{getCourseTitle(e.courseId)}</div>
-                          {e.displayTime && <div>{e.displayTime}</div>}
+                          <div>{t(`items:${e.type}.title`)}</div>
                           {e.location && <div>📍 {e.location}</div>}
                           {e.weight && <div>⚖️ Weight: {e.weight}%</div>}
                           {e.priority && <div>🎯 Priority: {e.priority}</div>}
@@ -220,73 +215,87 @@ export function PlannerMonthView({
 
       {/* Hidden Multi-Day Events Section */}
       {!showMultiDayEvents &&
-        regularEvents.some(e => e.isMultiDay !== false && e.endDate && e.endDate !== e.startDate) && (
+        regularEvents.some(item => {
+          if (item.type !== 'event') return false;
+          const startDate = new Date(item.startsAt);
+          const endDate = new Date(item.endsAt);
+          return isMultiDayEvent(startDate, endDate);
+        }) && (
           <div className="mt-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
               {t('messages.hiddenMultiDayEvents')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {regularEvents
-                .filter(
-                  e =>
-                    (filterCourse === 'all' || e.courseId === filterCourse) &&
-                    e.isMultiDay !== false &&
-                    e.endDate &&
-                    e.endDate !== e.startDate
-                )
-                .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-                .map(event => (
-                  <div
-                    key={event.id}
-                    className="bg-white/90 dark:bg-white/10 rounded-xl p-4 border-t-4 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                    style={{ borderTopColor: event.color || '#6366f1' }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      eventDialog.openEditRegularDialog(event);
-                    }}
-                    title={t('messages.clickToEdit')}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">{event.title}</div>
-                        <div className="text-sm text-zinc-600 dark:text-zinc-300 space-y-1">
-                          {event.courseId && <div>📚 {getCourseTitle(event.courseId)}</div>}
-                          <div>
-                            📅{' '}
-                            {event.isMultiDay
-                              ? `${formatDateDDMMYYYY(event.startDate)} - ${formatDateDDMMYYYY(event.endDate)}`
-                              : formatDateDDMMYYYY(event.startDate)}
-                          </div>
-                          {event.location && <div>📍 {event.location}</div>}
-                          {event.notes && (
-                            <div onClick={event => event.stopPropagation()}>
-                              <span className="mr-1">📝</span>
-                              <TasksProgressBar progress={eventNotesProgress[event.id]} className="mb-1 ml-4" />
-                              <RichTextDisplay
-                                content={event.notes}
-                                className="inline text-sm"
-                                onContentChange={newContent => {
-                                  // Regular events in multi-day view
-                                  updateRegularEvent(event.id, { ...event, notes: newContent });
-                                }}
-                                onProgressChange={progress => {
-                                  setEventNotesProgress(prev => ({
-                                    ...prev,
-                                    [event.id]: progress,
-                                  }));
-                                }}
-                              />
+                .filter(item => {
+                  if (item.type !== 'event') return false;
+                  const startDate = new Date(item.startsAt);
+                  const endDate = new Date(item.endsAt);
+                  const isMultiDay = isMultiDayEvent(startDate, endDate);
+                  return (filterCourse === 'all' || item.courseId === filterCourse) && isMultiDay;
+                })
+                .sort((itemA, itemB) => {
+                  if (itemA.type !== 'event' || itemB.type !== 'event') return 0;
+                  return compareDates(itemA.startsAt, itemB.startsAt);
+                })
+                .map(item => {
+                  if (item.type !== 'event') return null;
+                  const startDate = new Date(item.startsAt);
+                  const endDate = new Date(item.endsAt);
+                  const isMultiDay = isMultiDayEvent(startDate, endDate);
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white/90 dark:bg-white/10 rounded-xl p-4 border-t-4 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                      style={{ borderTopColor: item.color || '#6366f1' }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        itemDialog.openEditDialog(item);
+                      }}
+                      title={t('messages.clickToEdit')}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="font-semibold text-zinc-900 dark:text-zinc-100 mb-1">{item.title}</div>
+                          <div className="text-sm text-zinc-600 dark:text-zinc-300 space-y-1">
+                            {item.courseId && <div>📚 {getCourseTitle(item.courseId)}</div>}
+                            <div>
+                              📅{' '}
+                              {isMultiDay
+                                ? `${formatDateDDMMYYYY(startDate.toISOString().split('T')[0])} - ${formatDateDDMMYYYY(
+                                    endDate.toISOString().split('T')[0]
+                                  )}`
+                                : formatDateDDMMYYYY(startDate.toISOString().split('T')[0])}
                             </div>
-                          )}
+                            {item.location && <div>📍 {item.location}</div>}
+                            {item.notes && (
+                              <div onClick={event => event.stopPropagation()}>
+                                <span className="mr-1">📝</span>
+                                <TasksProgressBar progress={eventNotesProgress[item.id]} className="mb-1 ml-4" />
+                                <RichTextDisplay
+                                  content={item.notes}
+                                  className="inline text-sm"
+                                  onContentChange={newContent => handleEventContentChange(item, newContent)}
+                                  onProgressChange={progress => {
+                                    setEventNotesProgress(prev => ({
+                                      ...prev,
+                                      [item.id]: progress,
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        <div
+                          className="w-4 h-4 rounded-full flex-shrink-0 ml-2"
+                          style={{ backgroundColor: item.color || '#6366f1' }}
+                        ></div>
                       </div>
-                      <div
-                        className="w-4 h-4 rounded-full flex-shrink-0 ml-2"
-                        style={{ backgroundColor: event.color || '#6366f1' }}
-                      ></div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           </div>
         )}

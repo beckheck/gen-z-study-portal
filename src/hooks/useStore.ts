@@ -5,14 +5,10 @@ import type {
   Course,
   DegreePlan,
   ExamGrade,
-  ExamInput,
-  RegularEventInput,
+  Item,
+  SoundtrackPosition,
   StudySession,
   StudySessionTask,
-  SoundtrackPosition,
-  Task,
-  TaskInput,
-  TimetableEventInput,
   WeatherLocation,
   WeeklyGoal,
 } from '../types';
@@ -36,19 +32,16 @@ export function useCourses() {
   const state = useSnapshot(store);
 
   const clearCourseData = (courseId: string) => {
-    // Clear tasks
-    for (let i = store.tasks.length - 1; i >= 0; i--) {
-      if (store.tasks[i].courseId === courseId) {
-        store.tasks.splice(i, 1);
-      }
-    }
-
     // Clear exams and their grades
     const examIdsToDelete: string[] = [];
-    for (let i = store.exams.length - 1; i >= 0; i--) {
-      if (store.exams[i].courseId === courseId) {
-        examIdsToDelete.push(store.exams[i].id);
-        store.exams.splice(i, 1);
+
+    // Clear items
+    for (let i = store.items.length - 1; i >= 0; i--) {
+      if (store.items[i].courseId === courseId) {
+        if (store.items[i].type === 'exam') {
+          examIdsToDelete.push(store.items[i].id);
+        }
+        store.items.splice(i, 1);
       }
     }
 
@@ -56,20 +49,6 @@ export function useCourses() {
     for (let i = store.examGrades.length - 1; i >= 0; i--) {
       if (examIdsToDelete.includes(store.examGrades[i].examId)) {
         store.examGrades.splice(i, 1);
-      }
-    }
-
-    // Clear timetable events
-    for (let i = store.timetableEvents.length - 1; i >= 0; i--) {
-      if (store.timetableEvents[i].courseId === courseId) {
-        store.timetableEvents.splice(i, 1);
-      }
-    }
-
-    // Clear regular events
-    for (let i = store.regularEvents.length - 1; i >= 0; i--) {
-      if (store.regularEvents[i].courseId === courseId) {
-        store.regularEvents.splice(i, 1);
       }
     }
 
@@ -140,133 +119,16 @@ export function useCourses() {
 }
 
 /**
- * Hook to access and modify tasks
- */
-export function useTasks() {
-  const tasks = useSnapshot(store.tasks);
-
-  return {
-    tasks,
-    addTask: (task: TaskInput) => {
-      store.tasks.unshift({ ...task, id: uid(), done: false });
-    },
-    updateTask: (id: string, updatedTask: TaskInput) => {
-      const taskIndex = store.tasks.findIndex(t => t.id === id);
-      if (taskIndex !== -1) {
-        store.tasks[taskIndex] = { ...updatedTask, id, done: store.tasks[taskIndex].done };
-      }
-    },
-    toggleTask: (id: string) => {
-      const taskIndex = store.tasks.findIndex(t => t.id === id);
-      if (taskIndex !== -1) {
-        store.tasks[taskIndex].done = !store.tasks[taskIndex].done;
-      }
-    },
-    deleteTask: (id: string) => {
-      const taskIndex = store.tasks.findIndex(t => t.id === id);
-      if (taskIndex !== -1) {
-        store.tasks.splice(taskIndex, 1);
-      }
-    },
-    setTasks: (tasks: Task[]) => {
-      store.tasks = tasks;
-    },
-  };
-}
-
-/**
  * Hook to access and modify exams
  */
-export function useExams() {
+export function useExamGrades() {
   const state = useSnapshot(store);
 
   return {
-    exams: state.exams,
     examGrades: state.examGrades,
-    addExam: (exam: ExamInput) => {
-      store.exams.unshift({ ...exam, id: uid() });
-    },
-    updateExam: (id: string, updatedExam: ExamInput) => {
-      const examIndex = store.exams.findIndex(e => e.id === id);
-      if (examIndex !== -1) {
-        store.exams[examIndex] = { ...updatedExam, id };
-      }
-    },
-    deleteExam: (id: string) => {
-      // Remove exam
-      const examIndex = store.exams.findIndex(e => e.id === id);
-      if (examIndex !== -1) {
-        store.exams.splice(examIndex, 1);
-      }
-      // Remove associated grades
-      const gradeIndices = [];
-      for (let i = store.examGrades.length - 1; i >= 0; i--) {
-        if (store.examGrades[i].examId === id) {
-          gradeIndices.push(i);
-        }
-      }
-      gradeIndices.forEach(index => store.examGrades.splice(index, 1));
-    },
-    toggleExamComplete: (id: string) => {
-      const examIndex = store.exams.findIndex(e => e.id === id);
-      if (examIndex !== -1) {
-        store.exams[examIndex].completed = !store.exams[examIndex].completed;
-      }
-    },
+
     setExamGrades: (grades: ExamGrade[]) => {
       store.examGrades = grades;
-    },
-  };
-}
-
-/**
- * Hook to access and modify regular events
- */
-export function useRegularEvents() {
-  const regularEvents = useSnapshot(store.regularEvents);
-
-  return {
-    regularEvents,
-    addRegularEvent: (event: RegularEventInput) => {
-      store.regularEvents.unshift({ ...event, id: uid() });
-    },
-    updateRegularEvent: (id: string, updatedEvent: RegularEventInput) => {
-      const eventIndex = store.regularEvents.findIndex(e => e.id === id);
-      if (eventIndex !== -1) {
-        store.regularEvents[eventIndex] = { ...updatedEvent, id };
-      }
-    },
-    deleteRegularEvent: (id: string) => {
-      const eventIndex = store.regularEvents.findIndex(e => e.id === id);
-      if (eventIndex !== -1) {
-        store.regularEvents.splice(eventIndex, 1);
-      }
-    },
-  };
-}
-
-/**
- * Hook to access and modify timetable events
- */
-export function useTimetable() {
-  const timetableEvents = useSnapshot(store.timetableEvents);
-
-  return {
-    timetableEvents,
-    addTimetableEvent: (event: TimetableEventInput) => {
-      store.timetableEvents.push({ ...event, id: uid() });
-    },
-    updateTimetableEvent: (id: string, updatedEvent: TimetableEventInput) => {
-      const eventIndex = store.timetableEvents.findIndex(e => e.id === id);
-      if (eventIndex !== -1) {
-        store.timetableEvents[eventIndex] = { ...updatedEvent, id };
-      }
-    },
-    deleteTimetableEvent: (id: string) => {
-      const eventIndex = store.timetableEvents.findIndex(e => e.id === id);
-      if (eventIndex !== -1) {
-        store.timetableEvents.splice(eventIndex, 1);
-      }
     },
   };
 }
@@ -592,6 +454,96 @@ export function useWeeklyGoals() {
     },
     clearAllGoals: () => {
       store.weeklyGoals.length = 0;
+    },
+  };
+}
+
+/**
+ * Hook to access and modify items
+ */
+export function useItems() {
+  const items = useSnapshot(store.items);
+
+  return {
+    items,
+    getItemById: (id: string) => {
+      return items.find(item => item.id === id);
+    },
+    getItemsByType: (type: Item['type']) => {
+      return items.filter(item => item.type === type);
+    },
+    getItemsByCourse: (courseId: string) => {
+      return items.filter(item => item.courseId === courseId);
+    },
+    addItem: (item: Omit<Item, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const now = new Date();
+      const newItem = {
+        ...item,
+        id: uid(),
+        createdAt: now,
+        updatedAt: now,
+      } as Item;
+      store.items.unshift(newItem);
+      return newItem;
+    },
+    updateItem: (id: string, updates: Partial<Omit<Item, 'id' | 'createdAt'>>) => {
+      const itemIndex = store.items.findIndex(item => item.id === id);
+      if (itemIndex !== -1) {
+        const currentItem = store.items[itemIndex];
+        store.items[itemIndex] = {
+          ...currentItem,
+          ...updates,
+          updatedAt: new Date(),
+        } as Item;
+        return store.items[itemIndex];
+      }
+      return null;
+    },
+    deleteItem: (id: string) => {
+      const itemIndex = store.items.findIndex(item => item.id === id);
+      if (itemIndex !== -1) {
+        store.items.splice(itemIndex, 1);
+
+        // Remove associated grades
+        const gradeIndices = [];
+        for (let i = store.examGrades.length - 1; i >= 0; i--) {
+          if (store.examGrades[i].examId === id) {
+            gradeIndices.push(i);
+          }
+        }
+        gradeIndices.forEach(index => store.examGrades.splice(index, 1));
+
+        return true;
+      }
+      return false;
+    },
+    softDeleteItem: (id: string) => {
+      const itemIndex = store.items.findIndex(item => item.id === id);
+      if (itemIndex !== -1) {
+        store.items[itemIndex].isDeleted = true;
+        store.items[itemIndex].updatedAt = new Date();
+        return true;
+      }
+      return false;
+    },
+    restoreItem: (id: string) => {
+      const itemIndex = store.items.findIndex(item => item.id === id);
+      if (itemIndex !== -1) {
+        store.items[itemIndex].isDeleted = false;
+        store.items[itemIndex].updatedAt = new Date();
+        return true;
+      }
+      return false;
+    },
+    clearCourseItems: (courseId: string) => {
+      for (let i = store.items.length - 1; i >= 0; i--) {
+        if (store.items[i].courseId === courseId) {
+          store.items.splice(i, 1);
+        }
+      }
+    },
+    setItems: (items: Item[]) => {
+      store.items = items;
     },
   };
 }

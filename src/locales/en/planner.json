@@ -2,14 +2,13 @@
   "title": "Planner",
   "views": {
     "week": "Week",
-    "month": "Month"
+    "month": "Month",
+    "agenda": "Agenda"
   },
   "events": {
-    "addEvent": "Add Event",
     "addExam": "Add Exam",
     "addTask": "Add Task",
     "allDay": "All day",
-    "editEvent": "Edit Event",
     "editExam": "Edit Exam",
     "editTask": "Edit Task",
     "eventDetails": "Event Details",
@@ -31,11 +30,6 @@
     "title": "Title",
     "type": "Type",
     "weight": "Weight (%)"
-  },
-  "eventTypes": {
-    "exam": "Exam",
-    "regular": "Regular Event",
-    "task": "Task"
   },
   "goals": {
     "weeklyGoals": "Weekly Goals",

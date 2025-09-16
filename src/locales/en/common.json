@@ -15,11 +15,6 @@
     "clear": "Clear",
     "done": "Done"
   },
-  "priorities": {
-    "low": "Low",
-    "normal": "Normal",
-    "high": "High"
-  },
   "status": {
     "completed": "Completed",
     "pending": "Pending",
@@ -46,7 +41,13 @@
     "none": "None",
     "all": "All",
     "low": "low",
-    "high": "high"
+    "high": "high",
+    "items": "Items",
+    "searchByTitle": "Search by title...",
+    "noItemsFound": "No items found matching your search",
+    "noItemsYet": "No items yet. Click the buttons above to add some!",
+    "completed": "Completed",
+    "scrollForMore": "Scroll for more"
   },
   "loadingScreen": {
     "loadingData": "Loading your study data...",

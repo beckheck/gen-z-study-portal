@@ -2,6 +2,9 @@
 /// <reference types="wxt" />
 
 import React from 'react';
+import type { Item } from './items/models';
+
+export type { Item };
 
 interface BackgroundMessage_Tab {
   type: 'openStudyPortalTab';
@@ -142,46 +145,6 @@ export interface StudySessionTask {
 }
 
 /**
- * Task object for course management
- */
-export interface Task {
-  /** Unique identifier for the task */
-  id: string;
-  /** Title of the task */
-  title: string;
-  /** Due date of the task */
-  due: string;
-  /** Priority level ('low', 'normal', 'high') */
-  priority: string;
-  /** Id of the course this task belongs to */
-  courseId: string;
-  /** Whether the task is completed */
-  done: boolean;
-  /** Additional notes about the task */
-  notes?: string;
-}
-
-/**
- * Exam object for course management
- */
-export interface Exam {
-  /** Unique identifier for the exam */
-  id: string;
-  /** Title of the exam */
-  title: string;
-  /** Date of the exam */
-  date: string;
-  /** Weight percentage of the exam */
-  weight: number;
-  /** Additional notes about the exam */
-  notes: string;
-  /** Id of the course this exam belongs to */
-  courseId: string;
-  /** Whether the exam has been completed */
-  completed?: boolean;
-}
-
-/**
  * Exam grade object for tracking grades
  */
 export interface ExamGrade {
@@ -252,49 +215,6 @@ export interface OpenWeatherMapResponse {
  */
 export type SoundtrackPosition = 'dashboard' | 'floating' | 'minimized' | 'off';
 
-/**
- * Regular event object for planner
- */
-export interface RegularEvent {
-  /** Unique identifier for the event */
-  id: string;
-  /** Id of the course this event belongs to */
-  courseId: string;
-  /** Title of the event */
-  title: string;
-  /** Start date of the event */
-  startDate: string;
-  /** End date of the event (optional for single-day events) */
-  endDate?: string;
-  /** Whether the event spans multiple days */
-  isMultiDay?: boolean;
-  /** Location of the event */
-  location?: string;
-  /** Additional notes about the event */
-  notes?: string;
-  /** Color for the event */
-  color?: string;
-}
-
-/**
- * Input type for creating a new task (without ID)
- */
-export type TaskInput = Omit<Task, 'id' | 'done'>;
-
-/**
- * Input type for creating a new exam (without ID)
- */
-export type ExamInput = Omit<Exam, 'id'>;
-
-/**
- * Input type for creating a new regular event (without ID)
- */
-export type RegularEventInput = Omit<RegularEvent, 'id'>;
-
-/**
- * Input type for creating a new timetable event (without ID)
- */
-export type TimetableEventInput = Omit<TimetableEvent, 'id'>;
 
 /**
  * Generic position interface for UI elements
@@ -304,42 +224,6 @@ export interface Position {
   x: number;
   /** Y coordinate */
   y: number;
-}
-
-/**
- * Time block configuration for timetable scheduling
- */
-export interface TimeBlock {
-  /** Block identifier (e.g., '1', '2', '3') */
-  block: string;
-  /** Time range (e.g., '8:20 - 9:30') */
-  time: string;
-}
-
-/**
- * Timetable event object for weekly schedule
- */
-export interface TimetableEvent {
-  /** Unique identifier for the timetable event */
-  id: string;
-  /** Id of the course this event belongs to */
-  courseId: string;
-  /** Type of the event (e.g., 'Cátedra', 'Ayudantía', 'Taller', 'Laboratorio') */
-  eventType: string;
-  /** Classroom location */
-  classroom: string;
-  /** Teacher or TA name */
-  teacher: string;
-  /** Day of the week */
-  day: string;
-  /** Time block identifier */
-  block: string;
-  /** Start time */
-  startTime: string;
-  /** End time */
-  endTime: string;
-  /** Color for the event display */
-  color?: string;
 }
 
 /**
@@ -577,14 +461,11 @@ export interface FileAttachmentStore {
 }
 
 export interface AppState {
-  exams: Exam[];
   examGrades: ExamGrade[];
   sessions: StudySession[];
   sessionTasks: StudySessionTask[];
-  tasks: Task[];
-  timetableEvents: TimetableEvent[];
-  regularEvents: RegularEvent[];
   weeklyGoals: WeeklyGoal[];
+  items: Item[];
   courses: Course[];
   selectedCourseId: string;
   theme: ThemeState;

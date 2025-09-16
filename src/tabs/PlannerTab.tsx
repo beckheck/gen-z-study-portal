@@ -1,15 +1,17 @@
-import { EventDialog } from '@/components/EventDialog';
-import { EventDialogTrigger } from '@/components/EventDialogTrigger';
 import { PlannerMonthView } from '@/components/PlannerMonthView';
 import { PlannerWeekView } from '@/components/PlannerWeekView';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useEventDialog } from '@/hooks/useEventDialog';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useExams, useRegularEvents, useTasks } from '@/hooks/useStore';
-import { CalendarView } from '@/types';
+import { useCourses, useItems } from '@/hooks/useStore';
+import { ItemDialogTrigger } from '@/items/ItemDialogTrigger';
+import { ItemDialog } from '@/items/base/dialog';
+import { getItemMethods } from '@/items/methods';
+import { ItemDialogOptions, useItemDialog } from '@/items/useItemDialog';
+import { getDateString, isDateInRange, isMultiDayEvent, isSameDate } from '@/lib/date-utils';
+import { CalendarView, Item } from '@/types';
 import { CalendarDays, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,11 +20,14 @@ import { useTranslation } from 'react-i18next';
 // Planner (Week + Month views)
 // -----------------------------
 
+const addItemDialogOptions: ItemDialogOptions = {
+  hidden: { type: false },
+  availableItemTypes: ['event', 'exam', 'task'],
+};
+
 export default function PlannerTab() {
   const { courses } = useCourses();
-  const { tasks } = useTasks();
-  const { exams } = useExams();
-  const { regularEvents } = useRegularEvents();
+  const { items, getItemsByType } = useItems();
 
   // Localization hooks
   const { t } = useTranslation('planner');
@@ -34,8 +39,8 @@ export default function PlannerTab() {
   const [view, setView] = useState<'week' | 'month'>('month');
   const [weekOffset, setWeekOffset] = useState<number>(0);
 
-  // Event dialog hook
-  const eventDialog = useEventDialog();
+  // Item dialog hook
+  const itemDialog = useItemDialog();
 
   // Month data
   const now = new Date();
@@ -64,116 +69,63 @@ export default function PlannerTab() {
 
   // Handle day click to create new event with pre-filled date
   const handleDayClick = (date: Date): void => {
-    const dateString = date.toISOString().split('T')[0];
-    eventDialog.openDialog({ startDate: dateString });
+    const dateString = getDateString(date);
+    itemDialog.openAddDialog(
+      'event',
+      {
+        startsAt: dateString,
+        startsAtTime: '10:00',
+        endsAt: dateString,
+        endsAtTime: '11:00',
+      },
+      addItemDialogOptions
+    );
   };
 
   // Helper: get all events for a specific date
-  function getAllEventsForDate(date: Date): any[] {
-    const events = [];
-    const dateStr = date.toISOString().split('T')[0];
-
-    // Regular events - always include single-day events, multi-day events only if toggle is on
-    const regularEventsForDate = regularEvents
-      .filter(e => {
-        const startDate = new Date(e.startDate);
-        const endDate = e.endDate ? new Date(e.endDate) : startDate;
-        const currentDate = new Date(dateStr);
-        const isMultiDay = e.isMultiDay !== false && e.endDate && e.endDate !== e.startDate;
-
-        // Check if current date is within the event range
-        const isInRange = currentDate >= startDate && currentDate <= endDate;
-
-        // Include if: within range AND (single-day event OR multi-day event with toggle on)
-        return (
-          isInRange && (filterCourse === 'all' || e.courseId === filterCourse) && (!isMultiDay || showMultiDayEvents)
-        );
-      })
-      .map(e => ({
-        ...e,
-        eventType: 'regular',
-        time: '00:00',
-        displayTime: 'Event',
-        type: 'regular',
-      }));
-    events.push(...regularEventsForDate);
-
-    // Exams for this date
-    const dayExams = exams
-      .filter(e => e.date === dateStr && (filterCourse === 'all' || e.courseId === filterCourse))
-      .map(e => ({
-        ...e,
-        eventType: 'exam',
-        time: '00:00',
-        displayTime: 'Exam',
-        type: 'exam',
-      }));
-    events.push(...dayExams);
-
-    // Tasks due on this date
-    const dayTasks = tasks
-      .filter(t => t.due === dateStr && !t.done && (filterCourse === 'all' || t.courseId === filterCourse))
-      .map(t => ({
-        ...t,
-        eventType: 'task',
-        time: '00:00',
-        displayTime: 'Due',
-        type: 'task',
-      }));
-    events.push(...dayTasks);
-
-    return events.sort((a, b) => a.time.localeCompare(b.time));
+  function getAllEventsForDate(date: Date) {
+    return items.filter(item => {
+      if (item.type === 'timetable') {
+        return false;
+      }
+      if (item.type === 'task' && item.isCompleted) {
+        return false;
+      }
+      if (item.type == 'event') {
+        const isMultiDay = isMultiDayEvent(item.startsAt, item.endsAt);
+        if (isMultiDay && !showMultiDayEvents) {
+          return false;
+        }
+        const overlapsDay = isDateInRange(date, item.startsAt, item.endsAt);
+        if (overlapsDay) {
+          return true;
+        }
+      }
+      const methods = getItemMethods(item as Item);
+      const itemDate = methods.getDate();
+      return isSameDate(itemDate, date) && (filterCourse === 'all' || item.courseId === filterCourse);
+    });
   }
 
   // Helper: get all events for tooltip (including hidden multi-day events)
-  function getAllEventsForTooltip(date: Date): any[] {
-    const events = [];
-    const dateStr = date.toISOString().split('T')[0];
-
-    // ALL Regular events - for tooltip, show all regardless of toggle
-    const regularEventsForDate = regularEvents
-      .filter(e => {
-        const startDate = new Date(e.startDate);
-        const endDate = e.endDate ? new Date(e.endDate) : startDate;
-        const currentDate = new Date(dateStr);
-        return (
-          currentDate >= startDate && currentDate <= endDate && (filterCourse === 'all' || e.courseId === filterCourse)
-        );
-      })
-      .map(e => ({
-        ...e,
-        eventType: 'regular',
-        time: '00:00',
-        displayTime: 'Event',
-        type: 'regular',
-      }));
-    events.push(...regularEventsForDate);
-
-    // Exams for this date
-    const dayExams = exams
-      .filter(e => e.date === dateStr && (filterCourse === 'all' || e.courseId === filterCourse))
-      .map(e => ({
-        ...e,
-        eventType: 'exam',
-        time: '00:00',
-        displayTime: 'Exam',
-        type: 'exam',
-      }));
-    events.push(...dayExams);
-
-    // Tasks due on this date
-    const dayTasks = tasks
-      .filter(t => t.due === dateStr && !t.done && (filterCourse === 'all' || t.courseId === filterCourse))
-      .map(t => ({
-        ...t,
-        eventType: 'task',
-        time: '00:00',
-        displayTime: 'Due',
-        type: 'task',
-      }));
-    events.push(...dayTasks);
-
-    return events.sort((a, b) => a.time.localeCompare(b.time));
+  function getAllEventsForTooltip(date: Date) {
+    return items.filter(item => {
+      if (item.type === 'timetable') {
+        return false;
+      }
+      if (item.type === 'task' && item.isCompleted) {
+        return false;
+      }
+      if (item.type == 'event') {
+        const overlapsDay = isDateInRange(date, item.startsAt, item.endsAt);
+        if (overlapsDay) {
+          return true;
+        }
+      }
+      const methods = getItemMethods(item as Item);
+      const itemDate = methods.getDate();
+      return isSameDate(itemDate, date) && (filterCourse === 'all' || item.courseId === filterCourse);
+    });
   }
 
   return (
@@ -182,10 +134,10 @@ export default function PlannerTab() {
         <div className="flex items-center gap-3">
           <Select value={filterCourse} onValueChange={setFilterCourse}>
             <SelectTrigger className="w-48 rounded-xl">
-              <SelectValue placeholder={t('filters.filterByCourse')} />
+              <SelectValue placeholder={t('planner:filters.filterByCourse')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('filters.allCourses')}</SelectItem>
+              <SelectItem value="all">{t('planner:filters.allCourses')}</SelectItem>
               {courses.map(c => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.title}
@@ -200,14 +152,14 @@ export default function PlannerTab() {
             onClick={() => setView('week')}
             className="rounded-xl"
           >
-            {t('views.week')}
+            {t('planner:views.week')}
           </Button>
           <Button
             variant={view === 'month' ? 'default' : 'outline'}
             onClick={() => setView('month')}
             className="rounded-xl"
           >
-            {t('views.month')}
+            {t('planner:views.month')}
           </Button>
           {view === 'week' ? (
             <div className="flex items-center gap-2 ml-2">
@@ -259,24 +211,33 @@ export default function PlannerTab() {
                 onCheckedChange={setShowMultiDayEvents}
                 className="data-[state=checked]:bg-blue-600"
               />
-              <Label className="text-sm text-gray-900 dark:text-gray-100">{t('filters.showMultiDayEvents')}</Label>
+              <Label className="text-sm text-gray-900 dark:text-gray-100">
+                {t('planner:filters.showMultiDayEvents')}
+              </Label>
             </div>
           )}
-          <EventDialogTrigger onOpenDialog={() => eventDialog.openDialog()}>
+          <ItemDialogTrigger
+            itemType="event"
+            onOpenDialog={() => itemDialog.openAddDialog('event', null, addItemDialogOptions)}
+          >
             <Button className="rounded-xl">
               <Plus className="w-4 h-4 mr-2" />
-              {t('events.addEvent')}
+              {t('items:event.actions.add')}
             </Button>
-          </EventDialogTrigger>
+          </ItemDialogTrigger>
 
-          <EventDialog
-            open={eventDialog.open}
-            onOpenChange={eventDialog.onOpenChange}
-            form={eventDialog.form}
-            setForm={eventDialog.setForm}
-            editingEvent={eventDialog.editingEvent}
-            onSave={eventDialog.handleSave}
-            onDelete={eventDialog.handleDelete}
+          <ItemDialog
+            open={itemDialog.open}
+            onOpenChange={itemDialog.onOpenChange}
+            editingItem={itemDialog.editingItem}
+            itemType={itemDialog.itemType}
+            form={itemDialog.form}
+            hidden={itemDialog.hidden}
+            disabled={itemDialog.disabled}
+            availableItemTypes={itemDialog.availableItemTypes}
+            onTypeChange={itemDialog.handleChangeItemType}
+            onSave={itemDialog.handleSave}
+            onDelete={itemDialog.handleDelete}
           />
         </div>
       </div>
@@ -287,7 +248,7 @@ export default function PlannerTab() {
           startOfWeek={startOfWeek}
           getAllEventsForDate={getAllEventsForDate}
           handleDayClick={handleDayClick}
-          eventDialog={eventDialog}
+          itemDialog={itemDialog}
         />
       ) : (
         <PlannerMonthView
@@ -298,7 +259,7 @@ export default function PlannerTab() {
           getAllEventsForDate={getAllEventsForDate}
           getAllEventsForTooltip={getAllEventsForTooltip}
           handleDayClick={handleDayClick}
-          eventDialog={eventDialog}
+          itemDialog={itemDialog}
         />
       )}
     </div>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useExams, useRegularEvents, useTasks, useWeeklyGoals } from '@/hooks/useStore';
+import { useCourses, useItems, useWeeklyGoals } from '@/hooks/useStore';
 import { Plus, Target, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,38 +20,24 @@ interface PlannerWeekViewProps {
   startOfWeek: Date;
   getAllEventsForDate: (date: Date) => any[];
   handleDayClick: (date: Date) => void;
-  eventDialog: any;
+  itemDialog: any;
 }
 
 export function PlannerWeekView({
   startOfWeek,
   getAllEventsForDate,
   handleDayClick,
-  eventDialog,
+  itemDialog,
 }: PlannerWeekViewProps) {
   const { getCourseTitle } = useCourses();
   const { weeklyGoals, addGoal, toggleGoal, deleteGoal, clearAllGoals } = useWeeklyGoals();
-  const { updateExam } = useExams();
-  const { updateTask } = useTasks();
-  const { updateRegularEvent } = useRegularEvents();
+  const { updateItem } = useItems();
   const { t } = useTranslation('planner');
   const { getShortDayNames } = useLocalization();
 
   // Helper function to handle content changes for different event types
   const handleEventContentChange = (event: any, newContent: string) => {
-    switch (event.eventType) {
-      case 'exam':
-        updateExam(event.id, { ...event, notes: newContent });
-        break;
-      case 'regular':
-        updateRegularEvent(event.id, { ...event, notes: newContent });
-        break;
-      case 'task':
-        updateTask(event.id, { ...event, notes: newContent });
-        break;
-      default:
-        console.warn('Unknown event type:', event.eventType);
-    }
+    updateItem(event.id, { notes: newContent });
   };
 
   const [goalForm, setGoalForm] = useState<{ title: string }>({ title: '' });
@@ -232,7 +218,7 @@ export function PlannerWeekView({
                             className="flex-1 group relative bg-white/70 dark:bg-white/5 p-2.5 rounded-xl cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                             onClick={event => {
                               event.stopPropagation();
-                              eventDialog.openEditDialog(e);
+                              itemDialog.openEditDialog(e);
                             }}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -242,7 +228,8 @@ export function PlannerWeekView({
                                   <span className="font-medium truncate text-sm">{e.title || e.type}</span>
                                 </div>
                                 <div className="text-xs text-zinc-500 truncate">
-                                  {e.displayTime && `${e.displayTime} · `}
+                                  {t(`items:${e.type}.title`)}
+                                  {` · `}
                                   {getCourseTitle(e.courseId)}
                                   {e.location && ` · ${e.location}`}
                                   {e.weight && ` · ${e.weight}%`}
@@ -276,7 +263,7 @@ export function PlannerWeekView({
                       className="group relative flex flex-row items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl mb-2 cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                       onClick={event => {
                         event.stopPropagation();
-                        eventDialog.openEditDialog(e);
+                        itemDialog.openEditDialog(e);
                       }}
                     >
                       <div className="flex-1 min-w-0">
@@ -285,7 +272,8 @@ export function PlannerWeekView({
                           <span className="font-medium truncate text-sm">{e.title || e.type}</span>
                         </div>
                         <div className="text-xs text-zinc-500 truncate mt-0">
-                          {e.displayTime && `${e.displayTime} · `}
+                          {t(`items:${e.type}.title`)}
+                          {` · `}
                           {getCourseTitle(e.courseId)}
                           <span className="inline">
                             {e.location && ` · ${e.location}`}

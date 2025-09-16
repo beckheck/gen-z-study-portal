@@ -1,13 +1,8 @@
-import { DEFAULT_HYDRATION_SETTINGS, DEFAULT_MOOD_EMOJIS, DEFAULT_FOCUS_TIMER_CONFIG } from '@/stores/app';
-import { AppState, SoundtrackPosition } from '@/types';
-import { uid } from './utils';
+import { DEFAULT_FOCUS_TIMER_CONFIG, DEFAULT_HYDRATION_SETTINGS, DEFAULT_MOOD_EMOJIS } from '@/stores/app';
+import { AppState, Item, SoundtrackPosition } from '@/types';
+import { createLocalMidnightDate } from './date-utils';
 
 type StateUpdater = (updates: Partial<AppState>) => void;
-
-interface GenericEvent {
-  id: string;
-  [key: string]: any;
-}
 
 export class DataTransfer {
   private getState: () => AppState;
@@ -24,21 +19,9 @@ export class DataTransfer {
       version: '2',
       courses: state.courses,
       sessions: state.sessions,
-      exams: state.exams,
       examGrades: state.examGrades,
-      tasks: state.tasks,
-      timetableEvents: state.timetableEvents,
-      regularEvents: state.regularEvents.map(
-        o =>
-          ({
-            ...o,
-            endDate: o.endDate,
-            isMultiDay: o.isMultiDay,
-            location: o.location,
-            notes: o.notes,
-          } satisfies ExchangeFormatV2['regularEvents'][number])
-      ),
       sessionTasks: state.sessionTasks,
+      items: convertDatesToTimestamps(state.items, /(At|^until)$/),
       weeklyGoals: state.weeklyGoals,
       degreePlan: {
         name: state.degreePlan.name,
@@ -122,15 +105,21 @@ export class DataTransfer {
   }
 
   private importDataV2(data: ExchangeFormatV2) {
+    const convertedItems = convertLegacyItems(data);
+
+    // Combine existing items with converted items
+    const existingItems = data.items ? (convertTimestampsToDates(data.items, /(At|^until)$/) as Item[]) : [];
+    const items = [...existingItems, ...convertedItems];
+
     this.setState({
       courses: data.courses,
       degreePlan: {
         name: data.degreePlan.name || 'Degree Plan',
         ...data.degreePlan,
       },
-      exams: data.exams,
       examGrades: data.examGrades,
       sessionTasks: data.sessionTasks,
+      items,
       weeklyGoals: data.weeklyGoals,
       selectedCourseId: data.settings.selectedCourseId,
       wellness: {
@@ -184,69 +173,7 @@ export class DataTransfer {
         endTs: new Date(o.endTs).getTime(),
       })),
     });
-
-    this.setState({
-      tasks: data.tasks,
-    });
-
-    // Merge with existing timetable events, preserving user-assigned colors
-    const mergedTimetableEvents = mergeEvents(
-      this.getState().timetableEvents || [],
-      data.timetableEvents,
-      ['day', 'startTime', 'endTime', 'eventType'], // Key fields to match events
-      ['color'] // Fields to preserve from existing events (changed from 'hexColor' to 'color')
-    );
-    this.setState({ timetableEvents: mergedTimetableEvents });
-
-    // Merge with existing regular events, preserving user-assigned colors
-    const mergedRegularEvents = mergeEvents(
-      this.getState().regularEvents || [],
-      data.regularEvents,
-      ['title', 'startDate'], // Key fields to match events
-      ['color'] // Fields to preserve from existing events
-    );
-    this.setState({ regularEvents: mergedRegularEvents });
   }
-}
-
-// Helper function to merge events preserving user customizations
-function mergeEvents<T extends GenericEvent>(
-  existingEvents: T[],
-  importedEvents: T[],
-  keyFields: (keyof T)[],
-  preserveFields: (keyof T)[]
-): T[] {
-  const merged = [...existingEvents];
-
-  importedEvents.forEach(importedEvent => {
-    // Find existing event that matches the key fields
-    const existingIndex = merged.findIndex(existing => {
-      return keyFields.every(field => existing[field] === importedEvent[field]);
-    });
-
-    if (existingIndex >= 0) {
-      // Event exists, merge while preserving user customizations
-      const existing = merged[existingIndex];
-      const mergedEvent = { ...importedEvent };
-
-      // Preserve user customizations
-      preserveFields.forEach(field => {
-        if (existing[field] !== undefined && existing[field] !== null) {
-          (mergedEvent as any)[field] = existing[field];
-        }
-      });
-
-      // Keep the existing ID to maintain references
-      mergedEvent.id = existing.id;
-
-      merged[existingIndex] = mergedEvent as T;
-    } else {
-      // New event, add it
-      merged.push(importedEvent);
-    }
-  });
-
-  return merged;
 }
 
 interface ExchangeFormatV2 {
@@ -266,7 +193,7 @@ interface ExchangeFormatV2 {
     moodEnd?: number;
     note?: string;
   }>;
-  exams: Array<{
+  exams?: Array<{
     id: string;
     courseId: string;
     title: string;
@@ -278,7 +205,7 @@ interface ExchangeFormatV2 {
     examId: string;
     grade: number;
   }>;
-  tasks: Array<{
+  tasks?: Array<{
     id: string;
     courseId: string;
     title: string;
@@ -287,7 +214,7 @@ interface ExchangeFormatV2 {
     done: boolean;
     notes?: string;
   }>;
-  timetableEvents: Array<{
+  timetableEvents?: Array<{
     id: string;
     courseId: string;
     eventType: string;
@@ -299,7 +226,7 @@ interface ExchangeFormatV2 {
     block: string;
     color?: string;
   }>;
-  regularEvents: Array<{
+  regularEvents?: Array<{
     id: string;
     courseId: string;
     title: string;
@@ -316,6 +243,7 @@ interface ExchangeFormatV2 {
     done: boolean;
     createdAt: number;
   }>;
+  items: XItem[];
   degreePlan: {
     name: string;
     semesters: Array<{
@@ -357,13 +285,16 @@ interface ExchangeFormatV2 {
       dailyGoalOZ: number;
       unit: 'metric' | 'imperial';
     };
-    dailyHydration?: Record<string, {
-      intake: number;
-      goal: number;
-      unit: 'metric' | 'imperial';
-      useCups: boolean;
-      savedAt: number;
-    }>;
+    dailyHydration?: Record<
+      string,
+      {
+        intake: number;
+        goal: number;
+        unit: 'metric' | 'imperial';
+        useCups: boolean;
+        savedAt: number;
+      }
+    >;
   };
   fileAttachments: {
     files: Record<
@@ -444,4 +375,226 @@ interface ExchangeFormatV2 {
     };
     activeTabsByMode?: Record<string, string>;
   };
+}
+
+// Inlined Item type definitions
+type XItemBase = {
+  id: string;
+  title?: string;
+  courseId: string;
+  color?: string;
+  notes?: string;
+  tags?: string[];
+  isDeleted: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type XItemTask = XItemBase & {
+  type: 'task';
+  dueAt: number;
+  priority: 'low' | 'medium' | 'high';
+  isCompleted: boolean;
+};
+
+type XItemExam = XItemBase & {
+  type: 'exam';
+  startsAt: number;
+  weight: number;
+  isCompleted: boolean;
+};
+
+type XItemEvent = XItemBase & {
+  type: 'event';
+  startsAt: number;
+  endsAt: number;
+  isAllDay: boolean;
+  recurrence?: {
+    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    interval: number;
+    byWeekday?: number[];
+    count?: number;
+    until?: number;
+  };
+  location?: string;
+};
+
+type XItemTimetable = XItemBase & {
+  type: 'timetable';
+  blockId: string;
+  weekday: number;
+  classroom?: string;
+  teacher?: string;
+  activityType: string;
+};
+
+type XItem = XItemTask | XItemExam | XItemEvent | XItemTimetable;
+
+function convertLegacyItems(data: ExchangeFormatV2) {
+  const convertedExamItems: Item[] = (data.exams || []).map(exam => ({
+    id: exam.id,
+    type: 'exam' as const,
+    title: exam.title,
+    courseId: exam.courseId,
+    color: undefined,
+    notes: exam.notes,
+    tags: undefined,
+    isDeleted: false,
+    createdAt: new Date(), // Use current time since we don't have original createdAt
+    updatedAt: new Date(),
+    // Exam-specific fields
+    startsAt: createLocalMidnightDate(exam.date), // Convert date string to Date object at local midnight
+    weight: exam.weight,
+    isCompleted: false, // Default to false since legacy exams don't have this field
+  }));
+
+  // Convert legacy tasks to items for migration to new item system
+  const convertedTaskItems: Item[] = (data.tasks || []).map(task => {
+    // Normalize priority to match the expected enum values
+    let priority: 'low' | 'medium' | 'high' = 'medium'; // default
+    if (task.priority) {
+      const normalizedPriority = task.priority.toLowerCase();
+      if (normalizedPriority === 'low' || normalizedPriority === 'high') {
+        priority = normalizedPriority;
+      }
+    }
+    return {
+      id: task.id,
+      type: 'task' as const,
+      title: task.title,
+      courseId: task.courseId,
+      color: undefined,
+      notes: task.notes || '',
+      tags: undefined,
+      isDeleted: false,
+      createdAt: new Date(), // Use current time since we don't have original createdAt
+      updatedAt: new Date(),
+      // Task-specific fields
+      dueAt: createLocalMidnightDate(task.due), // Convert due date string to Date object at local midnight
+      priority,
+      isCompleted: task.done,
+    };
+  });
+
+  // Convert legacy regularEvents to items for migration to new item system
+  const convertedEventItems: Item[] = (data.regularEvents || []).map(event => ({
+    id: event.id,
+    type: 'event' as const,
+    title: event.title,
+    courseId: event.courseId,
+    color: event.color,
+    notes: event.notes || '',
+    tags: undefined,
+    isDeleted: false,
+    createdAt: new Date(), // Use current time since we don't have original createdAt
+    updatedAt: new Date(),
+    // Event-specific fields
+    startsAt: createLocalMidnightDate(event.startDate), // Convert start date string to Date object at local midnight
+    endsAt: event.endDate ? createLocalMidnightDate(event.endDate) : createLocalMidnightDate(event.startDate),
+    isAllDay: true,
+    location: event.location || undefined,
+    recurrence: undefined, // Regular events don't have recurrence data in the old format
+  }));
+
+  // Convert legacy timetableEvents to items for migration to new item system
+  const convertedTimetableItems: Item[] = (data.timetableEvents || []).map(timetableEvent => {
+    // Convert eventType to activityType
+    const eventTypeMap: Record<string, string> = {
+      Cátedra: 'lecture',
+      Ayudantía: 'tutorial',
+      Taller: 'workshop',
+      Laboratorio: 'lab',
+    };
+
+    // Convert day names to weekday numbers (0=Sunday, 1=Monday, ..., 6=Saturday)
+    const dayToWeekdayMap: Record<string, number> = {
+      Sunday: 0,
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6,
+    };
+
+    const activityType = eventTypeMap[timetableEvent.eventType] || timetableEvent.eventType.toLowerCase();
+    const weekday = dayToWeekdayMap[timetableEvent.day] ?? 1; // Default to Monday if not found
+
+    return {
+      id: timetableEvent.id,
+      type: 'timetable' as const,
+      title: `${timetableEvent.eventType}`, // Use eventType as title since timetable items don't have explicit titles
+      courseId: timetableEvent.courseId,
+      color: timetableEvent.color,
+      notes: '',
+      tags: undefined,
+      isDeleted: false,
+      createdAt: new Date(), // Use current time since we don't have original createdAt
+      updatedAt: new Date(),
+      // Timetable-specific fields
+      blockId: timetableEvent.block,
+      weekday,
+      classroom: timetableEvent.classroom || undefined,
+      teacher: timetableEvent.teacher || undefined,
+      activityType,
+    };
+  });
+  const convertedItems = [
+    ...convertedExamItems,
+    ...convertedTaskItems,
+    ...convertedEventItems,
+    ...convertedTimetableItems,
+  ];
+  return convertedItems;
+}
+
+/**
+ * Recursively converts Date objects to timestamps for properties matching the given pattern
+ */
+function convertDatesToTimestamps(obj: any, keyPattern: RegExp): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  if (obj instanceof Date) {
+    return obj.getTime();
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertDatesToTimestamps(item, keyPattern));
+  }
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (keyPattern.test(key)) {
+        result[key] = value instanceof Date ? value.getTime() : value;
+      } else {
+        result[key] = convertDatesToTimestamps(value, keyPattern);
+      }
+    }
+    return result;
+  }
+  return obj;
+}
+
+/**
+ * Recursively converts timestamps to Date objects for properties matching the given pattern
+ */
+function convertTimestampsToDates(obj: any, keyPattern: RegExp): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertTimestampsToDates(item, keyPattern));
+  }
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (keyPattern.test(key) && typeof value === 'number') {
+        result[key] = new Date(value);
+      } else {
+        result[key] = convertTimestampsToDates(value, keyPattern);
+      }
+    }
+    return result;
+  }
+  return obj;
 }

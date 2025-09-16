@@ -7,7 +7,10 @@ import { useSettingsDialogContext } from '@/components/settings/SettingsDialogPr
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { useCourses, useExams, useSoundtrack, useTasks, useWeather } from '@/hooks/useStore';
+import { useCourses, useItems, useSoundtrack, useWeather } from '@/hooks/useStore';
+import { ItemTask } from '@/items/task/modelSchema';
+import { ItemExam } from '@/items/exam/modelSchema';
+import { isDateAfterOrEqual, isDateBefore, compareDates } from '@/lib/date-utils';
 import { AlertTriangle, CalendarDays, ChevronDown, ChevronRight } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,11 +25,30 @@ interface DashboardTabProps {
 export default function DashboardTab({ onTabChange }: DashboardTabProps) {
   const { t } = useTranslation('common');
   const { setSelectedCourse } = useCourses();
-  const { tasks, toggleTask } = useTasks();
-  const { exams, toggleExamComplete } = useExams();
+  const { getItemsByType, updateItem } = useItems();
+  
+  // Get items by type
+  const tasks = getItemsByType('task') as ItemTask[];
+  const exams = getItemsByType('exam') as ItemExam[];
+  
   const { weather } = useWeather();
   const { soundtrack, setSoundtrackPosition } = useSoundtrack();
   const { openDialog } = useSettingsDialogContext();
+
+  // Helper functions for item updates
+  const toggleTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      updateItem(taskId, { isCompleted: !task.isCompleted } as any);
+    }
+  };
+
+  const toggleExamComplete = (examId: string) => {
+    const exam = exams.find(e => e.id === examId);
+    if (exam) {
+      updateItem(examId, { isCompleted: !exam.isCompleted } as any);
+    }
+  };
 
   const [nextUpExpanded, setNextUpExpanded] = useState<number>(0); // Number of additional "pages" shown (0 = collapsed)
   const [isAnimating, setIsAnimating] = useState(false);
@@ -97,20 +119,17 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
                     (
                     {(() => {
                       const today = new Date();
-                      today.setHours(0, 0, 0, 0);
 
                       const overdueExams = exams.filter(e => {
-                        if (e.completed) return false;
-                        const examDate = new Date(e.date);
-                        examDate.setHours(0, 0, 0, 0);
-                        return examDate.getTime() < today.getTime();
+                        if (e.isCompleted) return false;
+                        const examDate = new Date(e.startsAt);
+                        return isDateBefore(examDate, today);
                       }).length;
 
                       const overdueTasks = tasks.filter(t => {
-                        if (t.done || !t.due) return false;
-                        const taskDate = new Date(t.due);
-                        taskDate.setHours(0, 0, 0, 0);
-                        return taskDate.getTime() < today.getTime();
+                        if (t.isCompleted || !t.dueAt) return false;
+                        const taskDate = new Date(t.dueAt);
+                        return isDateBefore(taskDate, today);
                       }).length;
 
                       return overdueExams + overdueTasks;
@@ -165,29 +184,26 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         {(() => {
           // Calculate if there are more items to show
           const today = new Date();
-          today.setHours(0, 0, 0, 0);
 
-          let filteredExams = exams.slice().filter(e => !e.completed);
-          let filteredTasks = tasks.slice().filter(t => !t.done);
+          let filteredExams = exams.slice().filter(e => !e.isCompleted);
+          let filteredTasks = tasks.slice().filter(t => !t.isCompleted);
 
           // Filter out pending items if hidePending is true
           if (hidePending) {
             filteredExams = filteredExams.filter(e => {
-              const examDate = new Date(e.date);
-              examDate.setHours(0, 0, 0, 0);
-              return examDate.getTime() >= today.getTime();
+              const examDate = new Date(e.startsAt);
+              return isDateAfterOrEqual(examDate, today);
             });
 
             filteredTasks = filteredTasks.filter(t => {
-              if (!t.due) return true;
-              const taskDate = new Date(t.due);
-              taskDate.setHours(0, 0, 0, 0);
-              return taskDate.getTime() >= today.getTime();
+              if (!t.dueAt) return true;
+              const taskDate = new Date(t.dueAt);
+              return isDateAfterOrEqual(taskDate, today);
             });
           }
 
-          const allExams = filteredExams.sort((a, b) => a.date.localeCompare(b.date));
-          const allTasks = filteredTasks.sort((a, b) => a.due.localeCompare(b.due));
+          const allExams = filteredExams.sort((a, b) => compareDates(a.startsAt, b.startsAt));
+          const allTasks = filteredTasks.sort((a, b) => compareDates(a.dueAt, b.dueAt));
 
           const currentExamCount = 5 + nextUpExpanded * 3; // Changed from 3 to 5 to match tasks
           const currentTaskCount = 5 + nextUpExpanded * 3;

@@ -1,27 +1,25 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import ColorPicker from '@/components/ui/color-picker';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLocalization } from '@/hooks/useLocalization';
-import { useCourses, useTimetable } from '@/hooks/useStore';
-import type { TimeBlock, TimetableEvent, TimetableEventInput } from '@/types';
-import { Plus, Trash2 } from 'lucide-react';
+import { useCourses, useItems } from '@/hooks/useStore';
+import { ItemDialog } from '@/items/base/dialog';
+import { ITEM_TIMETABLE_ACTIVITY_TYPES, ItemTimetable, TIME_BLOCKS } from '@/items/timetable/modelSchema';
+import { useItemDialog } from '@/items/useItemDialog';
+import { Plus } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function TimetableTab() {
   const { t } = useTranslation('timetable');
-  const { t: tCommon } = useTranslation('common');
   const { getDayNames, getShortDayNames } = useLocalization();
-  const { courses, getCourseTitle } = useCourses();
-  const { timetableEvents, addTimetableEvent, updateTimetableEvent, deleteTimetableEvent } = useTimetable();
-  const [showAddEvent, setShowAddEvent] = useState<boolean>(false);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const [draggedEvent, setDraggedEvent] = useState<TimetableEvent | null>(null);
+  const { getCourseTitle } = useCourses();
+  const { getItemsByType, updateItem, deleteItem } = useItems();
+  const itemDialog = useItemDialog();
+
+  // Get timetable events from the unified item system
+  const timetableEvents = getItemsByType('timetable') as ItemTimetable[];
+
+  const [draggedEvent, setDraggedEvent] = useState<ItemTimetable | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ day: string; block: string } | null>(null);
   const dragCounter = useRef(0);
 
@@ -49,123 +47,54 @@ export default function TimetableTab() {
     return dayIndex !== -1 ? toTitleCase(shortDayNames[dayIndex]) : englishDay.slice(0, 3);
   };
 
-  // Event types
-  const activityTypesEnum = {
-    catedra: 'Cátedra',
-    ayudantia: 'Ayudantía',
-    taller: 'Taller',
-    laboratorio: 'Laboratorio',
-  };
-  const activityTypes: string[] = [
-    activityTypesEnum.catedra,
-    activityTypesEnum.ayudantia,
-    activityTypesEnum.taller,
-    activityTypesEnum.laboratorio,
-  ];
+  // Time blocks - use the unified TIME_BLOCKS but convert to legacy format for UI compatibility
+  const timeBlocks = TIME_BLOCKS.map(block => ({
+    block: block.id,
+    time: `${block.startsAt} - ${block.endsAt}`,
+  }));
 
-  // Default timetable event input values to avoid redundancy
-  const DEFAULT_TIMETABLE_EVENT_INPUT: TimetableEventInput = {
-    courseId: courses[0].id,
-    eventType: activityTypes[0],
-    classroom: '',
-    teacher: '',
-    day: weekDays[0], // Use English day name as key
-    block: '1',
-    startTime: '8:20',
-    endTime: '9:30',
-    color: '#7c3aed',
-  };
-
-  // Reset event input to default values
-  const resetEventInput = () => {
-    setEventInput(DEFAULT_TIMETABLE_EVENT_INPUT);
-  };
-
-  const [eventInput, setEventInput] = useState<TimetableEventInput>(DEFAULT_TIMETABLE_EVENT_INPUT);
-
-  // Time blocks with their start and end times
-  const timeBlocks: TimeBlock[] = [
-    { block: '1', time: '8:20 - 9:30' },
-    { block: '2', time: '9:40 - 10:50' },
-    { block: '3', time: '11:00 - 12:10' },
-    { block: '4', time: '12:20 - 13:30' },
-    { block: '5', time: '14:50 - 16:00' },
-    { block: '6', time: '16:10 - 17:20' },
-  ];
-
-  // Handle block selection and set corresponding times
-  const handleBlockChange = (value: string): void => {
-    const selectedBlock = value;
-    const blockInfo = timeBlocks.find(block => block.block === selectedBlock);
-
-    if (blockInfo) {
-      const [startTime, endTime] = blockInfo.time.split(' - ');
-      setEventInput({
-        ...eventInput,
-        block: selectedBlock,
-        startTime: startTime,
-        endTime: endTime,
-      });
-    }
+  // Helper function to convert English day name to weekday number
+  const getWeekdayNumber = (dayName: string): number => {
+    const dayMapping = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+    return dayMapping[dayName as keyof typeof dayMapping] || 1;
   };
 
   // Handle empty cell click to add new event
   const handleCellClick = (day: string, block: string): void => {
-    // Find the time block info
-    const blockInfo = timeBlocks.find(tb => tb.block === block);
-    const [startTime, endTime] = blockInfo ? blockInfo.time.split(' - ') : ['8:20', '9:30'];
-
-    // Pre-fill the form with the clicked cell's day and block
-    setEventInput({
-      ...DEFAULT_TIMETABLE_EVENT_INPUT,
-      day: day,
-      block: block,
-      startTime: startTime,
-      endTime: endTime,
+    // Open the item dialog with pre-filled values
+    itemDialog.openAddDialog('timetable', {
+      weekday: getWeekdayNumber(day),
+      blockId: block,
+      activityType: ITEM_TIMETABLE_ACTIVITY_TYPES[0],
+      classroom: '',
+      teacher: '',
     });
-
-    // Reset editing state and show the form
-    setIsEditing(false);
-    setShowAddEvent(true);
-  };
-
-  // Add a new event or update existing one
-  const addEvent = (): void => {
-    if (isEditing && editingEventId) {
-      // Update existing event
-      updateTimetableEvent(editingEventId, eventInput);
-    } else {
-      // Add new event
-      addTimetableEvent(eventInput);
-    }
-
-    setIsEditing(false);
-    setEditingEventId(null);
-    setShowAddEvent(false);
   };
 
   // Start editing an event
-  const editEvent = (event: TimetableEvent): void => {
-    // Remove the id field when setting eventInput since TimetableEventInput doesn't have id
-    const { id, ...eventWithoutId } = event;
-    setEventInput(eventWithoutId);
-    setIsEditing(true);
-    setEditingEventId(id);
-    setShowAddEvent(true);
+  const editEvent = (event: ItemTimetable): void => {
+    itemDialog.openEditDialog(event);
   };
 
-  // Delete an event
-  const deleteEvent = (id: string): void => {
-    deleteTimetableEvent(id);
+  // Helper function to get time display for an event
+  const getEventTimeDisplay = (event: ItemTimetable): string => {
+    const block = TIME_BLOCKS.find(b => b.id === event.blockId);
+    return block ? `${block.startsAt} - ${block.endsAt}` : '';
+  };
+
+  // Helper function to get activity type display
+  const getActivityTypeDisplay = (activityType: string): string => {
+    return t(`items:timetable.activityTypes.${activityType}`);
   };
 
   // Filter events for a specific day and block
-  const getEventForDayAndBlock = (day: string, block: string): TimetableEvent[] => {
-    return timetableEvents.filter(event => event.day === day && event.block === block);
+  const getEventForDayAndBlock = (day: string, block: string): ItemTimetable[] => {
+    const weekday = getWeekdayNumber(day);
+    return timetableEvents.filter(event => event.weekday === weekday && event.blockId === block);
   };
 
   // Drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, event: TimetableEvent) => {
+  const handleDragStart = (e: React.DragEvent, event: ItemTimetable) => {
     setDraggedEvent(event);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', event.id);
@@ -201,24 +130,15 @@ export default function TimetableTab() {
 
     if (!draggedEvent) return;
 
+    const targetWeekday = getWeekdayNumber(targetDay);
+
     // Check if the event is being dropped in a different cell
-    if (draggedEvent.day !== targetDay || draggedEvent.block !== targetBlock) {
-      // Find the time block info for the target
-      const blockInfo = timeBlocks.find(tb => tb.block === targetBlock);
-      const [startTime, endTime] = blockInfo ? blockInfo.time.split(' - ') : ['8:20', '9:30'];
-
-      // Update the event with new day, block, and times
-      const updatedEvent = {
-        ...draggedEvent,
-        day: targetDay,
-        block: targetBlock,
-        startTime: startTime,
-        endTime: endTime,
-      };
-
-      // Remove the id field since updateTimetableEvent expects TimetableEventInput
-      const { id, ...eventWithoutId } = updatedEvent;
-      updateTimetableEvent(draggedEvent.id, eventWithoutId);
+    if (draggedEvent.weekday !== targetWeekday || draggedEvent.blockId !== targetBlock) {
+      // Update the event with new weekday and block
+      updateItem(draggedEvent.id, {
+        weekday: targetWeekday,
+        blockId: targetBlock,
+      } as any);
     }
 
     setDraggedEvent(null);
@@ -237,19 +157,9 @@ export default function TimetableTab() {
                 {t('description')}
               </CardDescription>
             </div>
-            <Button
-              onClick={() => {
-                setShowAddEvent(!showAddEvent);
-                if (!showAddEvent) {
-                  setIsEditing(false);
-                  setEditingEventId(null);
-                  resetEventInput();
-                }
-              }}
-              className="rounded-xl"
-            >
+            <Button onClick={() => itemDialog.openAddDialog('timetable')} className="rounded-xl">
               <Plus className="w-4 h-4 mr-2" />
-              {t('addEvent')}
+              {t('items:timetable.actions.add')}
             </Button>
           </CardTitle>
         </CardHeader>
@@ -267,7 +177,7 @@ export default function TimetableTab() {
           {timeBlocks.map(({ block, time }) => (
             <div key={block} className="grid grid-cols-6 gap-2 mb-3">
               <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 flex items-center">
-                {t('timeBlocks.block')} {block}
+                {t('items:timetable.block')} {block}
                 <br />
                 {time}
               </div>
@@ -318,7 +228,7 @@ export default function TimetableTab() {
                           {getCourseTitle(event.courseId)}
                         </div>
                         <div className="text-xs sm:text-xs text-zinc-600 dark:text-zinc-400 font-medium">
-                          {event.eventType}
+                          {getActivityTypeDisplay(event.activityType)}
                         </div>
 
                         {/* Hover details popup */}
@@ -333,19 +243,19 @@ export default function TimetableTab() {
                             </div>
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                            <span className="font-medium">{t('hover.type')}</span> {event.eventType}
+                            <span className="font-medium">{t('items:common.fields.type')}:</span>{' '}
+                            {getActivityTypeDisplay(event.activityType)}
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                            <span className="font-medium">{t('hover.time')}</span> {event.startTime} - {event.endTime}
+                            <span className="font-medium">{t('items:timetable.fields.timeBlock')}:</span>{' '}
+                            {getEventTimeDisplay(event)}
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                            <span className="font-medium">{t('hover.classroom')}</span> {event.classroom}
+                            <span className="font-medium">{t('items:timetable.fields.classroom')}:</span>{' '}
+                            {event.classroom}
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                            <span className="font-medium">
-                              {event.eventType === activityTypesEnum.catedra ? t('hover.teacher') : t('hover.ta')}
-                            </span>{' '}
-                            {event.teacher}
+                            <span className="font-medium">{t('items:timetable.fields.teacher')}:</span> {event.teacher}
                           </div>
                         </div>
                       </div>
@@ -370,168 +280,20 @@ export default function TimetableTab() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Event Dialog */}
-      <Dialog
-        open={showAddEvent}
-        onOpenChange={open => {
-          setShowAddEvent(open);
-          if (!open) {
-            setIsEditing(false);
-            setEditingEventId(null);
-          }
-        }}
-      >
-        <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
-          <DialogHeader className="">
-            <DialogTitle className="text-gray-900 dark:text-gray-100">
-              {isEditing ? t('editEvent') : t('addEvent')}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="course" className="text-gray-700 dark:text-gray-300">
-                {t('fields.course')}
-              </Label>
-              <Select
-                value={eventInput.courseId}
-                onValueChange={(value: string) => setEventInput({ ...eventInput, courseId: value })}
-              >
-                <SelectTrigger id="course" className="mt-1 rounded-xl">
-                  <SelectValue placeholder={t('placeholders.selectCourse')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {getCourseTitle(c.id)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="eventType" className="text-gray-700 dark:text-gray-300">
-                {t('fields.eventType')}
-              </Label>
-              <Select
-                value={eventInput.eventType}
-                onValueChange={(value: string) => setEventInput({ ...eventInput, eventType: value })}
-              >
-                <SelectTrigger id="eventType" className="mt-1 rounded-xl">
-                  <SelectValue placeholder={t('placeholders.selectEventType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {activityTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="day" className="text-gray-700 dark:text-gray-300">
-                {t('fields.day')}
-              </Label>
-              <Select
-                value={eventInput.day}
-                onValueChange={(value: string) => setEventInput({ ...eventInput, day: value })}
-              >
-                <SelectTrigger id="day" className="mt-1 rounded-xl">
-                  <SelectValue placeholder={t('placeholders.selectDay')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {weekDays.map(day => (
-                    <SelectItem key={day} value={day}>
-                      {getTranslatedDayName(day)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="block" className="text-gray-700 dark:text-gray-300">
-                {t('fields.timeBlock')}
-              </Label>
-              <Select value={eventInput.block} onValueChange={handleBlockChange}>
-                <SelectTrigger id="block" className="mt-1 rounded-xl">
-                  <SelectValue placeholder={t('placeholders.selectTimeBlock')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeBlocks.map(block => (
-                    <SelectItem key={block.block} value={block.block}>
-                      {t('timeBlocks.block')} {block.block}: {block.time}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="classroom" className="text-gray-700 dark:text-gray-300">
-                {t('fields.classroom')}
-              </Label>
-              <Input
-                id="classroom"
-                value={eventInput.classroom}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setEventInput({ ...eventInput, classroom: e.target.value })
-                }
-                placeholder={t('placeholders.classroom')}
-                className="mt-1 rounded-xl"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="teacher" className="text-gray-700 dark:text-gray-300">
-                {eventInput.eventType === activityTypesEnum.catedra ? t('fields.teacherName') : t('fields.taName')}
-              </Label>
-              <Input
-                id="teacher"
-                value={eventInput.teacher}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setEventInput({ ...eventInput, teacher: e.target.value })
-                }
-                placeholder={
-                  eventInput.eventType === activityTypesEnum.catedra
-                    ? t('placeholders.teacherName')
-                    : t('placeholders.taName')
-                }
-                className="mt-1 rounded-xl"
-              />
-            </div>
-
-            <ColorPicker
-              label={t('fields.eventColor')}
-              value={eventInput.color}
-              onChange={color => setEventInput({ ...eventInput, color })}
-              htmlFor="event-color"
-            />
-
-            <div className="flex gap-2">
-              <Button onClick={addEvent} className="flex-1 rounded-xl">
-                {tCommon('actions.save')}
-              </Button>
-              {isEditing && editingEventId && (
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    deleteEvent(editingEventId);
-                    setShowAddEvent(false);
-                    setIsEditing(false);
-                    setEditingEventId(null);
-                  }}
-                  className="rounded-xl px-4"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Unified Item Dialog */}
+      <ItemDialog
+        open={itemDialog.open}
+        onOpenChange={itemDialog.onOpenChange}
+        editingItem={itemDialog.editingItem}
+        itemType={itemDialog.itemType}
+        form={itemDialog.form}
+        hidden={itemDialog.hidden}
+        disabled={itemDialog.disabled}
+        availableItemTypes={itemDialog.availableItemTypes}
+        onTypeChange={itemDialog.handleChangeItemType}
+        onSave={itemDialog.handleSave}
+        onDelete={itemDialog.handleDelete}
+      />
     </div>
   );
 }

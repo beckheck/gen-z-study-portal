@@ -798,6 +798,7 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
 
@@ -859,6 +860,20 @@ export function RichTextEditor({
           editor.chain().setTextSelection(endPos).run();
         }, 0);
       }
+
+      // Add focus handler to scroll editor into view
+      editor.view.dom.addEventListener('focus', () => {
+        // Use a slight delay to ensure the focus has been fully processed
+        setTimeout(() => {
+          if (editorContainerRef.current) {
+            editorContainerRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest',
+              inline: 'nearest',
+            });
+          }
+        }, 100);
+      });
 
       // Add click handlers for file attachments and checkboxes
       editor.view.dom.addEventListener('click', event => {
@@ -1491,6 +1506,7 @@ export function RichTextEditor({
 
   return (
     <div
+      ref={editorContainerRef}
       className={cn(
         'border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden',
         'bg-white dark:bg-gray-800',

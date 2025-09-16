@@ -1,29 +1,19 @@
-import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressBar';
+import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { useCourses } from '@/hooks/useStore';
-
-// Color chips for different event types
-const typeColors: Record<string, string> = {
-  class: 'bg-violet-500',
-  lab: 'bg-emerald-500',
-  workshop: 'bg-amber-500',
-  assistantship: 'bg-sky-500',
-  exam: 'bg-rose-500',
-  task: 'bg-amber-500',
-  regular: 'bg-indigo-500',
-};
+import { useTranslation } from 'react-i18next';
 
 // Shared event type indicator component
 export const EventTypeIndicator = ({ event, size = 'sm' }: { event: any; size?: 'sm' | 'md' }) => {
   const sizeClass = size === 'md' ? 'w-2.5 h-2.5' : 'w-2 h-2';
 
-  if (event.eventType === 'exam') {
+  if (event.type === 'exam') {
     return <span className={`flex-shrink-0 inline-block rounded-full bg-rose-500 ${sizeClass}`}></span>;
   }
-  if (event.eventType === 'task') {
+  if (event.type === 'task') {
     return <span className={`flex-shrink-0 inline-block rounded-full bg-amber-500 ${sizeClass}`}></span>;
   }
-  if (event.eventType === 'regular') {
+  if (event.type === 'event') {
     return (
       <span
         className={`flex-shrink-0 rounded-full ${sizeClass}`}
@@ -47,6 +37,7 @@ export const EventTooltip = ({
   onProgressChange?: (progress: ProgressData) => void;
 }) => {
   const { getCourseTitle } = useCourses();
+  const { t } = useTranslation();
   return (
     <div
       style={{
@@ -67,7 +58,7 @@ export const EventTooltip = ({
         </div>
         <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
           <div>{getCourseTitle(event.courseId)}</div>
-          {event.displayTime && <div>{event.displayTime}</div>}
+          <div>{t(`items:${event.type}.title`)}</div>
           {event.location && <div>{event.location}</div>}
           {event.weight && <div>Weight: {event.weight}%</div>}
           {event.priority && <div>Priority: {event.priority}</div>}

@@ -2,9 +2,10 @@ import { cn } from '@/lib/utils';
 import { Check, ChevronDown } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
-interface SimpleSelectOption {
+export interface SimpleSelectOption {
   value: string;
   label: React.ReactNode;
+  disabled?: boolean;
 }
 
 interface SimpleSelectProps {
@@ -108,11 +109,14 @@ export function SimpleSelect({
               <button
                 key={option.value}
                 type="button"
-                onClick={() => handleOptionSelect(option.value)}
+                disabled={option.disabled}
+                onClick={() => !option.disabled && handleOptionSelect(option.value)}
                 className={cn(
                   'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none',
                   'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                  value === option.value && 'bg-accent text-accent-foreground'
+                  value === option.value && 'bg-accent text-accent-foreground',
+                  option.disabled &&
+                    'opacity-80 cursor-not-allowed hover:bg-transparent hover:text-current focus:bg-transparent focus:text-current'
                 )}
               >
                 <span className="flex-1 text-left flex items-center">{option.label}</span>
