@@ -23,10 +23,12 @@ import SettingsTab from '@/tabs/SettingsTab';
 import StudyTrackerTab from '@/tabs/StudyTrackerTab';
 import TestTab from '@/tabs/TestTab';
 import TimetableTab from '@/tabs/TimetableTab';
+import UglyCalendarPlannerTab from '@/tabs/UglyCalendarPlannerTab';
 import WellnessTab from '@/tabs/WellnessTab';
 import { motion } from 'framer-motion';
 import {
   Brain,
+  Calendar,
   CalendarDays,
   CalendarRange,
   ChevronUp,
@@ -91,6 +93,9 @@ export default function StudyPortal(): React.JSX.Element {
     { value: 'dashboard', label: t('navigation.dashboard'), icon: Home },
     { value: 'planner', label: t('navigation.planner'), icon: CalendarDays },
     { value: 'timetable', label: t('navigation.timetable'), icon: CalendarRange },
+    ...(import.meta.env.VITE_FEATURE_UGLY_CALENDAR
+      ? [{ value: 'ugly-calendar', label: 'Ugly Calendar', icon: Calendar }]
+      : []),
     { value: 'courses', label: t('navigation.courses'), icon: NotebookPen },
     { value: 'degree-plan', label: t('navigation.degreePlan'), icon: GraduationCap },
     { value: 'study', label: t('navigation.study'), icon: Brain },
@@ -327,6 +332,12 @@ export default function StudyPortal(): React.JSX.Element {
               <TabsContent value="planner">
                 <PlannerTab />
               </TabsContent>
+
+              {import.meta.env.VITE_FEATURE_UGLY_CALENDAR && (
+                <TabsContent value="ugly-calendar">
+                  <UglyCalendarPlannerTab />
+                </TabsContent>
+              )}
 
               <TabsContent value="timetable">
                 <TimetableTab />

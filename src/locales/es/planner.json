@@ -69,7 +69,14 @@
     "noEvents": "Sin eventos programados",
     "noGoalsSet": "No hay metas establecidas para esta semana.\n¡Agrega una para comenzar! 🎯",
     "taskDetails": "Detalles adicionales de la tarea...",
-    "upcoming": "Próximamente"
+    "upcoming": "Próximamente",
+    "noEventsInRange": "No hay eventos en este rango de tiempo"
+  },
+  "labels": {
+    "date": "Fecha",
+    "time": "Hora",
+    "event": "Evento",
+    "more": "más"
   },
   "placeholders": {
     "locationExample": "ej., Auditorio Principal",

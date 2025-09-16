@@ -69,7 +69,14 @@
     "noEvents": "No events scheduled",
     "noGoalsSet": "No goals set for this week.\nAdd one to get started! 🎯",
     "taskDetails": "Additional task details...",
-    "upcoming": "Upcoming"
+    "upcoming": "Upcoming",
+    "noEventsInRange": "No events in this time range"
+  },
+  "labels": {
+    "date": "Date",
+    "time": "Time",
+    "event": "Event",
+    "more": "more"
   },
   "placeholders": {
     "locationExample": "e.g., Main Auditorium",
