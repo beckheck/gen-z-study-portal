@@ -45,19 +45,13 @@ export default function SettingsTab() {
   }, []);
 
   // Map menu items to their refs for scroll-to functionality
-  const refMap = {
-    courses: useRef<HTMLDivElement>(null),
-    about: useRef<HTMLDivElement>(null),
-    focusTimer: useRef<HTMLDivElement>(null),
-    soundtrack: useRef<HTMLDivElement>(null),
-    background: useRef<HTMLDivElement>(null),
-    customCursor: useRef<HTMLDivElement>(null),
-    accentColor: useRef<HTMLDivElement>(null),
-    cardOpacity: useRef<HTMLDivElement>(null),
-    backgroundGradient: useRef<HTMLDivElement>(null),
-    hydration: useRef<HTMLDivElement>(null),
-    weatherApi: useRef<HTMLDivElement>(null),
-  };
+  const menuRefMap: Record<string, HTMLDivElement> = {};
+  const setMenuRef = useCallback(
+    (id: string) => (node: HTMLDivElement | null) => {
+      menuRefMap[id] = node;
+    },
+    []
+  );
 
   // Scroll to section function
   const scrollToSection = useCallback(
@@ -71,21 +65,19 @@ export default function SettingsTab() {
         window.history.replaceState(null, '', newHash);
       }
 
-      const ref = refMap[menuId as keyof typeof refMap];
-      if (ref?.current) {
-        const el = ref.current as HTMLDivElement;
-
+      const menuRef = menuRefMap[menuId];
+      if (menuRef) {
         if (menuItems[0].id === menuId) {
           scrollToTop();
         } else {
-          el.scrollIntoView({
+          menuRef.scrollIntoView({
             behavior: 'smooth',
             block: 'start',
           });
         }
 
-        el.tabIndex = -1; // Make it focusable for screen readers
-        el.focus({ preventScroll: true });
+        menuRef.tabIndex = -1; // Make it focusable for screen readers
+        menuRef.focus({ preventScroll: true });
       }
     },
     [scrollToTop]
@@ -535,7 +527,7 @@ export default function SettingsTab() {
       <div className="flex-1">
         <div className="space-y-6 pb-24 md:pb-6">
           {menuItems.map(({ id, render }) => (
-            <div key={id} ref={refMap[id]} className="scroll-mt-section">
+            <div key={id} ref={setMenuRef(id)} className="scroll-mt-section">
               {render()}
             </div>
           ))}
