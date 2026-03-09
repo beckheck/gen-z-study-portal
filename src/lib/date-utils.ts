@@ -145,12 +145,9 @@ export function calculateDDay(targetDate: Date | number | string): string | null
 
   const diffDays = getDaysDifference(today, target);
 
-  // Add 1 day to all calculations (preserving existing behavior)
-  const adjustedDiff = diffDays + 1;
-
-  if (adjustedDiff === 0) return 'D-Day';
-  if (adjustedDiff > 0) return `D-${adjustedDiff}`;
-  return `D+${Math.abs(adjustedDiff)}`;
+  if (diffDays === 0) return 'D-Day';
+  if (diffDays > 0) return `D-${diffDays}`;
+  return `D+${Math.abs(diffDays)}`;
 }
 
 /**

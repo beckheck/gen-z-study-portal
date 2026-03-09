@@ -16,6 +16,7 @@ interface SemesterForm {
   credits: string;
   prerequisites: string;
   corequisites: string;
+  finalGrade: string;
 }
 
 export default function DegreePlanTab() {
@@ -51,6 +52,7 @@ export default function DegreePlanTab() {
     credits: '',
     prerequisites: '',
     corequisites: '',
+    finalGrade: '',
   });
 
   // Degree Plan Management Functions
@@ -135,6 +137,7 @@ export default function DegreePlanTab() {
       credits: '',
       prerequisites: '',
       corequisites: '',
+      finalGrade: '',
     });
     setDegreePlanDialog(false);
   }
@@ -387,7 +390,14 @@ export default function DegreePlanTab() {
                                 </div>
                                 <div className="text-xs text-zinc-500 mt-1 flex items-center justify-between">
                                   <span>{t('course.creditsShort', { count: parseInt(course.credits || '0') })}</span>
-                                  {isCompleted && <Check className="w-3 h-3 text-green-600" />}
+                                  <div className="flex items-center gap-1">
+                                    {course.finalGrade && (
+                                      <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                        {course.finalGrade}
+                                      </span>
+                                    )}
+                                    {isCompleted && <Check className="w-3 h-3 text-green-600" />}
+                                  </div>
                                 </div>
                               </div>
                               <Button
@@ -403,6 +413,7 @@ export default function DegreePlanTab() {
                                     credits: course.credits,
                                     prerequisites: course.prerequisites || '',
                                     corequisites: course.corequisites || '',
+                                    finalGrade: course.finalGrade || '',
                                   });
                                   setCurrentSemester(semester.number);
                                   setDegreePlanStep('courses');
@@ -477,47 +488,70 @@ export default function DegreePlanTab() {
               {degreePlanStep === 'view' && t('view.description')}
             </DialogDescription>
             
-            {/* Degree Plan Name Section */}
-            <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-              <div className="space-y-2">
-                <Label htmlFor="degree-plan-name-dialog" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                  {t('settings.degreePlanName')}
-                </Label>
-                <div className="flex gap-2">
+            {/* Degree Plan Name Section - Only show when not editing a course */}
+            {degreePlanStep !== 'courses' && (
+              <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <div className="space-y-2">
+                  <Label htmlFor="degree-plan-name-dialog" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    {t('settings.degreePlanName')}
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="degree-plan-name-dialog"
+                      value={degreePlanNameInput}
+                      onChange={(e) => handleNameChange(e.target.value)}
+                      placeholder="Enter degree plan name"
+                      className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                    />
+                    {nameHasChanged && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleNameReset}
+                          className="rounded-xl px-3"
+                          title={tCommon('actions.cancel')}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleNameSave}
+                          className="rounded-xl px-3"
+                          title={tCommon('actions.save')}
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    {t('settings.degreePlanNameDescription')}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Final Grade Section - Only show when editing a course */}
+            {degreePlanStep === 'courses' && editingCourse && (
+              <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <div className="space-y-2">
+                  <Label htmlFor="final-grade-input" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    Final Grade for {editingCourse.acronym}
+                  </Label>
                   <Input
-                    id="degree-plan-name-dialog"
-                    value={degreePlanNameInput}
-                    onChange={(e) => handleNameChange(e.target.value)}
-                    placeholder="Enter degree plan name"
+                    id="final-grade-input"
+                    value={semesterForm.finalGrade}
+                    onChange={(e) => setSemesterForm(prev => ({ ...prev, finalGrade: e.target.value }))}
+                    placeholder="e.g., A+, 95, 4.0"
                     className="rounded-xl bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
                   />
-                  {nameHasChanged && (
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleNameReset}
-                        className="rounded-xl px-3"
-                        title={tCommon('actions.cancel')}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleNameSave}
-                        className="rounded-xl px-3"
-                        title={tCommon('actions.save')}
-                      >
-                        <Check className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <p className="text-xs text-zinc-500">
+                    Enter the final grade received for this course
+                  </p>
                 </div>
-                <p className="text-xs text-zinc-500">
-                  {t('settings.degreePlanNameDescription')}
-                </p>
               </div>
-            </div>
+            )}
           </DialogHeader>
 
           {degreePlanStep === 'setup' && (
@@ -649,6 +683,7 @@ export default function DegreePlanTab() {
                             credits: '',
                             prerequisites: '',
                             corequisites: '',
+                            finalGrade: '',
                           });
                         }}
                         className="rounded-xl w-full border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 mb-2"
@@ -688,6 +723,7 @@ export default function DegreePlanTab() {
                             credits: '',
                             prerequisites: '',
                             corequisites: '',
+                            finalGrade: '',
                           });
                         }
                       }}
@@ -783,6 +819,7 @@ export default function DegreePlanTab() {
                       credits: '',
                       prerequisites: '',
                       corequisites: '',
+                      finalGrade: '',
                     });
                     if (currentSemester > 1) {
                       setCurrentSemester(currentSemester - 1);
@@ -806,6 +843,7 @@ export default function DegreePlanTab() {
                         credits: '',
                         prerequisites: '',
                         corequisites: '',
+                        finalGrade: '',
                       });
                       setCurrentSemester(currentSemester + 1);
                     }}
@@ -823,6 +861,7 @@ export default function DegreePlanTab() {
                         credits: '',
                         prerequisites: '',
                         corequisites: '',
+                        finalGrade: '',
                       });
                       setDegreePlanStep('view');
                       setDegreePlanDialog(false);
@@ -861,6 +900,7 @@ export default function DegreePlanTab() {
                               credits: '',
                               prerequisites: '',
                               corequisites: '',
+                              finalGrade: '',
                             });
                             setCurrentSemester(semester.number);
                             setDegreePlanStep('courses');

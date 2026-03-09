@@ -67,6 +67,47 @@
     "addExamsFirst": "Agrega exámenes primero para registrar calificaciones",
     "weight": "peso {{weight}}%"
   },
+  "courseRecord": {
+    "title": "Registro del Curso",
+    "description": "Registra actividades diarias, notas y asistencia",
+    "addRecord": "Agregar Registro",
+    "editRecord": "Editar Registro",
+    "deleteRecord": "Eliminar Registro",
+    "noRecords": "No hay registros para este día",
+    "recordTypes": {
+      "note": "Nota",
+      "attendance": "Asistencia",
+      "homework": "Tarea",
+      "lecture": "Clase",
+      "lab": "Laboratorio",
+      "other": "Otro"
+    },
+    "fields": {
+      "type": "Tipo",
+      "content": "Notas",
+      "mood": "Ánimo",
+      "date": "Fecha"
+    },
+    "placeholders": {
+      "content": "¿Qué pasó en clase hoy? Notas u observaciones..."
+    }
+  },
+  "syllabus": {
+    "title": "Programa del Curso",
+    "upload": "Subir Programa",
+    "view": "Ver Programa",
+    "download": "Descargar",
+    "replace": "Reemplazar",
+    "remove": "Eliminar",
+    "noFile": "Aún no se ha subido ningún programa",
+    "invalidFileType": "Tipo de archivo inválido. Solo se permiten archivos PDF, DOC, DOCX o TXT.",
+    "fileTooLarge": "El archivo es demasiado grande. El tamaño máximo es 10MB.",
+    "uploadFailed": "Error al subir el programa. Por favor, inténtalo de nuevo.",
+    "viewFailed": "Error al abrir el programa. Por favor, inténtalo de nuevo.",
+    "downloadFailed": "Error al descargar el programa. Por favor, inténtalo de nuevo.",
+    "removeFailed": "Error al eliminar el programa. Por favor, inténtalo de nuevo.",
+    "removeConfirmation": "¿Estás seguro de que quieres eliminar este programa?"
+  },
   "confirmations": {
     "clearData": {
       "title": "Limpiar Datos de {{course}}",

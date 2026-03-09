@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { useSnapshot } from 'valtio';
 import { uid } from '../lib/utils';
 import { store, storeLoadingState } from '../stores/app';
 import type {
   Course,
+  CourseRecord,
   DegreePlan,
   ExamGrade,
   Item,
@@ -114,6 +116,12 @@ export function useCourses() {
     },
     setCourses: (courses: Course[]) => {
       store.courses = courses;
+    },
+    updateCourseSyllabus: (courseId: string, syllabusFileId: string | undefined) => {
+      const course = store.courses.find(c => c.id === courseId);
+      if (course) {
+        course.syllabusFileId = syllabusFileId;
+      }
     },
   };
 }
@@ -544,6 +552,94 @@ export function useItems() {
     },
     setItems: (items: Item[]) => {
       store.items = items;
+    },
+  };
+}
+
+/**
+ * Hook to access and modify course records (daily notes/activity logs)
+ */
+export function useCourseRecords() {
+  // Use full store snapshot to handle cases where courseRecords might not exist yet
+  // (e.g., after loading from older saved state without this field)
+  const state = useSnapshot(store);
+  const courseRecords = state.courseRecords ?? [];
+
+  // Ensure store.courseRecords exists for mutations (run once on mount)
+  useEffect(() => {
+    if (!store.courseRecords) {
+      store.courseRecords = [];
+    }
+  }, []);
+
+  return {
+    courseRecords,
+    
+    getRecordsByDate: (date: string) => {
+      return courseRecords.filter(record => record.date === date);
+    },
+    
+    getRecordsByCourse: (courseId: string) => {
+      return courseRecords.filter(record => record.courseId === courseId);
+    },
+    
+    getRecordsByCourseAndDate: (courseId: string, date: string) => {
+      return courseRecords.filter(record => record.courseId === courseId && record.date === date);
+    },
+    
+    getRecordsForMonth: (courseId: string, year: number, month: number) => {
+      const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+      return courseRecords.filter(
+        record => record.courseId === courseId && record.date.startsWith(monthStr)
+      );
+    },
+    
+    addRecord: (record: Omit<CourseRecord, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const now = new Date();
+      const newRecord: CourseRecord = {
+        ...record,
+        id: uid(),
+        createdAt: now,
+        updatedAt: now,
+      };
+      if (!store.courseRecords) {
+        store.courseRecords = [];
+      }
+      store.courseRecords.unshift(newRecord);
+      return newRecord;
+    },
+    
+    updateRecord: (id: string, updates: Partial<Omit<CourseRecord, 'id' | 'createdAt'>>) => {
+      if (!store.courseRecords) return null;
+      const recordIndex = store.courseRecords.findIndex(r => r.id === id);
+      if (recordIndex !== -1) {
+        store.courseRecords[recordIndex] = {
+          ...store.courseRecords[recordIndex],
+          ...updates,
+          updatedAt: new Date(),
+        };
+        return store.courseRecords[recordIndex];
+      }
+      return null;
+    },
+    
+    deleteRecord: (id: string) => {
+      if (!store.courseRecords) return false;
+      const recordIndex = store.courseRecords.findIndex(r => r.id === id);
+      if (recordIndex !== -1) {
+        store.courseRecords.splice(recordIndex, 1);
+        return true;
+      }
+      return false;
+    },
+    
+    clearCourseRecords: (courseId: string) => {
+      if (!store.courseRecords) return;
+      for (let i = store.courseRecords.length - 1; i >= 0; i--) {
+        if (store.courseRecords[i].courseId === courseId) {
+          store.courseRecords.splice(i, 1);
+        }
+      }
     },
   };
 }

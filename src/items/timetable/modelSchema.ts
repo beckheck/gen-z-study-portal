@@ -14,6 +14,8 @@ export const TIME_BLOCKS = [
   { id: '4', startsAt: '12:20', endsAt: '13:30' },
   { id: '5', startsAt: '14:50', endsAt: '16:00' },
   { id: '6', startsAt: '16:10', endsAt: '17:20' },
+  { id: '7', startsAt: '17:30', endsAt: '18:40' },
+  { id: '8', startsAt: '18:50', endsAt: '20:00' },
 ];
 
 export const TimetableBlockSchema = z.object({

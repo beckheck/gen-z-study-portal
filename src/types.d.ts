@@ -237,6 +237,7 @@ export interface DegreeCourse {
   prerequisites?: string;
   corequisites?: string;
   completed: boolean;
+  finalGrade?: string;
 }
 
 /**
@@ -245,6 +246,29 @@ export interface DegreeCourse {
 export interface Course {
   id: string;
   title: string;
+  syllabusFileId?: string;
+}
+
+/**
+ * Course record entry for tracking daily notes and activities
+ */
+export interface CourseRecord {
+  /** Unique identifier for the record */
+  id: string;
+  /** Course ID this record belongs to */
+  courseId: string;
+  /** Date of the record (YYYY-MM-DD format) */
+  date: string;
+  /** Content/notes for this record */
+  content: string;
+  /** Type of record entry */
+  type: 'note' | 'attendance' | 'homework' | 'lecture' | 'lab' | 'other';
+  /** Optional mood/rating for the day (1-5) */
+  mood?: number;
+  /** Creation timestamp */
+  createdAt: Date;
+  /** Last update timestamp */
+  updatedAt: Date;
 }
 
 /**
@@ -476,6 +500,7 @@ export interface AppState {
   fileAttachments: FileAttachmentStore;
   activeTabsByMode: Record<string, string>;
   focusTimer: FocusTimerConfig;
+  courseRecords: CourseRecord[];
 }
 
 export interface AppTab {

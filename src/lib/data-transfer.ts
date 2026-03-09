@@ -1,5 +1,5 @@
 import { DEFAULT_FOCUS_TIMER_CONFIG, DEFAULT_HYDRATION_SETTINGS, DEFAULT_MOOD_EMOJIS } from '@/stores/app';
-import { AppState, Item, SoundtrackPosition } from '@/types';
+import { AppState, CourseRecord, Item, SoundtrackPosition } from '@/types';
 import { createLocalMidnightDate } from './date-utils';
 
 type StateUpdater = (updates: Partial<AppState>) => void;
@@ -30,6 +30,7 @@ export class DataTransfer {
       },
       wellness: state.wellness,
       fileAttachments: state.fileAttachments,
+      courseRecords: convertDatesToTimestamps(state.courseRecords ?? [], /(At)$/),
       settings: {
         selectedCourseId: state.selectedCourseId,
         soundtrackEmbed: state.soundtrack.embed,
@@ -164,6 +165,9 @@ export class DataTransfer {
         metadata: {},
       },
       activeTabsByMode: data.settings.activeTabsByMode || {},
+      courseRecords: data.courseRecords 
+        ? (convertTimestampsToDates(data.courseRecords, /(At)$/) as CourseRecord[]) 
+        : [],
     });
 
     this.setState({
@@ -375,6 +379,16 @@ interface ExchangeFormatV2 {
     };
     activeTabsByMode?: Record<string, string>;
   };
+  courseRecords?: Array<{
+    id: string;
+    courseId: string;
+    date: string;
+    content: string;
+    type: 'note' | 'attendance' | 'homework' | 'lecture' | 'lab' | 'other';
+    mood?: number;
+    createdAt: number;
+    updatedAt: number;
+  }>;
 }
 
 // Inlined Item type definitions

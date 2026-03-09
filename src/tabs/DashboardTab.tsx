@@ -1,6 +1,8 @@
 import CurrentDateTime from '@/components/CurrentDateTime';
+import MiniCalendar from '@/components/MiniCalendar';
 import SoundtrackCard from '@/components/SoundtrackCard';
 import TipsRow from '@/components/TipsRow';
+import TodaySchedule from '@/components/TodaySchedule';
 import Upcoming from '@/components/Upcoming';
 import WeatherWidget from '@/components/WeatherWidget';
 import { useSettingsDialogContext } from '@/components/settings/SettingsDialogProvider';
@@ -81,6 +83,10 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         />
         <CurrentDateTime />
       </div>
+
+      {/* Today's Schedule - Horizontal Timeline */}
+      <TodaySchedule onTabChange={onTabChange} />
+
       <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -259,12 +265,32 @@ export default function DashboardTab({ onTabChange }: DashboardTabProps) {
         })()}
       </Card>
 
-      <SoundtrackCard
-        visible={soundtrack.position === 'dashboard'}
-        embed={soundtrack.embed}
-        position={'dashboard'}
-        onPositionChange={setSoundtrackPosition}
-      />
+      {/* Calendar and Soundtrack Section */}
+      <div className="grid grid-cols-1 gap-6">
+        {soundtrack.position === 'dashboard' ? (
+          /* Both calendar and soundtrack visible */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <MiniCalendar 
+              onTabChange={onTabChange}
+              onCourseSelect={setSelectedCourse}
+              isExpanded={false}
+            />
+            <SoundtrackCard
+              visible={true}
+              embed={soundtrack.embed}
+              position={'dashboard'}
+              onPositionChange={setSoundtrackPosition}
+            />
+          </div>
+        ) : (
+          /* Only calendar visible, expanded to use available space */
+          <MiniCalendar 
+            onTabChange={onTabChange}
+            onCourseSelect={setSelectedCourse}
+            isExpanded={true}
+          />
+        )}
+      </div>
 
       <TipsRow />
     </div>

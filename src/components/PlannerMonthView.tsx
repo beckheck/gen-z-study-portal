@@ -20,6 +20,7 @@ interface PlannerMonthViewProps {
   getAllEventsForTooltip: (date: Date) => any[];
   handleDayClick: (date: Date) => void;
   itemDialog: any;
+  editItemDialogOptions?: any;
 }
 
 export function PlannerMonthView({
@@ -31,6 +32,7 @@ export function PlannerMonthView({
   getAllEventsForTooltip,
   handleDayClick,
   itemDialog,
+  editItemDialogOptions,
 }: PlannerMonthViewProps) {
   const { getCourseTitle } = useCourses();
   const { getItemsByType, updateItem } = useItems();
@@ -131,7 +133,7 @@ export function PlannerMonthView({
                     className="text-xs truncate flex items-center gap-1.5 p-1 rounded bg-white/50 dark:bg-white/10 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                     onClick={clickEvent => {
                       clickEvent.stopPropagation();
-                      itemDialog.openEditDialog(e);
+                      itemDialog.openEditDialog(e, editItemDialogOptions);
                     }}
                     title={t('messages.clickToEdit')}
                   >
@@ -165,7 +167,7 @@ export function PlannerMonthView({
                         className="space-y-1 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/50 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                         onClick={clickEvent => {
                           clickEvent.stopPropagation();
-                          itemDialog.openEditDialog(event);
+                          itemDialog.openEditDialog(event, editItemDialogOptions);
                         }}
                         title={t('messages.clickToEdit')}
                       >
@@ -255,7 +257,7 @@ export function PlannerMonthView({
                       style={{ borderTopColor: item.color || '#6366f1' }}
                       onClick={e => {
                         e.stopPropagation();
-                        itemDialog.openEditDialog(item);
+                        itemDialog.openEditDialog(item, editItemDialogOptions);
                       }}
                       title={t('messages.clickToEdit')}
                     >

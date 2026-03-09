@@ -94,7 +94,11 @@
   },
   "dashboard": {
     "nextUp": "Próximamente",
-    "upcomingExamsAndTasks": "Próximos exámenes y tareas"
+    "upcomingExamsAndTasks": "Próximos exámenes y tareas",
+    "todaySchedule": "Horario de Hoy",
+    "noClassesToday": "No hay clases programadas para hoy",
+    "addRecord": "Clic para agregar un registro de esta clase",
+    "recordClass": "Registrar"
   },
   "weather": {
     "loading": {

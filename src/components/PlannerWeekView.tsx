@@ -21,6 +21,7 @@ interface PlannerWeekViewProps {
   getAllEventsForDate: (date: Date) => any[];
   handleDayClick: (date: Date) => void;
   itemDialog: any;
+  editItemDialogOptions?: any;
 }
 
 export function PlannerWeekView({
@@ -28,6 +29,7 @@ export function PlannerWeekView({
   getAllEventsForDate,
   handleDayClick,
   itemDialog,
+  editItemDialogOptions,
 }: PlannerWeekViewProps) {
   const { getCourseTitle } = useCourses();
   const { weeklyGoals, addGoal, toggleGoal, deleteGoal, clearAllGoals } = useWeeklyGoals();
@@ -218,7 +220,7 @@ export function PlannerWeekView({
                             className="flex-1 group relative bg-white/70 dark:bg-white/5 p-2.5 rounded-xl cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                             onClick={clickEvent => {
                               clickEvent.stopPropagation();
-                              itemDialog.openEditDialog(e);
+                              itemDialog.openEditDialog(e, editItemDialogOptions);
                             }}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -263,7 +265,7 @@ export function PlannerWeekView({
                       className="group relative flex flex-row items-start justify-between gap-2 bg-white/70 dark:bg-white/5 p-3 rounded-xl mb-2 cursor-pointer hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                       onClick={clickEvent => {
                         clickEvent.stopPropagation();
-                        itemDialog.openEditDialog(e);
+                        itemDialog.openEditDialog(e, editItemDialogOptions);
                       }}
                     >
                       <div className="flex-1 min-w-0">

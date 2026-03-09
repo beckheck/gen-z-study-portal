@@ -67,6 +67,47 @@
     "addExamsFirst": "Add exams first to track grades",
     "weight": "{{weight}}% weight"
   },
+  "courseRecord": {
+    "title": "Course Record",
+    "description": "Track daily activities, notes, and attendance",
+    "addRecord": "Add Record",
+    "editRecord": "Edit Record",
+    "deleteRecord": "Delete Record",
+    "noRecords": "No records for this day",
+    "recordTypes": {
+      "note": "Note",
+      "attendance": "Attendance",
+      "homework": "Homework",
+      "lecture": "Lecture",
+      "lab": "Lab",
+      "other": "Other"
+    },
+    "fields": {
+      "type": "Type",
+      "content": "Notes",
+      "mood": "Mood",
+      "date": "Date"
+    },
+    "placeholders": {
+      "content": "What happened in class today? Any notes or observations..."
+    }
+  },
+  "syllabus": {
+    "title": "Course Syllabus",
+    "upload": "Upload Syllabus",
+    "view": "View Syllabus",
+    "download": "Download",
+    "replace": "Replace",
+    "remove": "Remove",
+    "noFile": "No syllabus uploaded yet",
+    "invalidFileType": "Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only.",
+    "fileTooLarge": "File is too large. Maximum size is 10MB.",
+    "uploadFailed": "Failed to upload syllabus. Please try again.",
+    "viewFailed": "Failed to open syllabus. Please try again.",
+    "downloadFailed": "Failed to download syllabus. Please try again.",
+    "removeFailed": "Failed to remove syllabus. Please try again.",
+    "removeConfirmation": "Are you sure you want to remove this syllabus?"
+  },
   "confirmations": {
     "clearData": {
       "title": "Clear {{course}} Data",

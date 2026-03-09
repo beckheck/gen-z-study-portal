@@ -25,6 +25,11 @@ const addItemDialogOptions: ItemDialogOptions = {
   availableItemTypes: ['event', 'exam', 'task'],
 };
 
+const editItemDialogOptions: ItemDialogOptions = {
+  hidden: { type: false },
+  availableItemTypes: ['event', 'exam'],
+};
+
 export default function PlannerTab() {
   const { courses } = useCourses();
   const { items, getItemsByType } = useItems();
@@ -249,6 +254,7 @@ export default function PlannerTab() {
           getAllEventsForDate={getAllEventsForDate}
           handleDayClick={handleDayClick}
           itemDialog={itemDialog}
+          editItemDialogOptions={editItemDialogOptions}
         />
       ) : (
         <PlannerMonthView
@@ -260,6 +266,7 @@ export default function PlannerTab() {
           getAllEventsForTooltip={getAllEventsForTooltip}
           handleDayClick={handleDayClick}
           itemDialog={itemDialog}
+          editItemDialogOptions={editItemDialogOptions}
         />
       )}
     </div>

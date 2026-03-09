@@ -250,15 +250,28 @@ export default function SoundtrackCard({
 
   if (position === 'dashboard' && !embed) {
     return (
-      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Music2 className="w-5 h-5" />
-            {t('title')}
-          </CardTitle>
-          <CardDescription>{t('description')}</CardDescription>
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur h-full">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Music2 className="w-5 h-5" />
+                {t('title')}
+              </CardTitle>
+              <CardDescription className="text-sm">{t('description')}</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openDialog('soundtrack')}
+              className="h-6 w-6 p-0 hover:bg-white/20"
+              title={t('actions.configure')}
+            >
+              <Settings className="w-3 h-3" />
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="text-sm text-zinc-500" dangerouslySetInnerHTML={{ __html: t('empty.message') }} />
         </CardContent>
       </Card>
@@ -293,37 +306,37 @@ export default function SoundtrackCard({
   // Dashboard position
   if (position === 'dashboard') {
     return (
-      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
-        <CardHeader>
+      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur h-full">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
               <SoundtrackTitle />
-              <CardDescription>{t('description')}</CardDescription>
+              <CardDescription className="text-sm">{t('description')}</CardDescription>
             </div>
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => openDialog('soundtrack')}
-                className="h-8 w-8 p-0 hover:bg-white/20"
+                className="h-6 w-6 p-0 hover:bg-white/20"
                 title={t('actions.configure')}
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-3 h-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onPositionChange?.('floating')}
-                className="h-8 w-8 p-0 hover:bg-white/20"
+                className="h-6 w-6 p-0 hover:bg-white/20"
                 title={t('actions.minimizeToFloating')}
               >
-                <ArrowDownToLine className="w-4 h-4" />
+                <ArrowDownToLine className="w-3 h-3" />
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-2xl overflow-hidden">
+        <CardContent className="pt-0">
+          <div className="rounded-xl overflow-hidden">
             <div ref={dashboardContainerRef} className="aspect-video bg-black/5" />
           </div>
         </CardContent>

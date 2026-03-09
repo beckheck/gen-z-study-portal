@@ -1,4 +1,6 @@
+import CourseRecordCalendar from '@/components/CourseRecordCalendar';
 import { useSettingsDialogContext } from '@/components/settings/SettingsDialogProvider';
+import SyllabusUpload from '@/components/SyllabusUpload';
 import { TasksProgressBar, type ProgressData } from '@/components/TasksProgressBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,7 +40,7 @@ export default function CourseManagerTab() {
   const { t: tCourse } = useTranslation('courseManager');
   const { t: tCommon } = useTranslation('common');
   const { formatDateDDMMYYYY } = useLocalization();
-  const { courses, selectedCourseId, getCourseTitle, setSelectedCourse, clearCourseData } = useCourses();
+  const { courses, selectedCourseId, getCourseTitle, setSelectedCourse, clearCourseData, updateCourseSyllabus } = useCourses();
   const { items, getItemsByType, updateItem, deleteItem } = useItems();
 
   // Get items by type
@@ -653,8 +655,10 @@ export default function CourseManagerTab() {
         </Card>
       </div>
 
-      {/* Grade Calculator - Standalone Card */}
-      <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
+      {/* Grade Calculator & Course Record Section */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Grade Calculator Card */}
+        <Card className="rounded-2xl border-none shadow-xl bg-white/80 dark:bg-white/10 backdrop-blur">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -755,8 +759,21 @@ export default function CourseManagerTab() {
               </div>
             </div>
           )}
+
+          {/* Syllabus Upload Section */}
+          <div className="border-t pt-4">
+            <SyllabusUpload
+              courseId={selectedCourseId}
+              syllabusFileId={courses.find(c => c.id === selectedCourseId)?.syllabusFileId}
+              onSyllabusChange={(fileId) => updateCourseSyllabus(selectedCourseId, fileId)}
+            />
+          </div>
         </CardContent>
       </Card>
+
+        {/* Course Record Calendar Card */}
+        <CourseRecordCalendar courseId={selectedCourseId} />
+      </div>
 
       {/* Confirmation Dialog for clearing course data */}
       <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>

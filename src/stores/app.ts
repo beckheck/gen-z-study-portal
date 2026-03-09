@@ -143,6 +143,9 @@ function createInitialState(): AppState {
 
     // Focus timer configuration
     focusTimer: { ...DEFAULT_FOCUS_TIMER_CONFIG },
+
+    // Course records for tracking daily notes
+    courseRecords: [],
   };
 }
 
