@@ -88,7 +88,7 @@ export default function TodaySchedule({ onTabChange }: TodayScheduleProps) {
               </span>
             </div>
             
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1">
+            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto scrollbar-hide py-1 pr-4">
               {todayEvents.map((event, index) => {
                 const blockTime = getBlockTime(event.blockId);
                 const isCurrent = isCurrentBlock(event.blockId);

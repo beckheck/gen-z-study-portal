@@ -345,6 +345,13 @@ export const performGarbageCollection = async (): Promise<void> => {
       }
     });
 
+    // Include syllabus files from courses
+    currentStore.courses.forEach(course => {
+      if (course.syllabusFileId) {
+        referencedFileIds.add(course.syllabusFileId);
+      }
+    });
+
     // Perform cleanup
     const deletedCount = await fileAttachmentStorage.cleanupOrphanedFiles(referencedFileIds);
 
